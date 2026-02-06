@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth, adminDb } from './lib/firebase-admin';
+import { cookies } from 'next/headers';
 
 // Force the middleware to run on the Node.js runtime
 export const runtime = 'nodejs';
