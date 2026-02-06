@@ -57,7 +57,7 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
         case 'auth/popup-closed-by-user':
             return 'The sign-in popup was closed before completing the sign-in. Please try again.';
         default:
-            return 'An unexpected error occurred during login. Please try again later.';
+            return `An unexpected server error occurred. Please try again. (Code: ${errorCode})`;
     }
 }
 
@@ -104,10 +104,13 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+    console.log('LoginPage onSubmit: Attempting to sign in with email/password.');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      console.log('LoginPage onSubmit: signInWithEmailAndPassword successful for user:', userCredential.user.uid);
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
+      console.error('LoginPage onSubmit: Caught error during sign-in process.', error);
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
@@ -121,16 +124,19 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleSubmitting(true);
+    console.log('LoginPage handleGoogleSignIn: Attempting to sign in with Google.');
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
+        console.log('LoginPage handleGoogleSignIn: Google sign-in successful for user:', user.uid);
 
         // Check if user exists in Firestore, if not, create a document
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
+             console.log('LoginPage handleGoogleSignIn: New Google user. Creating Firestore document.');
              await setDoc(userDocRef, {
                 uid: user.uid,
                 email: user.email,
@@ -141,11 +147,14 @@ export default function LoginPage() {
                 verified: false,
                 createdAt: serverTimestamp(),
             });
+        } else {
+            console.log('LoginPage handleGoogleSignIn: Existing Google user found in Firestore.');
         }
         
         await handleLoginSuccess(user);
 
     } catch (error: any) {
+        console.error('LoginPage handleGoogleSignIn: Caught error during Google sign-in process.', error);
         const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
