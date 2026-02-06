@@ -91,57 +91,34 @@ export default async function AdminInboxPage() {
           {contactMessages.length === 0 ? (
             <p className="text-sm text-muted-foreground">No contact messages yet.</p>
           ) : (
-            <>
-              <div className="space-y-3 md:hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sender</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Received</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {contactMessages.map((message) => (
-                  <Card key={message.id}>
-                    <CardContent className="p-4 space-y-2">
-                      <div>
-                        <p className="font-semibold">{message.name}</p>
-                        <p className="text-xs text-muted-foreground">{message.email}</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{message.message}</p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
-                        <span>
-                          {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <TableRow key={message.id}>
+                    <TableCell className="font-medium">{message.name}</TableCell>
+                    <TableCell>{message.email}</TableCell>
+                    <TableCell className="max-w-md truncate" title={message.message}>
+                      {message.message}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sender</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Received</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contactMessages.map((message) => (
-                      <TableRow key={message.id}>
-                        <TableCell className="font-medium">{message.name}</TableCell>
-                        <TableCell>{message.email}</TableCell>
-                        <TableCell className="max-w-md truncate" title={message.message}>
-                          {message.message}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={message.status === 'new' ? 'secondary' : 'outline'}>{message.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -155,64 +132,39 @@ export default async function AdminInboxPage() {
           {listingReports.length === 0 ? (
             <p className="text-sm text-muted-foreground">No listing reports yet.</p>
           ) : (
-            <>
-              <div className="space-y-3 md:hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Listing ID</TableHead>
+                  <TableHead>Reporter</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Received</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {listingReports.map((report) => (
-                  <Card key={report.id}>
-                    <CardContent className="p-4 space-y-2">
-                      <div>
-                        <p className="font-semibold">Listing {report.listingId}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {report.reporter?.displayName || 'Anonymous'} · {report.reporter?.email || 'No email'}
-                        </p>
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.listingId}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{report.reporter?.displayName || 'Anonymous'}</span>
+                        <span className="text-xs text-muted-foreground">{report.reporter?.email || 'No email'}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{report.reason}</p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
-                        <span>
-                          {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </TableCell>
+                    <TableCell className="max-w-md truncate" title={report.reason}>
+                      {report.reason}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Listing ID</TableHead>
-                      <TableHead>Reporter</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Received</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {listingReports.map((report) => (
-                      <TableRow key={report.id}>
-                        <TableCell className="font-medium">{report.listingId}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span>{report.reporter?.displayName || 'Anonymous'}</span>
-                            <span className="text-xs text-muted-foreground">{report.reporter?.email || 'No email'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-md truncate" title={report.reason}>
-                          {report.reason}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={report.status === 'new' ? 'secondary' : 'outline'}>{report.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
