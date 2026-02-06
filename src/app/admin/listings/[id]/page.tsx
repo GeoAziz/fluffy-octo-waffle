@@ -1,8 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
+import Image from 'next/image';
 import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText } from 'lucide-react';
+import { FileText, AlertTriangle } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { AdminActions } from './_components/admin-actions';
 import { cookies } from 'next/headers';
@@ -31,6 +32,8 @@ export default async function AdminReviewPage({ params }: { params: { id: string
     notFound();
   }
 
+  const isImageSuspicious = listing.imageAnalysis?.isSuspicious === true;
+
   return (
     <div className="container mx-auto max-w-7xl py-10">
       <div className="mb-8">
@@ -42,6 +45,22 @@ export default async function AdminReviewPage({ params }: { params: { id: string
         {/* Listing Details */}
         <div className="md:col-span-2 space-y-6">
             <Card>
+                 <CardHeader className="p-0 relative">
+                    <Image
+                        src={listing.image}
+                        alt={listing.title}
+                        width={1200}
+                        height={800}
+                        className="aspect-video w-full object-cover rounded-t-lg"
+                        data-ai-hint={listing.imageHint}
+                    />
+                    {isImageSuspicious && (
+                        <div className="absolute top-3 left-3 bg-destructive/80 text-destructive-foreground p-2 rounded-md flex items-center gap-2 text-sm">
+                            <AlertTriangle className="h-5 w-5" />
+                            <span>Suspicious Image Flagged</span>
+                        </div>
+                    )}
+                </CardHeader>
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>

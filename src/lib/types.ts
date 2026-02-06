@@ -1,5 +1,15 @@
 export type ListingStatus = 'pending' | 'approved' | 'rejected';
 
+export type BadgeSuggestion = {
+  badge: 'Gold' | 'Silver' | 'Bronze' | 'None';
+  reason: string;
+};
+
+export type ImageAnalysis = {
+  isSuspicious: boolean;
+  reason: string;
+};
+
 export type Evidence = {
   id: string;
   listingId: string;
@@ -35,6 +45,8 @@ export type Listing = {
   createdAt: any; // Firestore timestamp
   updatedAt: any; // Firestore timestamp
   adminReviewedAt?: any; // Firestore timestamp, optional
+  imageAnalysis?: ImageAnalysis;
+  badgeSuggestion?: BadgeSuggestion;
 };
 
 export type UserProfile = {

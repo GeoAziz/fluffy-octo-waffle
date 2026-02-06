@@ -19,9 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createListing } from '@/app/actions';
-import { Loader2 } from 'lucide-react';
+import { createListing, generateDescriptionAction } from '@/app/actions';
+import { Loader2, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -32,6 +33,7 @@ const formSchema = z.object({
   size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
   landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
+  mainImage: z.custom<FileList>().refine(files => files?.length === 1, 'A main property image is required.'),
   evidence: z.custom<FileList>().optional(),
 });
 
@@ -39,6 +41,8 @@ export default function NewListingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [bulletPoints, setBulletPoints] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -54,6 +58,23 @@ export default function NewListingPage() {
       description: '',
     },
   });
+
+  const handleGenerateDescription = async () => {
+    if (!bulletPoints) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please provide some key features.' });
+        return;
+    }
+    setIsGenerating(true);
+    try {
+        const result = await generateDescriptionAction(bulletPoints);
+        form.setValue('description', result.description, { shouldValidate: true });
+        toast({ title: 'Description generated!', description: 'You can now edit the description below.' });
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+    } finally {
+        setIsGenerating(false);
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -71,8 +92,12 @@ export default function NewListingPage() {
 
     try {
       const formData = new FormData();
-      Object.entries(values).forEach(([key, value]) => {
-        if (key === 'evidence' && value) {
+      // Use Object.keys on the schema to ensure all fields are considered.
+      Object.keys(formSchema.shape).forEach(key => {
+        const value = values[key as keyof typeof values];
+        if (key === 'mainImage' && value) {
+            formData.append('mainImage', (value as FileList)[0]);
+        } else if (key === 'evidence' && value) {
           Array.from(value as FileList).forEach(file => formData.append('evidence', file));
         } else if (value) {
             formData.append(key, String(value));
@@ -203,28 +228,60 @@ export default function NewListingPage() {
                 />
               </div>
 
+              <Separator />
+
+              {/* AI Description Generator */}
+              <div className="space-y-4">
+                 <FormLabel>Generate Description with AI</FormLabel>
+                 <Textarea 
+                    placeholder="Enter key features as bullet points...&#10;- 5 acres prime land&#10;- Ready title deed&#10;- Water and electricity on site"
+                    className="min-h-[100px]"
+                    value={bulletPoints}
+                    onChange={(e) => setBulletPoints(e.target.value)}
+                 />
+                 <Button type="button" variant="outline" onClick={handleGenerateDescription} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Description
+                 </Button>
+              </div>
+
               {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl><Textarea placeholder="Provide a detailed description of the property..." className="min-h-[120px]" {...field} /></FormControl>
+                    <FormLabel>Property Description</FormLabel>
+                    <FormControl><Textarea placeholder="A detailed description of the property will appear here..." className="min-h-[150px]" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Evidence */}
+              <Separator />
+
+              {/* File Uploads */}
+               <FormField
+                control={form.control}
+                name="mainImage"
+                render={({ field: { onChange, ...rest } }) => (
+                  <FormItem>
+                    <FormLabel>Main Property Image</FormLabel>
+                    <FormControl><Input type="file" accept="image/*" {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
+                    <FormDescription>The main photo that will be displayed for your listing.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="evidence"
-                render={({ field: { onChange, value, ...rest } }) => (
+                render={({ field: { onChange, ...rest } }) => (
                   <FormItem>
                     <FormLabel>Evidence Documents</FormLabel>
                     <FormControl><Input type="file" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>Upload title deed, survey maps, agreements, etc. (max 5 files).</FormDescription>
+                    <FormDescription>Upload title deed, survey maps, agreements, etc. (images or PDFs).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -234,6 +291,7 @@ export default function NewListingPage() {
                 <div className="space-y-2">
                     <Label>Submitting for Review...</Label>
                     <Progress value={uploadProgress} />
+                    <p className="text-xs text-muted-foreground">Running AI analysis, please wait...</p>
                 </div>
               )}
 

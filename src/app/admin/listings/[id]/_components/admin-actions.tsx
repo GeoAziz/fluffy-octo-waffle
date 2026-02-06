@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Listing, ListingStatus } from '@/lib/types';
 import { updateListingStatus, getAiSummary, checkSuspiciousPatterns, deleteListing } from '@/app/actions';
 import { Separator } from '@/components/ui/separator';
-import { Bot, Sparkles, AlertTriangle, FileText, Loader2, Trash2 } from 'lucide-react';
+import { Bot, Sparkles, AlertTriangle, FileText, Loader2, Trash2, BadgeCheck, Shield, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -28,6 +28,13 @@ const statusOptions: { value: ListingStatus; label: string }[] = [
   { value: 'pending', label: 'Set to Pending' },
   { value: 'rejected', label: 'Reject' },
 ];
+
+const badgeIcons = {
+    Gold: <Award className="h-5 w-5 text-yellow-500" />,
+    Silver: <BadgeCheck className="h-5 w-5 text-slate-400" />,
+    Bronze: <Shield className="h-5 w-5 text-amber-700" />,
+    None: <AlertTriangle className="h-5 w-5 text-destructive" />,
+};
 
 export function AdminActions({ listing }: { listing: Listing }) {
   const router = useRouter();
@@ -161,7 +168,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete the
-                    listing and all of its associated evidence files.
+                    listing, its main image, and all associated evidence files.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -179,13 +186,35 @@ export function AdminActions({ listing }: { listing: Listing }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot /> AI Assistant Tools
+            <Bot /> AI Assistant & Insights
           </CardTitle>
-          <CardDescription>Use GenAI to accelerate your review process.</CardDescription>
+          <CardDescription>GenAI tools to accelerate your review process.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+           {listing.badgeSuggestion && (
+            <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="text-accent h-4 w-4"/>Trust Badge Suggestion</h4>
+                <div className="p-3 rounded-md border bg-secondary/50">
+                    <div className="flex items-center gap-2">
+                         {badgeIcons[listing.badgeSuggestion.badge]}
+                        <p className="font-bold text-lg">{listing.badgeSuggestion.badge} Badge</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{listing.badgeSuggestion.reason}</p>
+                </div>
+            </div>
+           )}
+           {listing.imageAnalysis?.isSuspicious && (
+            <div>
+                 <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-warning h-4 w-4"/>Image Analysis</h4>
+                 <div className="p-3 rounded-md border border-destructive/50 bg-destructive/10">
+                    <p className="font-bold text-destructive">Result: Suspicious Image</p>
+                    <p className="text-sm text-muted-foreground mt-1">{listing.imageAnalysis.reason}</p>
+                 </div>
+            </div>
+           )}
+          <Separator />
           <div>
-            <h4 className="font-semibold mb-2 flex items-center gap-2"><Sparkles className="text-accent h-4 w-4"/>Evidence Summarization</h4>
+            <h4 className="font-semibold mb-2">Document Tools</h4>
             {listing.evidence.length > 0 ? (
                 <div className="space-y-3">
                 {listing.evidence.map(doc => (
@@ -203,11 +232,11 @@ export function AdminActions({ listing }: { listing: Listing }) {
                     </div>
                 ))}
                 </div>
-            ) : <p className="text-sm text-muted-foreground">No evidence to summarize.</p>}
+            ) : <p className="text-sm text-muted-foreground">No evidence to analyze.</p>}
           </div>
           <Separator />
           <div>
-            <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-warning h-4 w-4"/>Suspicious Pattern Detection</h4>
+            <h4 className="font-semibold mb-2">Fraud Detection</h4>
             <Button className="w-full" onClick={handleSuspicionCheck} disabled={isChecking || listing.evidence.length === 0}>
                 {isChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check for Suspicious Patterns"}
             </Button>
