@@ -15,6 +15,7 @@ import { Eye } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 async function checkAdmin() {
   const sessionCookie = cookies().get('__session')?.value;
@@ -55,7 +56,7 @@ export default async function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {listings.map((listing) => (
-                <TableRow key={listing.id}>
+                <TableRow key={listing.id} className={cn(listing.status === 'pending' && 'bg-warning/10 hover:bg-warning/20')}>
                   <TableCell className="font-medium">{listing.title}</TableCell>
                   <TableCell className="hidden md:table-cell">{listing.location}</TableCell>
                   <TableCell className="hidden sm:table-cell">{listing.seller.name}</TableCell>

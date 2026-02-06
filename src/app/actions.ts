@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion } from '@/lib/types';
+import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -11,6 +11,7 @@ import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
 import { analyzePropertyImage } from '@/ai/flows/analyze-property-image';
 import { suggestTrustBadge } from '@/ai/flows/suggest-trust-badge';
+import { getListings } from '@/lib/data';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
@@ -26,6 +27,18 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
     } catch(e) {
         return null;
     }
+}
+
+// Action to search/filter listings
+export async function searchListingsAction(options: {
+    query?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    landType?: string;
+    limit?: number;
+    startAfter?: string;
+}): Promise<{ listings: Listing[]; lastVisibleId: string | null }> {
+    return getListings(options);
 }
 
 // Action to generate a property description
@@ -75,8 +88,10 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
           imageAnalysisResult = await analyzePropertyImage({ imageDataUri });
       } catch (e) {
           console.error('Image analysis failed:', e);
-          // Fail gracefully, allow listing creation to continue
+          // Fail gracefully, allow listing creation to continue but maybe flag it.
       }
+  } else {
+      throw new Error('A main property image is required.');
   }
 
 
@@ -108,7 +123,7 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
                     contentForAi = ocrResult.extractedText?.trim() || `(Image file: ${file.name} - No text found)`;
                 } catch (ocrError) {
                     console.error(`OCR failed for ${file.name}:`, ocrError);
-                    contentForAi = `(OCR failed for image: ${file.name})`;
+                    throw new Error(`AI failed to process document "${file.name}". Please upload a clearer image or a different file type.`);
                 }
             }
             allEvidenceContent.push(contentForAi);
@@ -134,6 +149,7 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
           badgeSuggestionResult = await suggestTrustBadge({ listingTitle: title, evidenceContent: allEvidenceContent });
       } catch(e) {
           console.error('Badge suggestion failed:', e);
+          // Fail gracefully
       }
   }
 

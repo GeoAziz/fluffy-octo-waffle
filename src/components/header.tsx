@@ -7,7 +7,7 @@ import { LandPlot, LayoutDashboard, LogOut, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +18,29 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from './ui/skeleton';
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Badge } from './ui/badge';
 
 
 export function Header() {
   const pathname = usePathname();
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (userProfile?.role !== 'ADMIN') return;
+
+    const q = query(collection(db, "listings"), where("status", "==", "pending"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        setPendingCount(snapshot.size);
+    }, (error) => {
+      console.error("Failed to listen for pending listings:", error);
+    });
+
+    return () => unsubscribe();
+  }, [userProfile]);
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -55,13 +72,16 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'transition-colors hover:text-foreground/80',
+                  'transition-colors hover:text-foreground/80 relative',
                   pathname === link.href
                     ? 'text-foreground'
                     : 'text-foreground/60'
                 )}
               >
                 {link.label}
+                 {link.label === 'Admin' && pendingCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-2 -right-4 h-5 w-5 justify-center p-0">{pendingCount}</Badge>
+                )}
               </Link>
             ))}
           </nav>

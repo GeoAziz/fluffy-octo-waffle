@@ -67,19 +67,78 @@ const getEvidenceForListing = async (listingId: string): Promise<Evidence[]> => 
 }
 
 // The 'cache' function from React is used to memoize data requests.
-export const getListings = cache(async (): Promise<Listing[]> => {
-  const listingsCol = adminDb.collection('listings');
-  // Public users only see 'approved' listings
-  const snapshot = await listingsCol
-    .where('status', '==', 'approved')
-    .orderBy('createdAt', 'desc')
-    .get();
+export const getListings = async (options: {
+  status?: ListingStatus | 'all';
+  query?: string; // for county search
+  minPrice?: number;
+  maxPrice?: number;
+  landType?: string;
+  limit?: number;
+  startAfter?: string; // a document ID
+} = {}): Promise<{ listings: Listing[], lastVisibleId: string | null }> => {
+  const {
+    status = 'approved',
+    query,
+    minPrice,
+    maxPrice,
+    landType,
+    limit: queryLimit = 12,
+    startAfter: startAfterId
+  } = options;
 
-  return Promise.all(snapshot.docs.map(async (doc) => {
-    const evidence = await getEvidenceForListing(doc.id);
-    return toListing(doc, evidence);
-  }));
-});
+  let listingsQuery: FirebaseFirestore.Query = adminDb.collection('listings');
+
+  if (status !== 'all') {
+    listingsQuery = listingsQuery.where('status', '==', status);
+  }
+  
+  if (query) {
+     // Firestore doesn't support case-insensitive or partial string searches natively.
+     // For a production app, a search service like Algolia is recommended.
+     // Here, we'll do a simple equality check on a capitalized version.
+     const capitalizedQuery = query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
+     listingsQuery = listingsQuery.where('county', '>=', capitalizedQuery).where('county', '<=', capitalizedQuery + '\uf8ff');
+  }
+
+  if (landType) {
+    listingsQuery = listingsQuery.where('landType', '==', landType);
+  }
+  
+  // Price filtering. Firestore requires ordering by the field being used in a range filter.
+  // We prioritize ordering by date, so price filtering will be done in-memory.
+  // This is a trade-off for this implementation.
+  listingsQuery = listingsQuery.orderBy('createdAt', 'desc');
+
+  if (startAfterId) {
+    const startAfterDoc = await adminDb.collection('listings').doc(startAfterId).get();
+    if (startAfterDoc.exists) {
+      listingsQuery = listingsQuery.startAfter(startAfterDoc);
+    }
+  }
+
+  listingsQuery = listingsQuery.limit(queryLimit);
+
+  const snapshot = await listingsQuery.get();
+
+  let listings = snapshot.docs.map(doc => toListing(doc, []));
+  
+  // In-memory filtering for price
+  if (minPrice || maxPrice) {
+      listings = listings.filter(l => {
+          const price = l.price;
+          const isAboveMin = minPrice ? price >= minPrice : true;
+          const isBelowMax = maxPrice ? price <= maxPrice : true;
+          return isAboveMin && isBelowMax;
+      });
+  }
+
+  const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+  
+  return {
+    listings,
+    lastVisibleId: lastVisible ? lastVisible.id : null,
+  };
+};
 
 export const getListingsForSeller = cache(async (sellerId: string): Promise<Listing[]> => {
     if (!sellerId) return [];
