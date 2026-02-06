@@ -23,6 +23,20 @@ const formSchema = z.object({
   phone: z.string().optional(),
 });
 
+function getFirebaseAuthErrorMessage(errorCode: string): string {
+    switch (errorCode) {
+        case 'auth/email-already-in-use':
+            return 'An account with this email address already exists. Please log in instead.';
+        case 'auth/invalid-email':
+            return 'The email address you entered is not valid.';
+        case 'auth/weak-password':
+            return 'The password is too weak. Please choose a stronger password.';
+        default:
+            return 'An unexpected error occurred during sign up. Please try again later.';
+    }
+}
+
+
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -72,7 +86,7 @@ export default function SignupPage() {
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: getFirebaseAuthErrorMessage(error.code),
       });
     } finally {
       setIsSubmitting(false);

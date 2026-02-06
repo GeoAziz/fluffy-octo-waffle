@@ -15,7 +15,7 @@ import { StatusBadge } from '@/components/status-badge';
 import type { Listing } from '@/lib/types';
 import { useEffect, useState, useTransition } from 'react';
 import { searchListingsAction } from '@/app/actions';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -28,8 +28,17 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
+const BADGE_TYPES = ["Gold", "Silver", "Bronze"];
 
 export default function ListingsPage() {
   const router = useRouter();
@@ -42,18 +51,25 @@ export default function ListingsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
   // Filter states
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [landType, setLandType] = useState(searchParams.get('landType') || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
+  const [badge, setBadge] = useState(searchParams.get('badge') || '');
 
   const debouncedUpdateParams = useDebouncedCallback(() => {
     const params = new URLSearchParams(searchParams);
     if (query) params.set('query', query); else params.delete('query');
     if (landType) params.set('landType', landType); else params.delete('landType');
+    if (badge) params.set('badge', badge); else params.delete('badge');
+
     params.set('minPrice', String(priceRange[0]));
     params.set('maxPrice', String(priceRange[1]));
+    params.set('minArea', String(areaRange[0]));
+    params.set('maxArea', String(areaRange[1]));
     
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`);
@@ -63,9 +79,13 @@ export default function ListingsPage() {
   useEffect(() => {
     const minPrice = Number(searchParams.get('minPrice') || '0');
     const maxPrice = Number(searchParams.get('maxPrice') || '50000000');
+    const minArea = Number(searchParams.get('minArea') || '0');
+    const maxArea = Number(searchParams.get('maxArea') || '100');
     setQuery(searchParams.get('query') || '');
     setLandType(searchParams.get('landType') || '');
     setPriceRange([minPrice, maxPrice]);
+    setAreaRange([minArea, maxArea]);
+    setBadge(searchParams.get('badge') || '');
   }, [searchParams]);
 
   useEffect(() => {
@@ -73,9 +93,12 @@ export default function ListingsPage() {
     const params = {
       query: searchParams.get('query') || undefined,
       landType: searchParams.get('landType') || undefined,
+      badge: searchParams.get('badge') || undefined,
       minPrice: Number(searchParams.get('minPrice') || 0),
       maxPrice: Number(searchParams.get('maxPrice') || 50000000),
-      limit: 8,
+      minArea: Number(searchParams.get('minArea') || 0),
+      maxArea: Number(searchParams.get('maxArea') || 100),
+      limit: 12,
     };
     
     searchListingsAction(params).then(result => {
@@ -83,6 +106,7 @@ export default function ListingsPage() {
       setLastVisibleId(result.lastVisibleId);
       setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
       setLoading(false);
+      setIsFilterSheetOpen(false);
     });
   }, [searchParams]);
 
@@ -94,9 +118,12 @@ export default function ListingsPage() {
     const params = {
       query: searchParams.get('query') || undefined,
       landType: searchParams.get('landType') || undefined,
+      badge: searchParams.get('badge') || undefined,
       minPrice: Number(searchParams.get('minPrice') || 0),
       maxPrice: Number(searchParams.get('maxPrice') || 50000000),
-      limit: 8,
+      minArea: Number(searchParams.get('minArea') || 0),
+      maxArea: Number(searchParams.get('maxArea') || 100),
+      limit: 12,
       startAfter: lastVisibleId,
     };
     
@@ -106,27 +133,16 @@ export default function ListingsPage() {
     setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
     setLoadingMore(false);
   };
-  
-  return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          Secure Your Piece of Kenya
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
-          Browse verified land listings with transparent trust signals.
-        </p>
-      </div>
-      
-      {/* Search and Filters */}
-      <div className="mb-8 p-4 border rounded-lg bg-card grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+
+  const FilterControls = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
         <div className="space-y-2">
-            <Label htmlFor="search-query">Search by County</Label>
+            <Label htmlFor="search-query">Search County/Location</Label>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                     id="search-query"
-                    placeholder="e.g., Kajiado"
+                    placeholder="e.g., Kajiado, Kitengela"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); debouncedUpdateParams(); }}
                     className="pl-10"
@@ -148,10 +164,24 @@ export default function ListingsPage() {
             </Select>
         </div>
         <div className="space-y-2">
-           <Label>Price Range (Ksh)</Label>
+            <Label htmlFor="badge-type">Trust Badge</Label>
+            <Select value={badge} onValueChange={(value) => { setBadge(value === 'all' ? '' : value); debouncedUpdateParams(); }}>
+                <SelectTrigger id="badge-type">
+                    <SelectValue placeholder="Any Badge" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Any Badge</SelectItem>
+                    {BADGE_TYPES.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="space-y-2">
+           <Label>Max Price (Ksh)</Label>
             <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{priceRange[0].toLocaleString()}</span>
-                <span>{priceRange[1].toLocaleString()}+</span>
+                <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
             </div>
             <Slider
                 value={[priceRange[1]]}
@@ -161,8 +191,60 @@ export default function ListingsPage() {
                 step={100000}
             />
         </div>
+        <div className="space-y-2 md:col-span-2 lg:col-span-4">
+           <Label>Area (Acres)</Label>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{areaRange[0]}</span>
+                <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
+            </div>
+            <Slider
+                value={[areaRange[1]]}
+                onValueChange={(value) => { setAreaRange([areaRange[0], value[0]]); }}
+                onValueCommit={debouncedUpdateParams}
+                max={100}
+                step={1}
+            />
+        </div>
+      </div>
+  );
+  
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="mb-12 text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-primary md:text-5xl">
+          Secure Your Piece of Kenya
+        </h1>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
+          Browse verified land listings with transparent trust signals.
+        </p>
+      </div>
+      
+      {/* Search and Filters */}
+      <div className="mb-8 p-4 border rounded-lg bg-card hidden lg:block">
+        <FilterControls />
       </div>
 
+      <div className="mb-8 lg:hidden">
+        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Search & Filter
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[80vh] flex flex-col">
+            <SheetHeader>
+              <SheetTitle>Search & Filter</SheetTitle>
+              <SheetDescription>Find the perfect property for you.</SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-1">
+              <div className="p-4">
+                 <FilterControls />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {(loading || isPending) && listings.length === 0 ? (
         <div className="flex min-h-[50vh] items-center justify-center">

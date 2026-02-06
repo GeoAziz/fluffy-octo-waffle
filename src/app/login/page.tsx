@@ -20,6 +20,23 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
+function getFirebaseAuthErrorMessage(errorCode: string): string {
+    switch (errorCode) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+            return 'Invalid email or password. Please check your credentials and try again.';
+        case 'auth/invalid-email':
+            return 'The email address you entered is not valid.';
+        case 'auth/user-disabled':
+            return 'This user account has been disabled.';
+        case 'auth/too-many-requests':
+            return 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
+        default:
+            return 'An unexpected error occurred during login. Please try again later.';
+    }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -50,7 +67,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Please check your credentials and try again.',
+        description: getFirebaseAuthErrorMessage(error.code),
       });
     } finally {
       setIsSubmitting(false);

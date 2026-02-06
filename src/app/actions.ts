@@ -34,7 +34,10 @@ export async function searchListingsAction(options: {
     query?: string;
     minPrice?: number;
     maxPrice?: number;
+    minArea?: number;
+    maxArea?: number;
     landType?: string;
+    badge?: string;
     limit?: number;
     startAfter?: string;
 }): Promise<{ listings: Listing[]; lastVisibleId: string | null }> {
@@ -88,7 +91,8 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
           imageAnalysisResult = await analyzePropertyImage({ imageDataUri });
       } catch (e) {
           console.error('Image analysis failed:', e);
-          // Fail gracefully, allow listing creation to continue but maybe flag it.
+          // Let user know AI analysis failed but still allow listing creation.
+          throw new Error('AI image analysis failed. The image might be of a low quality or unsupported format.');
       }
   } else {
       throw new Error('A main property image is required.');
@@ -149,7 +153,8 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
           badgeSuggestionResult = await suggestTrustBadge({ listingTitle: title, evidenceContent: allEvidenceContent });
       } catch(e) {
           console.error('Badge suggestion failed:', e);
-          // Fail gracefully
+          // Fail gracefully but let user know
+           throw new Error('AI badge suggestion failed. The listing will be created without it.');
       }
   }
 
@@ -244,6 +249,7 @@ export async function deleteListing(listingId: string) {
             await bucket.file(imagePath).delete();
         } catch (error) {
              console.error(`Failed to delete main image ${listing.image}`, error);
+             // Non-fatal, continue with deletion.
         }
     }
     // Delete evidence files
@@ -253,6 +259,7 @@ export async function deleteListing(listingId: string) {
     } catch (error: any) {
         if (error.code !== 404) { // Ignore not found errors
             console.error(`Failed to delete evidence files for prefix ${prefix}`, error);
+            // Non-fatal
         }
     }
 
@@ -278,10 +285,14 @@ export async function getAiSummary(documentText: string) {
         throw new Error('Authorization required.');
     }
     if (!documentText) {
-        throw new Error('Document text is required.');
+        throw new Error('Document text is required to generate a summary.');
     }
-    const result = await summarizeEvidence({ documentText });
-    return result;
+    try {
+        const result = await summarizeEvidence({ documentText });
+        return result;
+    } catch(e: any) {
+        throw new Error(`AI summarization failed: ${e.message}`);
+    }
 }
 
 // Action to call the suspicious pattern detection flow
@@ -291,8 +302,12 @@ export async function checkSuspiciousPatterns(documentDescriptions: string[]) {
         throw new Error('Authorization required.');
     }
     if (documentDescriptions.length === 0) {
-        throw new Error('At least one document description is required.');
+        throw new Error('At least one document description is required to check for suspicious patterns.');
     }
-    const result = await flagSuspiciousUploadPatterns({ documentDescriptions });
-    return result;
+    try {
+        const result = await flagSuspiciousUploadPatterns({ documentDescriptions });
+        return result;
+    } catch(e: any) {
+        throw new Error(`AI fraud detection failed: ${e.message}`);
+    }
 }

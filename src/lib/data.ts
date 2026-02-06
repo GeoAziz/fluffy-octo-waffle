@@ -69,19 +69,25 @@ const getEvidenceForListing = async (listingId: string): Promise<Evidence[]> => 
 // The 'cache' function from React is used to memoize data requests.
 export const getListings = async (options: {
   status?: ListingStatus | 'all';
-  query?: string; // for county search
+  query?: string;
   minPrice?: number;
   maxPrice?: number;
+  minArea?: number;
+  maxArea?: number;
   landType?: string;
+  badge?: string;
   limit?: number;
   startAfter?: string; // a document ID
 } = {}): Promise<{ listings: Listing[], lastVisibleId: string | null }> => {
   const {
     status = 'approved',
     query,
-    minPrice,
+    minPrice = 0,
     maxPrice,
+    minArea = 0,
+    maxArea,
     landType,
+    badge,
     limit: queryLimit = 12,
     startAfter: startAfterId
   } = options;
@@ -92,22 +98,33 @@ export const getListings = async (options: {
     listingsQuery = listingsQuery.where('status', '==', status);
   }
   
-  if (query) {
-     // Firestore doesn't support case-insensitive or partial string searches natively.
-     // For a production app, a search service like Algolia is recommended.
-     // Here, we'll do a simple equality check on a capitalized version.
-     const capitalizedQuery = query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
-     listingsQuery = listingsQuery.where('county', '>=', capitalizedQuery).where('county', '<=', capitalizedQuery + '\uf8ff');
-  }
-
   if (landType) {
     listingsQuery = listingsQuery.where('landType', '==', landType);
   }
+
+  if (badge) {
+    listingsQuery = listingsQuery.where('badgeSuggestion.badge', '==', badge);
+  }
   
-  // Price filtering. Firestore requires ordering by the field being used in a range filter.
-  // We prioritize ordering by date, so price filtering will be done in-memory.
-  // This is a trade-off for this implementation.
-  listingsQuery = listingsQuery.orderBy('createdAt', 'desc');
+  // Firestore requires the first orderBy to be on the same field as an inequality filter.
+  // We'll prioritize filtering by price if it's specified.
+  const hasPriceFilter = typeof maxPrice === 'number' && maxPrice < 50000000;
+  
+  if (hasPriceFilter) {
+    listingsQuery = listingsQuery.where('price', '>=', minPrice);
+    if (maxPrice) {
+        listingsQuery = listingsQuery.where('price', '<=', maxPrice);
+    }
+    listingsQuery = listingsQuery.orderBy('price');
+  } else {
+    // Default sort order when not filtering by price
+    listingsQuery = listingsQuery.orderBy('createdAt', 'desc');
+  }
+
+  // NOTE: Firestore limitations prevent querying by multiple range filters (e.g., price AND area)
+  // at the same time without creating composite indexes. For this implementation, we filter by
+  // price in the query and will filter by area and query string in memory for flexibility.
+  // For a large-scale app, a dedicated search service like Algolia or Typesense is recommended.
 
   if (startAfterId) {
     const startAfterDoc = await adminDb.collection('listings').doc(startAfterId).get();
@@ -122,21 +139,27 @@ export const getListings = async (options: {
 
   let listings = snapshot.docs.map(doc => toListing(doc, []));
   
-  // In-memory filtering for price
-  if (minPrice || maxPrice) {
+  // In-memory filtering for area and text query
+  if (query || (typeof maxArea === 'number' && maxArea < 100)) {
       listings = listings.filter(l => {
-          const price = l.price;
-          const isAboveMin = minPrice ? price >= minPrice : true;
-          const isBelowMax = maxPrice ? price <= maxPrice : true;
-          return isAboveMin && isBelowMax;
+          const isAreaMatch = maxArea && maxArea < 100 ? l.area >= minArea && l.area <= maxArea : true;
+          
+          const isQueryMatch = query ? 
+              l.county.toLowerCase().includes(query.toLowerCase()) || 
+              l.location.toLowerCase().includes(query.toLowerCase()) ||
+              l.title.toLowerCase().includes(query.toLowerCase())
+              : true;
+              
+          return isAreaMatch && isQueryMatch;
       });
   }
 
-  const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+  const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+  const hasMoreListings = snapshot.docs.length === queryLimit;
   
   return {
     listings,
-    lastVisibleId: lastVisible ? lastVisible.id : null,
+    lastVisibleId: hasMoreListings && lastVisible ? lastVisible.id : null,
   };
 };
 
