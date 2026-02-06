@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { adminAuth, adminDb } from './lib/firebase-admin';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -12,7 +13,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  const protectedPages = ['/admin', '/dashboard', '/listings/new'];
+  // All pages that require a user to be logged in
+  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages'];
   let isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
 
   // Regex to match /listings/{any-id}/edit
@@ -21,10 +23,32 @@ export async function middleware(request: NextRequest) {
     isProtectedRoute = editListingPattern.test(pathname);
   }
 
-  if (isProtectedRoute && !sessionCookie) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  // Handle all protected routes
+  if (isProtectedRoute) {
+      if (!sessionCookie) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      // If it's an admin route, perform an additional role check
+      if (pathname.startsWith('/admin')) {
+          try {
+            const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+            const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+            if (!userDoc.exists || userDoc.data()?.role !== 'ADMIN') {
+              // Not an admin, redirect to access denied page
+              return NextResponse.redirect(new URL('/denied', request.url));
+            }
+          } catch (error) {
+            // Invalid session cookie, clear it and redirect to login
+            const loginUrl = new URL('/login', request.url);
+            loginUrl.searchParams.set('redirect', pathname);
+            const response = NextResponse.redirect(loginUrl);
+            response.cookies.set('__session', '', { maxAge: 0 });
+            return response;
+          }
+      }
   }
   
   return NextResponse.next();
