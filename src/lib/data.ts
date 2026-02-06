@@ -11,6 +11,27 @@ const toDate = (timestamp: Timestamp | FieldValue | undefined): Date | null => {
     return null;
 }
 
+const generateCoordsFromLocation = (location: string): { latitude: number; longitude: number } => {
+    if (!location) return { latitude: 0.0236, longitude: 37.9062 }; // Default to central Kenya
+
+    let hash = 0;
+    for (let i = 0; i < location.length; i++) {
+        const char = location.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+
+    // Bounding box for Kenya
+    const latMin = -4.7, latMax = 5.0;
+    const lonMin = 34.0, lonMax = 41.9;
+
+    const lat = latMin + ((hash & 0xffff) / 0xffff) * (latMax - latMin);
+    const lon = lonMin + (((hash >> 16) & 0xffff) / 0xffff) * (lonMax - lonMin);
+    
+    return { latitude: parseFloat(lat.toFixed(6)), longitude: parseFloat(lon.toFixed(6)) };
+}
+
+
 // Helper to convert a Firestore document to a serializable Listing object
 const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[] = []): Listing => {
     const data = doc.data();
@@ -40,6 +61,12 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
         images.push({ url: 'https://picsum.photos/seed/placeholder/1200/800', hint: 'placeholder' });
     }
 
+    // Generate coordinates if they don't exist
+    let coords = { latitude: data.latitude, longitude: data.longitude };
+    if (coords.latitude === undefined || coords.longitude === undefined) {
+        coords = generateCoordsFromLocation(data.location);
+    }
+
     // Convert all timestamp fields to serializable Date objects
     const finalListing: Listing = {
         ...firestoreListing,
@@ -48,6 +75,8 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
         adminReviewedAt: toDate(firestoreListing.adminReviewedAt),
         evidence,
         images, // Use the transformed images array
+        latitude: coords.latitude,
+        longitude: coords.longitude,
     };
     
     // Clean up old fields if they exist on the final object

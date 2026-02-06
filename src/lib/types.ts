@@ -41,6 +41,8 @@ export type Listing = {
   area: number; // e.g., in Acres
   size: string; // e.g., "50x100 ft"
   landType: string; // e.g., "Agricultural", "Residential"
+  latitude: number;
+  longitude: number;
   status: ListingStatus;
   seller: {
     name: string;

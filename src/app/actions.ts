@@ -13,6 +13,27 @@ import { analyzePropertyImage } from '@/ai/flows/analyze-property-image';
 import { suggestTrustBadge } from '@/ai/flows/suggest-trust-badge';
 import { getListings, getListingById } from '@/lib/data';
 
+const generateCoordsFromLocation = (location: string): { latitude: number; longitude: number } => {
+    if (!location) return { latitude: 0.0236, longitude: 37.9062 }; // Default to central Kenya
+
+    let hash = 0;
+    for (let i = 0; i < location.length; i++) {
+        const char = location.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+
+    // Bounding box for Kenya
+    const latMin = -4.7, latMax = 5.0;
+    const lonMin = 34.0, lonMax = 41.9;
+
+    const lat = latMin + ((hash & 0xffff) / 0xffff) * (latMax - latMin);
+    const lon = lonMin + (((hash >> 16) & 0xffff) / 0xffff) * (lonMax - lonMin);
+    
+    return { latitude: parseFloat(lat.toFixed(6)), longitude: parseFloat(lon.toFixed(6)) };
+}
+
+
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
     if (!sessionCookie) return null;
@@ -68,6 +89,9 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   const userRecord = await adminAuth.getUser(authUser.uid);
 
   const title = formData.get('title') as string;
+  const location = formData.get('location') as string;
+  const coords = generateCoordsFromLocation(location);
+
   const allEvidenceContent: string[] = [];
   let imageAnalysisResult: ImageAnalysis | undefined = undefined;
   let badgeSuggestionResult: BadgeSuggestion | undefined = undefined;
@@ -172,12 +196,14 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   const newListingData = {
     ownerId: authUser.uid,
     title: title,
-    location: formData.get('location') as string,
+    location: location,
     county: formData.get('county') as string,
     price: Number(formData.get('price')),
     area: Number(formData.get('area')),
     size: formData.get('size') as string,
     landType: formData.get('landType') as string,
+    latitude: coords.latitude,
+    longitude: coords.longitude,
     description: formData.get('description') as string,
     status: 'pending' as ListingStatus,
     images: uploadedImages,
@@ -220,15 +246,20 @@ export async function editListingAction(listingId: string, formData: FormData): 
     }
 
     const bucket = adminStorage.bucket();
+    const location = formData.get('location') as string;
+    const coords = generateCoordsFromLocation(location);
+
     const updatePayload: Record<string, any> = {
         title: formData.get('title') as string,
-        location: formData.get('location') as string,
+        location: location,
         county: formData.get('county') as string,
         price: Number(formData.get('price')),
         area: Number(formData.get('area')),
         size: formData.get('size') as string,
         landType: formData.get('landType') as string,
         description: formData.get('description') as string,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
         updatedAt: FieldValue.serverTimestamp(),
     };
     

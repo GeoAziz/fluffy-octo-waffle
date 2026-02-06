@@ -31,7 +31,13 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { UserProfile } from '@/lib/types';
 import { TrustBadge } from '@/components/trust-badge';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
 
+const LocationMap = dynamic(() => import('@/components/location-map'), { 
+  ssr: false, 
+  loading: () => <Skeleton className="h-[400px] w-full" />
+});
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
@@ -95,6 +101,8 @@ export default async function ListingDetailPage({
     size,
     landType,
     badge,
+    latitude,
+    longitude
   } = listing;
 
   const listingDetails = [
@@ -109,7 +117,7 @@ export default async function ListingDetailPage({
     <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         {/* Main Content */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-8">
           <Card className="overflow-hidden">
             <CardHeader className="p-0 relative">
                <Carousel className="w-full">
@@ -182,6 +190,18 @@ export default async function ListingDetailPage({
                   <p className="text-lg font-medium">{seller.name}</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader>
+              <CardTitle>Location on Map</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {latitude && longitude ? (
+                <LocationMap lat={latitude} lon={longitude} title={title} />
+              ) : (
+                <p className="text-muted-foreground">Location data is not available for this listing.</p>
+              )}
             </CardContent>
           </Card>
         </div>
