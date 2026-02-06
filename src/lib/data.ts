@@ -151,6 +151,7 @@ export const getListings = async (options: {
   maxArea?: number;
   landType?: string;
   badges?: BadgeValue[];
+  sortBy?: string; // e.g. 'createdAt:desc'
   limit?: number;
   startAfter?: string; // a document ID
 } = {}): Promise<{ listings: Listing[], lastVisibleId: string | null }> => {
@@ -163,6 +164,7 @@ export const getListings = async (options: {
     maxArea = 100,
     landType,
     badges,
+    sortBy = 'createdAt:desc',
     limit: queryLimit = 12,
     startAfter: startAfterId
   } = options;
@@ -183,20 +185,29 @@ export const getListings = async (options: {
   
   const hasPriceFilter = minPrice > 0 || maxPrice < 50000000;
   
+  // Note: Firestore requires an index for this query. If not present, this will fail.
   if (hasPriceFilter) {
     listingsQuery = listingsQuery.where('price', '>=', minPrice).where('price', '<=', maxPrice);
   }
 
   const hasAreaFilter = minArea > 0 || maxArea < 100;
    if (hasAreaFilter) {
-    // Firestore does not support multiple range filters on different fields.
-    // For a production app with this requirement, a composite index would be needed,
-    // or a more advanced search solution like Algolia/Typesense.
-    // Here, we filter area in-memory after fetching.
+    // Firestore does not support multiple range filters on different fields without a composite index.
+    // We will filter area in-memory after fetching.
   }
   
-  // Default sort order
-  listingsQuery = listingsQuery.orderBy(hasPriceFilter ? 'price' : 'createdAt', hasPriceFilter ? 'asc' : 'desc');
+  // Sorting logic
+  const [sortField, sortDirection] = sortBy.split(':') as [string, 'asc' | 'desc'];
+  // If we have a price filter, and we're not sorting by price already, Firestore will require a composite index.
+  // To avoid this complexity, we'll only allow one range filter at a time in the query.
+  // If sorting by price, we won't apply the price range filter on the query, and will filter in memory instead.
+  const sortAndFilterOnPrice = hasPriceFilter && sortField === 'price';
+  if (sortAndFilterOnPrice) {
+      listingsQuery = listingsQuery.orderBy(sortField, sortDirection);
+  } else {
+      listingsQuery = listingsQuery.orderBy(sortField, sortDirection);
+  }
+
 
   if (startAfterId) {
     const startAfterDoc = await adminDb.collection('listings').doc(startAfterId).get();
@@ -211,18 +222,20 @@ export const getListings = async (options: {
 
   let listings = snapshot.docs.map(doc => toListing(doc, []));
   
-  // In-memory filtering for text query, and area if needed
-  if (query || hasAreaFilter) {
+  // In-memory filtering
+  if (query || hasAreaFilter || sortAndFilterOnPrice) {
       listings = listings.filter(l => {
           const isAreaMatch = hasAreaFilter ? l.area >= minArea && l.area <= maxArea : true;
+          const isPriceMatch = sortAndFilterOnPrice ? l.price >= minPrice && l.price <= maxPrice : true;
           
           const isQueryMatch = query ? 
               l.county.toLowerCase().includes(query.toLowerCase()) || 
               l.location.toLowerCase().includes(query.toLowerCase()) ||
-              l.title.toLowerCase().includes(query.toLowerCase())
+              l.title.toLowerCase().includes(query.toLowerCase()) ||
+              l.seller.name.toLowerCase().includes(query.toLowerCase())
               : true;
               
-          return isAreaMatch && isQueryMatch;
+          return isAreaMatch && isQueryMatch && isPriceMatch;
       });
   }
 
@@ -247,11 +260,21 @@ export const getListingsForSeller = cache(async (sellerId: string): Promise<List
     }));
 });
 
-export const getAllListingsForAdmin = cache(async (): Promise<Listing[]> => {
-    const listingsCol = adminDb.collection('listings');
-    const snapshot = await listingsCol.orderBy('createdAt', 'desc').get();
-    // Admin dashboard doesn't need evidence details upfront
-    return snapshot.docs.map(doc => toListing(doc, []));
+export const getAdminDashboardStats = cache(async () => {
+    const snapshot = await adminDb.collection('listings').get();
+    const stats = {
+        total: snapshot.size,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+    };
+    snapshot.forEach(doc => {
+        const status = doc.data().status;
+        if (status === 'pending') stats.pending++;
+        else if (status === 'approved') stats.approved++;
+        else if (status === 'rejected') stats.rejected++;
+    });
+    return stats;
 });
 
 

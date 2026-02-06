@@ -11,7 +11,7 @@ import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
 import { analyzePropertyImage } from '@/ai/flows/analyze-property-image';
 import { suggestTrustBadge } from '@/ai/flows/suggest-trust-badge';
-import { getListings, getListingById } from '@/lib/data';
+import { getListings, getListingById, getAdminDashboardStats } from '@/lib/data';
 
 const generateCoordsFromLocation = (location: string): { latitude: number; longitude: number } => {
     if (!location) return { latitude: 0.0236, longitude: 37.9062 }; // Default to central Kenya
@@ -60,10 +60,21 @@ export async function searchListingsAction(options: {
     maxArea?: number;
     landType?: string;
     badges?: BadgeValue[];
+    status?: ListingStatus | 'all';
+    sortBy?: string;
     limit?: number;
     startAfter?: string;
 }): Promise<{ listings: Listing[]; lastVisibleId: string | null }> {
     return getListings(options);
+}
+
+// Action to get admin dashboard stats
+export async function getAdminStatsAction() {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') {
+    throw new Error('Authorization required.');
+  }
+  return getAdminDashboardStats();
 }
 
 // Action to generate a property description
@@ -220,6 +231,7 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   
   revalidatePath('/');
   revalidatePath('/dashboard');
+  revalidatePath('/admin');
   
   return { id: docRef.id };
 }
