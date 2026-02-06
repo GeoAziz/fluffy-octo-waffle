@@ -1,7 +1,7 @@
 import { adminDb } from './firebase-admin';
 import type { Listing, Evidence, ListingStatus, BadgeValue, ListingImage } from './types';
 import { cache } from 'react';
-import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { Timestamp, type FieldValue } from 'firebase-admin/firestore';
 
 // Helper to convert a Firestore Timestamp to a serializable Date
 const toDate = (timestamp: Timestamp | FieldValue | undefined): Date | null => {
@@ -80,8 +80,8 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
     };
     
     // Clean up old fields if they exist on the final object
-    delete finalListing.image;
-    delete finalListing.imageHint;
+    delete (finalListing as any).image;
+    delete (finalListing as any).imageHint;
 
     return finalListing;
 }
