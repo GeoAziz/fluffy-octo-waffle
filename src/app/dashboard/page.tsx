@@ -19,7 +19,8 @@ import type { UserProfile } from '@/lib/types';
 import { Edit } from 'lucide-react';
 
 async function getAuthenticatedUser() {
-    const sessionCookie = cookies().get('__session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
     if (!sessionCookie) return null;
 
     try {

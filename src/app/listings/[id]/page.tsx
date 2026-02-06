@@ -33,7 +33,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
-    const sessionCookie = cookies().get('__session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
     if (!sessionCookie) return null;
 
     try {

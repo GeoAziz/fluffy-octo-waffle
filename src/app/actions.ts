@@ -35,7 +35,8 @@ const generateCoordsFromLocation = (location: string): { latitude: number; longi
 
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
-    const sessionCookie = cookies().get('__session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
     if (!sessionCookie) return null;
 
     try {

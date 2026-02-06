@@ -19,7 +19,8 @@ import { cn } from '@/lib/utils';
 import { TrustBadge } from '@/components/trust-badge';
 
 async function checkAdmin() {
-  const sessionCookie = cookies().get('__session')?.value;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('__session')?.value;
   if (!sessionCookie) return redirect('/login');
 
   try {

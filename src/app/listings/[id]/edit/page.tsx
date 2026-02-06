@@ -5,7 +5,8 @@ import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebase-admin';
 
 async function getAuthenticatedUser() {
-    const sessionCookie = cookies().get('__session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
     if (!sessionCookie) return null;
 
     try {

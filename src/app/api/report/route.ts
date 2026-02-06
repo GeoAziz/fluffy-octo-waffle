@@ -12,7 +12,8 @@ export async function POST(request: Request) {
     }
 
     let reporter: { uid: string; email?: string | null; displayName?: string | null } | null = null;
-    const sessionCookie = cookies().get('__session')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
     if (sessionCookie) {
       try {
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
