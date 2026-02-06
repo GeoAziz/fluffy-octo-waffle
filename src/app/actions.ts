@@ -424,6 +424,42 @@ export async function updateListing(listingId: string, data: { status?: ListingS
   revalidatePath('/');
 }
 
+// Action for admins to bulk update listing statuses
+export async function bulkUpdateListingStatus(listingIds: string[], status: ListingStatus): Promise<{ success: boolean }> {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') {
+    throw new Error('Authorization required: Only admins can perform bulk updates.');
+  }
+
+  if (!listingIds || listingIds.length === 0) {
+    throw new Error('No listings selected for update.');
+  }
+
+  const batch = adminDb.batch();
+
+  listingIds.forEach(id => {
+    const listingRef = adminDb.collection('listings').doc(id);
+    const updateData: Record<string, any> = {
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+      adminReviewedAt: FieldValue.serverTimestamp(),
+    };
+    batch.update(listingRef, updateData);
+  });
+
+  await batch.commit();
+
+  // Revalidate paths to reflect changes
+  revalidatePath('/admin');
+  revalidatePath('/'); // Revalidate home page as listings might appear/disappear
+  listingIds.forEach(id => {
+    revalidatePath(`/listings/${id}`);
+    revalidatePath(`/admin/listings/${id}`);
+  });
+  
+  return { success: true };
+}
+
 // Action to delete a listing and its associated evidence
 export async function deleteListing(listingId: string) {
     const authUser = await getAuthenticatedUser();
