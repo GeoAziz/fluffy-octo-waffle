@@ -148,8 +148,9 @@ export default function LoginPage() {
           throw new Error(errorData.message || 'Failed to create session on the server.');
       }
 
-      console.log('[Login] Session cookie created, waiting for browser to process Set-Cookie');
-      // Wait for the cookie to be fully set in the browser
+      console.log('[Login] Session cookie created, waiting 500ms for browser to process Set-Cookie');
+      // Wait longer for the cookie to be fully set in the browser
+      // The browser needs time to process the Set-Cookie header from the response
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Verify the session was actually created and is accessible
@@ -159,7 +160,7 @@ export default function LoginPage() {
         try {
           const verifyResponse = await fetch('/api/auth/session', {
             method: 'GET',
-            credentials: 'include',
+            credentials: 'include', // Include cookies in the request
           });
           if (verifyResponse.ok) {
             console.log('[Login] Session verified on attempt', i + 1);
@@ -176,7 +177,7 @@ export default function LoginPage() {
         console.warn('[Login] Session verification failed, but proceeding anyway');
       }
 
-      // Wait a moment before navigation to ensure cookie is fully set
+      // Wait another moment for good measure before navigation
       await new Promise(resolve => setTimeout(resolve, 200));
 
       toast({ title: 'Login Successful', description: "Welcome back!" });
@@ -205,8 +206,8 @@ export default function LoginPage() {
       const requestedRedirect = searchParams.get('redirect');
       const finalRedirectUrl = computeRedirectUrl(userRole, requestedRedirect, fallbackRedirect);
       
-      console.log('[Login] Final redirect URL:', finalRedirectUrl);
-      router.push(finalRedirectUrl);
+      console.log('[Login] Final redirect URL:', redirectUrl);
+      router.push(redirectUrl);
       console.log('[Login] router.push called');
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);

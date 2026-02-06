@@ -106,13 +106,11 @@ export default function SignupPage() {
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
-    // Wait longer for the cookie to be fully set in the browser
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    // Navigate directly to onboarding
-    router.push('/onboarding');
+    // Using window.location.assign to ensure the browser sends the new session cookie with the next request.
+    // This is more reliable for HttpOnly cookies than client-side routing.
+    window.location.assign('/onboarding');
   }
 
 
