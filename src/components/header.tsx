@@ -1,18 +1,43 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { LandPlot, UserCircle, PlusCircle } from 'lucide-react';
+import { LandPlot, LayoutDashboard, LogOut, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/providers';
+import { auth } from '@/lib/firebase';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from './ui/skeleton';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/admin', label: 'Admin' },
-];
 
 export function Header() {
   const pathname = usePathname();
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    // Signal backend to clear the session cookie
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    router.push('/');
+    router.refresh();
+  };
+
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    // Conditionally show Admin link
+    ...(userProfile?.role === 'ADMIN' ? [{ href: '/admin', label: 'Admin' }] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,16 +67,58 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Button asChild>
-            <Link href="/listings/new">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Listing
-            </Link>
-          </Button>
-          <Button variant="ghost" size="icon">
-            <UserCircle className="h-5 w-5" />
-            <span className="sr-only">User Profile</span>
-          </Button>
+          {loading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <>
+              {user ? (
+                <>
+                  <Button asChild>
+                    <Link href="/listings/new">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Listing
+                    </Link>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                           <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
+                           <AvatarFallback>{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                            <div className="flex flex-col space-y-1">
+                                <p className="text-sm font-medium leading-none">{userProfile?.displayName}</p>
+                                <p className="text-xs leading-none text-muted-foreground">{userProfile?.email}</p>
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                             <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Log out
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Log in</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     </header>

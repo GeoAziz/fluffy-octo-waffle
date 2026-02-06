@@ -1,14 +1,30 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Bot, AlertTriangle } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { TrustBadge } from '@/components/trust-badge';
 import { AdminActions } from './_components/admin-actions';
-import { BadgeStatus } from '@/lib/types';
+import { cookies } from 'next/headers';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
+async function checkAdmin() {
+  const sessionCookie = cookies().get('__session')?.value;
+  if (!sessionCookie) return redirect('/login');
+
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'ADMIN') {
+       return redirect('/denied');
+    }
+  } catch (error) {
+    return redirect('/login');
+  }
+}
 
 export default async function AdminReviewPage({ params }: { params: { id: string } }) {
+  await checkAdmin();
   const listing = await getListingById(params.id);
 
   if (!listing) {
@@ -49,7 +65,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
                 <CardDescription>Documents provided by the seller for verification.</CardDescription>
             </CardHeader>
             <CardContent>
-                {listing.evidence.length > 0 ? (
+                {listing.evidence && listing.evidence.length > 0 ? (
                 <ul className="space-y-3">
                     {listing.evidence.map((doc) => (
                     <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">

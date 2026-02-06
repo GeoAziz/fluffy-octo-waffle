@@ -1,0 +1,90 @@
+import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getListingsForSeller } from '@/lib/data';
+import { TrustBadge } from '@/components/trust-badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatRelative } from 'date-fns';
+import { notFound } from 'next/navigation';
+
+async function getAuthenticatedUser() {
+    const sessionCookie = cookies().get('__session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+        return decodedToken;
+    } catch(e) {
+        return null;
+    }
+}
+
+export default async function SellerDashboard() {
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    // This should be handled by middleware, but as a safeguard.
+    return notFound();
+  }
+
+  const listings = await getListingsForSeller(user.uid);
+
+  return (
+    <div className="container mx-auto py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>Seller Dashboard</CardTitle>
+          <CardDescription>Manage your property listings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           {listings.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Property Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell">Created</TableHead>
+                        <TableHead className="text-right">Price (Ksh)</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {listings.map((listing) => (
+                        <TableRow key={listing.id}>
+                            <TableCell className="font-medium">
+                                <Link href={`/listings/${listing.id}`} className="hover:underline">{listing.title}</Link>
+                            </TableCell>
+                            <TableCell>
+                                <TrustBadge status={listing.badge} />
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                                {listing.createdAt ? formatRelative(listing.createdAt.toDate(), new Date()) : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                {listing.price.toLocaleString()}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+           ) : (
+             <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">You haven't created any listings yet.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/listings/new">Create Your First Listing</Link>
+                </Button>
+             </div>
+           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

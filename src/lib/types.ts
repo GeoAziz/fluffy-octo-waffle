@@ -22,9 +22,19 @@ export type Listing = {
   image: string;
   imageHint: string;
   badge: BadgeStatus;
+  sellerId: string;
   seller: {
     name: string;
     avatarUrl: string;
   };
   evidence: Evidence[];
+  createdAt: any; // Firestore timestamp
+};
+
+export type UserProfile = {
+  uid: string;
+  email: string;
+  displayName: string | null;
+  photoURL: string | null;
+  role: 'SELLER' | 'ADMIN';
 };

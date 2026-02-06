@@ -12,8 +12,27 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { redirect } from 'next/navigation';
+
+async function checkAdmin() {
+  const sessionCookie = cookies().get('__session')?.value;
+  if (!sessionCookie) return redirect('/login');
+
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'ADMIN') {
+       return redirect('/denied');
+    }
+  } catch (error) {
+    return redirect('/login');
+  }
+}
 
 export default async function AdminDashboard() {
+  await checkAdmin();
   const listings = await getListings();
 
   return (
