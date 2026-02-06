@@ -98,7 +98,7 @@ export function Header() {
             <>
               {user ? (
                 <>
-                  <Button asChild className="hidden sm:inline-flex">
+                  <Button asChild className="hidden md:inline-flex">
                     <Link href="/listings/new">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       New Listing
@@ -140,17 +140,17 @@ export function Header() {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                  <Button variant="ghost" asChild className="hidden md:inline-flex">
                     <Link href="/login">Log in</Link>
                   </Button>
-                  <Button variant="accent" asChild className="hidden sm:inline-flex">
+                  <Button variant="accent" asChild className="hidden md:inline-flex">
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
               )}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
