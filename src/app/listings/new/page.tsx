@@ -34,7 +34,7 @@ const formSchema = z.object({
   size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
   landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  mainImage: z.custom<FileList>().refine(files => files?.length === 1, 'A main property image is required.'),
+  images: z.custom<FileList>().refine(files => files && files.length > 0, 'At least one property image is required.'),
   evidence: z.custom<FileList>().optional(),
 });
 
@@ -102,11 +102,10 @@ export default function NewListingPage() {
 
     try {
       const formData = new FormData();
-      // Use Object.keys on the schema to ensure all fields are considered.
       Object.keys(formSchema.shape).forEach(key => {
         const value = values[key as keyof typeof values];
-        if (key === 'mainImage' && value) {
-            formData.append('mainImage', (value as FileList)[0]);
+        if (key === 'images' && value) {
+            Array.from(value as FileList).forEach(file => formData.append('images', file));
         } else if (key === 'evidence' && value) {
           Array.from(value as FileList).forEach(file => formData.append('evidence', file));
         } else if (value) {
@@ -287,12 +286,12 @@ export default function NewListingPage() {
               {/* File Uploads */}
                <FormField
                 control={form.control}
-                name="mainImage"
+                name="images"
                 render={({ field: { onChange, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Main Property Image</FormLabel>
-                    <FormControl><Input type="file" accept="image/*" {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>The main photo that will be displayed for your listing.</FormDescription>
+                    <FormLabel>Property Images</FormLabel>
+                    <FormControl><Input type="file" accept="image/*" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
+                    <FormDescription>The first image will be the main photo. You can upload multiple images.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

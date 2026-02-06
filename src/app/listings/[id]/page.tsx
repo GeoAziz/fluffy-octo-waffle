@@ -10,6 +10,13 @@ import {
   CardTitle,
   CardDescription
 } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Separator } from '@/components/ui/separator';
 import {
   FileText,
@@ -80,8 +87,7 @@ export default async function ListingDetailPage({
     county,
     price,
     description,
-    image,
-    imageHint,
+    images,
     status,
     seller,
     evidence,
@@ -106,15 +112,25 @@ export default async function ListingDetailPage({
         <div className="md:col-span-2">
           <Card className="overflow-hidden">
             <CardHeader className="p-0 relative">
-              <Image
-                src={image}
-                alt={title}
-                width={1200}
-                height={800}
-                className="aspect-video w-full object-cover"
-                data-ai-hint={imageHint}
-                priority
-              />
+               <Carousel className="w-full">
+                <CarouselContent>
+                  {images.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <Image
+                        src={image.url}
+                        alt={`${title} - image ${index + 1}`}
+                        width={1200}
+                        height={800}
+                        className="aspect-video w-full object-cover"
+                        data-ai-hint={image.hint}
+                        priority={index === 0}
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4" />
+                <CarouselNext className="absolute right-4" />
+              </Carousel>
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 {badge && <TrustBadge badge={badge} />}
                 <StatusBadge status={status} />

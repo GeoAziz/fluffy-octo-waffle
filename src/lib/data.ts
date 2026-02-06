@@ -1,5 +1,5 @@
 import { adminDb } from './firebase-admin';
-import type { Listing, Evidence, ListingStatus, BadgeValue } from './types';
+import type { Listing, Evidence, ListingStatus, BadgeValue, ListingImage } from './types';
 import { cache } from 'react';
 import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
@@ -28,14 +28,33 @@ const toListing = (doc: FirebaseFirestore.DocumentSnapshot, evidence: Evidence[]
         adminReviewedAt?: Timestamp;
     };
 
+    // Data transformation for backward compatibility
+    let images: ListingImage[] = [];
+    if (firestoreListing.images && firestoreListing.images.length > 0) {
+        images = firestoreListing.images;
+    } else if (firestoreListing.image) {
+        // If old data structure exists, convert it
+        images.push({ url: firestoreListing.image, hint: firestoreListing.imageHint || 'legacy upload' });
+    } else {
+        // Fallback placeholder
+        images.push({ url: 'https://picsum.photos/seed/placeholder/1200/800', hint: 'placeholder' });
+    }
+
     // Convert all timestamp fields to serializable Date objects
-    return {
+    const finalListing: Listing = {
         ...firestoreListing,
         createdAt: toDate(firestoreListing.createdAt)!,
         updatedAt: toDate(firestoreListing.updatedAt)!,
         adminReviewedAt: toDate(firestoreListing.adminReviewedAt),
         evidence,
+        images, // Use the transformed images array
     };
+    
+    // Clean up old fields if they exist on the final object
+    delete finalListing.image;
+    delete finalListing.imageHint;
+
+    return finalListing;
 }
 
 // Helper to convert Firestore doc to serializable Evidence object

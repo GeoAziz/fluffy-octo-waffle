@@ -25,6 +25,11 @@ export type Evidence = {
   verified: boolean;
 };
 
+export type ListingImage = {
+  url: string;
+  hint: string;
+};
+
 export type Listing = {
   id: string;
   ownerId: string;
@@ -42,14 +47,16 @@ export type Listing = {
     avatarUrl: string;
   };
   evidence: Evidence[];
-  image: string; // Main image for the listing
-  imageHint: string;
+  images: ListingImage[];
   createdAt: any; // Firestore timestamp
   updatedAt: any; // Firestore timestamp
   adminReviewedAt?: any; // Firestore timestamp, optional
   imageAnalysis?: ImageAnalysis;
   badgeSuggestion?: BadgeSuggestion;
   badge: BadgeValue | null;
+  // Kept for backward compatibility during data transformation in `toListing`
+  image?: string; 
+  imageHint?: string;
 };
 
 export type UserProfile = {

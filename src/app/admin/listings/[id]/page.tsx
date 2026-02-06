@@ -2,6 +2,13 @@ import { notFound, redirect } from 'next/navigation';
 import Image from 'next/image';
 import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Separator } from '@/components/ui/separator';
 import { FileText, AlertTriangle } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
@@ -46,18 +53,29 @@ export default async function AdminReviewPage({ params }: { params: { id: string
         <div className="md:col-span-2 space-y-6">
             <Card>
                  <CardHeader className="p-0 relative">
-                    <Image
-                        src={listing.image}
-                        alt={listing.title}
-                        width={1200}
-                        height={800}
-                        className="aspect-video w-full object-cover rounded-t-lg"
-                        data-ai-hint={listing.imageHint}
-                    />
+                    <Carousel className="w-full rounded-t-lg overflow-hidden">
+                      <CarouselContent>
+                        {listing.images.map((image, index) => (
+                          <CarouselItem key={index}>
+                            <Image
+                              src={image.url}
+                              alt={`${listing.title} - image ${index + 1}`}
+                              width={1200}
+                              height={800}
+                              className="aspect-video w-full object-cover"
+                              data-ai-hint={image.hint}
+                              priority={index === 0}
+                            />
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="absolute left-4" />
+                      <CarouselNext className="absolute right-4" />
+                    </Carousel>
                     {isImageSuspicious && (
                         <div className="absolute top-3 left-3 bg-destructive/80 text-destructive-foreground p-2 rounded-md flex items-center gap-2 text-sm">
                             <AlertTriangle className="h-5 w-5" />
-                            <span>Suspicious Image Flagged</span>
+                            <span>Suspicious Main Image</span>
                         </div>
                     )}
                 </CardHeader>

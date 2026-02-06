@@ -346,12 +346,12 @@ export default function ListingsPage() {
                 <CardHeader className="relative p-0">
                   <Link href={`/listings/${listing.id}`} className="block">
                     <Image
-                      src={listing.image}
+                      src={listing.images[0]?.url || 'https://picsum.photos/seed/fallback/600/400'}
                       alt={listing.title}
                       width={600}
                       height={400}
                       className="aspect-[3/2] w-full object-cover"
-                      data-ai-hint={listing.imageHint}
+                      data-ai-hint={listing.images[0]?.hint || 'landscape'}
                     />
                   </Link>
                   <div className="absolute top-3 right-3 flex items-center gap-2">

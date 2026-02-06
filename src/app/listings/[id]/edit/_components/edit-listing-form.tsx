@@ -36,7 +36,7 @@ const formSchema = z.object({
   size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
   landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  mainImage: z.custom<FileList>().optional(),
+  images: z.custom<FileList>().optional(),
   evidence: z.custom<FileList>().optional(),
 });
 
@@ -107,8 +107,8 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       Object.keys(formSchema.shape).forEach(key => {
         const valueKey = key as keyof typeof values;
         const value = values[valueKey];
-        if (key === 'mainImage' && value && (value as FileList).length > 0) {
-            formData.append('mainImage', (value as FileList)[0]);
+        if (key === 'images' && value && (value as FileList).length > 0) {
+            Array.from(value as FileList).forEach(file => formData.append('images', file));
         } else if (key === 'evidence' && value) {
           Array.from(value as FileList).forEach(file => formData.append('evidence', file));
         } else if (value !== undefined && value !== null) {
@@ -285,16 +285,22 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
                <FormField
                 control={form.control}
-                name="mainImage"
+                name="images"
                 render={({ field: { onChange, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Main Property Image</FormLabel>
-                     <div className="p-4 border-2 border-dashed rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-2">Current Image:</p>
-                        <Image src={listing.image} alt={listing.title} width={200} height={133} className="rounded-md object-cover" />
+                    <FormLabel>Property Images</FormLabel>
+                     <div className="p-4 border-2 border-dashed rounded-lg space-y-4">
+                        <p className="text-sm text-muted-foreground">Current Images:</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {listing.images.map((image, index) => (
+                                <div key={index} className="relative aspect-video">
+                                    <Image src={image.url} alt={`Property image ${index + 1}`} layout="fill" className="rounded-md object-cover" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <FormControl><Input type="file" accept="image/*" {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>Upload a new image to replace the current one. Leave blank to keep the same image.</FormDescription>
+                    <FormControl><Input type="file" accept="image/*" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
+                    <FormDescription>Upload new images to replace all current images. Leave blank to keep existing images.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -320,7 +326,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                         </div>
                      )}
                     <FormControl><Input type="file" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
-                    <FormDescription>You can upload additional evidence documents (title deed, survey maps, etc.).</FormDescription>
+                    <FormDescription>You can upload additional evidence documents (title deed, survey maps, etc.). Existing documents will be kept.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
