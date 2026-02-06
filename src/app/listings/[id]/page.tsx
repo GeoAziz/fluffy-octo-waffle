@@ -24,20 +24,11 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { UserProfile } from '@/lib/types';
 import { TrustBadge } from '@/components/trust-badge';
-import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContactSellerButton } from './_components/contact-seller-button';
 import { BuyerTip } from '@/components/buyer-tip';
-
-const LocationMap = dynamic(() => import('@/components/location-map'), { 
-  ssr: false, 
-  loading: () => <Skeleton className="h-[400px] w-full" />
-});
-
-const ListingCarousel = dynamic(() => import('@/components/listing-carousel').then(mod => mod.ListingCarousel), {
-    ssr: false,
-    loading: () => <Skeleton className="aspect-video w-full" />
-});
+import { DynamicLocationMap } from '@/components/dynamic-location-map';
+import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
@@ -122,7 +113,7 @@ export default async function ListingDetailPage({
         <div className="md:col-span-2 space-y-8">
           <Card className="overflow-hidden">
             <CardHeader className="p-0 relative">
-               <ListingCarousel images={images} title={title} className="w-full" />
+               <DynamicListingCarousel images={images} title={title} className="w-full" />
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 {badge && <TrustBadge badge={badge} />}
                 <StatusBadge status={status} />
@@ -182,7 +173,7 @@ export default async function ListingDetailPage({
             </CardHeader>
             <CardContent>
               {latitude && longitude ? (
-                <LocationMap lat={latitude} lon={longitude} title={title} />
+                <DynamicLocationMap lat={latitude} lon={longitude} title={title} />
               ) : (
                 <p className="text-muted-foreground">Location data is not available for this listing.</p>
               )}

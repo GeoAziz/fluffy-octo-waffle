@@ -8,8 +8,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { AdminActions } from './_components/admin-actions';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import dynamic from 'next/dynamic';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
 
 async function checkAdmin() {
   const sessionCookie = cookies().get('__session')?.value;
@@ -25,12 +24,6 @@ async function checkAdmin() {
     return redirect('/login');
   }
 }
-
-const ListingCarousel = dynamic(() => import('@/components/listing-carousel').then(mod => mod.ListingCarousel), {
-    ssr: false,
-    loading: () => <Skeleton className="aspect-video w-full rounded-t-lg" />
-});
-
 
 export default async function AdminReviewPage({ params }: { params: { id: string } }) {
   await checkAdmin();
@@ -54,7 +47,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
         <div className="md:col-span-2 space-y-6">
             <Card>
                  <CardHeader className="p-0 relative">
-                    <ListingCarousel images={listing.images} title={listing.title} className="w-full rounded-t-lg overflow-hidden" />
+                    <DynamicListingCarousel images={listing.images} title={listing.title} className="w-full rounded-t-lg overflow-hidden" />
                     {isImageSuspicious && (
                         <div className="absolute top-3 left-3 bg-destructive/80 text-destructive-foreground p-2 rounded-md flex items-center gap-2 text-sm">
                             <AlertTriangle className="h-5 w-5" />
