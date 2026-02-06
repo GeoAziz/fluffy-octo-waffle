@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, type User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -74,15 +74,19 @@ export default function LoginPage() {
   });
   
   // Common function to handle successful login flow
-  const handleLoginSuccess = async (user: any) => {
+  const handleLoginSuccess = async (user: User) => {
     const idToken = await user.getIdToken();
 
     // Set session cookie
-    await fetch('/api/auth/session', {
+    const response = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
     });
+
+    if (!response.ok) {
+        throw new Error('Failed to create session. Please try again.');
+    }
 
     toast({ title: 'Login Successful', description: "Welcome back!" });
     
@@ -97,10 +101,11 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
+      const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: getFirebaseAuthErrorMessage(error.code),
+        description: message,
       });
     } finally {
       setIsSubmitting(false);
@@ -134,10 +139,11 @@ export default function LoginPage() {
         await handleLoginSuccess(user);
 
     } catch (error: any) {
+        const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
             title: 'Sign In Failed',
-            description: getFirebaseAuthErrorMessage(error.code),
+            description: message,
         });
     } finally {
         setIsGoogleSubmitting(false);

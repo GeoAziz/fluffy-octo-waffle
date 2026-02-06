@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, type User } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -72,13 +72,17 @@ export default function SignupPage() {
   });
 
   // Common function to handle successful login/signup flow
-  const handleAuthSuccess = async (user: any) => {
+  const handleAuthSuccess = async (user: User) => {
     const idToken = await user.getIdToken();
-    await fetch('/api/auth/session', {
+    const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
     });
+
+    if (!response.ok) {
+        throw new Error('Failed to create session. Please try again.');
+    }
 
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     router.push('/dashboard');
@@ -113,10 +117,11 @@ export default function SignupPage() {
       await handleAuthSuccess(user);
 
     } catch (error: any) {
+      const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: getFirebaseAuthErrorMessage(error.code),
+        description: message,
       });
     } finally {
       setIsSubmitting(false);
@@ -150,10 +155,11 @@ export default function SignupPage() {
         await handleAuthSuccess(user);
 
     } catch (error: any) {
+        const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
             title: 'Sign Up Failed',
-            description: getFirebaseAuthErrorMessage(error.code),
+            description: message,
         });
     } finally {
         setIsGoogleSubmitting(false);
