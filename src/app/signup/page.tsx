@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4">
@@ -60,6 +61,7 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 
 export default function SignupPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -72,44 +74,35 @@ export default function SignupPage() {
 
   // Common function to handle successful login/signup flow
   const handleAuthSuccess = async (user: User) => {
-    console.log('handleAuthSuccess: Starting session creation for new user:', user.uid);
     const idToken = await user.getIdToken();
     
-    console.log('handleAuthSuccess: Sending idToken to /api/auth/session');
     const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
     });
 
-    console.log('handleAuthSuccess: Received response from /api/auth/session. Status:', response.status);
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
-        console.error('handleAuthSuccess: Session creation failed. Server response:', errorData);
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
-    console.log('handleAuthSuccess: Session created successfully.');
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
     const redirectUrl = '/'; // New users start at the home page
-    console.log('handleAuthSuccess: Redirecting to', redirectUrl);
-    window.location.href = redirectUrl;
+    router.push(redirectUrl);
   }
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    console.log('SignupPage onSubmit: Attempting to create user with email/password.');
     try {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      console.log('SignupPage onSubmit: User created in Firebase Auth. UID:', user.uid);
 
       // 2. Update Firebase Auth profile
       await updateProfile(user, { displayName: values.displayName });
-      console.log('SignupPage onSubmit: Updated Firebase Auth profile display name.');
 
       // 3. Create user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
@@ -119,17 +112,15 @@ export default function SignupPage() {
         displayName: values.displayName,
         photoURL: user.photoURL,
         phone: values.phone || null,
-        role: 'BUYER', // Default role
-        verified: false, // For future verification processes
+        role: 'BUYER', // Default role for new users is BUYER
+        verified: false,
         createdAt: serverTimestamp(),
       });
-      console.log('SignupPage onSubmit: Created user document in Firestore.');
       
       // 4. Set session cookie and redirect
       await handleAuthSuccess(user);
 
     } catch (error: any) {
-      console.error('SignupPage onSubmit: Caught error during sign-up process.', error);
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
@@ -142,37 +133,31 @@ export default function SignupPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleSubmitting(true);
-    console.log('SignupPage handleGoogleSignIn: Attempting to sign in with Google.');
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        console.log('SignupPage handleGoogleSignIn: Google sign-in successful. UID:', user.uid);
 
         // Check if user exists in Firestore, if not, create a document
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-             console.log('SignupPage handleGoogleSignIn: New Google user. Creating Firestore document.');
              await setDoc(userDocRef, {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 phone: user.phoneNumber || null,
-                role: 'BUYER', // Default role for new sign-ups
+                role: 'BUYER', // Default role for new sign-ups is BUYER
                 verified: false,
                 createdAt: serverTimestamp(),
             });
-        } else {
-            console.log('SignupPage handleGoogleSignIn: Existing Google user found in Firestore.');
         }
         
         await handleAuthSuccess(user);
 
     } catch (error: any) {
-        console.error('SignupPage handleGoogleSignIn: Caught error during Google sign-in.', error);
         const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
@@ -189,7 +174,7 @@ export default function SignupPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
-          <CardDescription>Join our platform to start listing your property.</CardDescription>
+          <CardDescription>Join our platform to start browsing verified listings.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

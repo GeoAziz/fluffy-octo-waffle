@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -62,6 +62,7 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,25 +76,20 @@ export default function LoginPage() {
   
   // Common function to handle successful login flow
   const handleLoginSuccess = async (user: User) => {
-    console.log('handleLoginSuccess: Starting session creation process for user:', user.uid);
     const idToken = await user.getIdToken();
 
     // Set session cookie
-    console.log('handleLoginSuccess: Sending idToken to /api/auth/session');
     const response = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
     });
     
-    console.log('handleLoginSuccess: Received response from /api/auth/session. Status:', response.status);
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
-        console.error('handleLoginSuccess: Session creation failed. Server response:', errorData);
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
-    console.log('handleLoginSuccess: Session created successfully.');
     toast({ title: 'Login Successful', description: "Welcome back!" });
     
     let fallbackRedirect = '/dashboard';
@@ -109,23 +105,18 @@ export default function LoginPage() {
         fallbackRedirect = '/'; // Buyers go to home page
       }
     } catch (roleError) {
-      console.error('handleLoginSuccess: Failed to read user role. Falling back to home.', roleError);
       fallbackRedirect = '/';
     }
     const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
-    console.log('handleLoginSuccess: Redirecting to', redirectUrl);
-    window.location.href = redirectUrl;
+    router.push(redirectUrl);
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    console.log('LoginPage onSubmit: Attempting to sign in with email/password.');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      console.log('LoginPage onSubmit: signInWithEmailAndPassword successful for user:', userCredential.user.uid);
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
-      console.error('LoginPage onSubmit: Caught error during sign-in process.', error);
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
@@ -138,19 +129,16 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleSubmitting(true);
-    console.log('LoginPage handleGoogleSignIn: Attempting to sign in with Google.');
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        console.log('LoginPage handleGoogleSignIn: Google sign-in successful for user:', user.uid);
 
         // Check if user exists in Firestore, if not, create a document
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-             console.log('LoginPage handleGoogleSignIn: New Google user. Creating Firestore document.');
              await setDoc(userDocRef, {
                 uid: user.uid,
                 email: user.email,
@@ -161,14 +149,11 @@ export default function LoginPage() {
                 verified: false,
                 createdAt: serverTimestamp(),
             });
-        } else {
-            console.log('LoginPage handleGoogleSignIn: Existing Google user found in Firestore.');
         }
         
         await handleLoginSuccess(user);
 
     } catch (error: any) {
-        console.error('LoginPage handleGoogleSignIn: Caught error during Google sign-in process.', error);
         const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
