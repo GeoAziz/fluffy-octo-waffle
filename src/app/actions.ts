@@ -6,7 +6,7 @@ import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
 import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
 import { analyzePropertyImage } from '@/ai/flows/analyze-property-image';
@@ -492,6 +492,67 @@ export async function markListingReportStatus(reportId: string, status: 'new' | 
     return { success: true };
 }
 
+type InboxItemStatus = 'new' | 'handled' | 'all';
+
+type InboxItems = {
+  contactMessages: any[]; // Use any to avoid type issues with Firestore Timestamps on the client
+  listingReports: any[];
+}
+
+export async function getInboxItemsAction(filters: {
+  contactStatus: InboxItemStatus;
+  reportStatus: InboxItemStatus;
+}): Promise<InboxItems> {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') {
+    throw new Error('Authorization required.');
+  }
+
+  const toDateISO = (timestamp?: Timestamp): string | null => {
+    if (!timestamp) return null;
+    return timestamp.toDate().toISOString();
+  };
+
+  const getContactMessages = async () => {
+    let query: FirebaseFirestore.Query = adminDb.collection('contactMessages');
+    if (filters.contactStatus !== 'all') {
+      query = query.where('status', '==', filters.contactStatus);
+    }
+    const snapshot = await query.orderBy('createdAt', 'desc').limit(50).get();
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: toDateISO(data.createdAt),
+      };
+    });
+  };
+
+  const getListingReports = async () => {
+    let query: FirebaseFirestore.Query = adminDb.collection('listingReports');
+    if (filters.reportStatus !== 'all') {
+      query = query.where('status', '==', filters.reportStatus);
+    }
+    const snapshot = await query.orderBy('createdAt', 'desc').limit(50).get();
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: toDateISO(data.createdAt),
+      };
+    });
+  };
+
+  const [contactMessages, listingReports] = await Promise.all([
+    getContactMessages(),
+    getListingReports()
+  ]);
+
+  return { contactMessages, listingReports };
+}
+
 
 // Action to delete a listing and its associated evidence
 export async function deleteListing(listingId: string) {
@@ -691,3 +752,5 @@ export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
     // Filter out nulls (not found) and non-approved listings
     return listings.filter((l): l is Listing => l !== null && l.status === 'approved');
 }
+
+    
