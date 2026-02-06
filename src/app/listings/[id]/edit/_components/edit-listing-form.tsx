@@ -26,6 +26,7 @@ import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
 import type { Listing } from '@/lib/types';
 import Image from 'next/image';
+import { ListingLocationPicker } from '@/components/listing-location-picker';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -38,6 +39,8 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   images: z.custom<FileList>().optional(),
   evidence: z.custom<FileList>().optional(),
+  latitude: z.coerce.number(),
+  longitude: z.coerce.number(),
 });
 
 export function EditListingForm({ listing }: { listing: Listing }) {
@@ -60,6 +63,8 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       size: listing.size,
       landType: listing.landType,
       description: listing.description,
+      latitude: listing.latitude,
+      longitude: listing.longitude,
     },
   });
 
@@ -283,6 +288,10 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
               <Separator />
 
+              <ListingLocationPicker initialPosition={{ lat: listing.latitude, lon: listing.longitude }} />
+
+              <Separator />
+
                <FormField
                 control={form.control}
                 name="images"
@@ -294,7 +303,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {listing.images.map((image, index) => (
                                 <div key={index} className="relative aspect-video">
-                                    <Image src={image.url} alt={`Property image ${index + 1}`} layout="fill" className="rounded-md object-cover" />
+                                    <Image src={image.url} alt={`Property image ${index + 1}`} fill className="rounded-md object-cover" />
                                 </div>
                             ))}
                         </div>

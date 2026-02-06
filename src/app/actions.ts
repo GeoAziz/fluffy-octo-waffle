@@ -89,9 +89,6 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   const userRecord = await adminAuth.getUser(authUser.uid);
 
   const title = formData.get('title') as string;
-  const location = formData.get('location') as string;
-  const coords = generateCoordsFromLocation(location);
-
   const allEvidenceContent: string[] = [];
   let imageAnalysisResult: ImageAnalysis | undefined = undefined;
   let badgeSuggestionResult: BadgeSuggestion | undefined = undefined;
@@ -196,14 +193,14 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   const newListingData = {
     ownerId: authUser.uid,
     title: title,
-    location: location,
+    location: formData.get('location') as string,
     county: formData.get('county') as string,
     price: Number(formData.get('price')),
     area: Number(formData.get('area')),
     size: formData.get('size') as string,
     landType: formData.get('landType') as string,
-    latitude: coords.latitude,
-    longitude: coords.longitude,
+    latitude: Number(formData.get('latitude')),
+    longitude: Number(formData.get('longitude')),
     description: formData.get('description') as string,
     status: 'pending' as ListingStatus,
     images: uploadedImages,
@@ -246,20 +243,18 @@ export async function editListingAction(listingId: string, formData: FormData): 
     }
 
     const bucket = adminStorage.bucket();
-    const location = formData.get('location') as string;
-    const coords = generateCoordsFromLocation(location);
 
     const updatePayload: Record<string, any> = {
         title: formData.get('title') as string,
-        location: location,
+        location: formData.get('location') as string,
         county: formData.get('county') as string,
         price: Number(formData.get('price')),
         area: Number(formData.get('area')),
         size: formData.get('size') as string,
         landType: formData.get('landType') as string,
         description: formData.get('description') as string,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: Number(formData.get('latitude')),
+        longitude: Number(formData.get('longitude')),
         updatedAt: FieldValue.serverTimestamp(),
     };
     

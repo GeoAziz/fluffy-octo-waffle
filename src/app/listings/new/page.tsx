@@ -24,6 +24,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
+import { ListingLocationPicker } from '@/components/listing-location-picker';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -36,6 +37,8 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   images: z.custom<FileList>().refine(files => files && files.length > 0, 'At least one property image is required.'),
   evidence: z.custom<FileList>().optional(),
+  latitude: z.coerce.number(),
+  longitude: z.coerce.number(),
 });
 
 export default function NewListingPage() {
@@ -58,6 +61,8 @@ export default function NewListingPage() {
       size: '',
       landType: '',
       description: '',
+      latitude: 0.0236, // Default to central Kenya
+      longitude: 37.9062,
     },
   });
 
@@ -280,6 +285,10 @@ export default function NewListingPage() {
                   </FormItem>
                 )}
               />
+
+              <Separator />
+
+              <ListingLocationPicker />
 
               <Separator />
 
