@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "land_1",
+      "description": "A beautiful plot of land in rural Kenya with acacia trees.",
+      "imageUrl": "https://images.unsplash.com/photo-1646159755791-54e741749028?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxrZW55YSUyMGxhbmRzY2FwZXxlbnwwfHx8fDE3NzAzODE5Njd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "kenya landscape"
+    },
+    {
+      "id": "land_2",
+      "description": "A plot of farmland with green crops.",
+      "imageUrl": "https://images.unsplash.com/photo-1671533762700-3861636fdd96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmYXJtbGFuZCUyMGtlbnlhfGVufDB8fHx8MTc3MDM4MTk2N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farmland kenya"
+    },
+    {
+      "id": "land_3",
+      "description": "An aerial view of a plot near a river.",
+      "imageUrl": "https://images.unsplash.com/photo-1643365227235-1e29f7fcf0f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWVyaWFsJTIwbGFuZHxlbnwwfHx8fDE3NzAzODE5Njd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "aerial land"
+    },
+    {
+      "id": "land_4",
+      "description": "A vacant plot in a developing suburban area.",
+      "imageUrl": "https://images.unsplash.com/photo-1619445717703-c5891651344f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdWJ1cmJhbiUyMHBsb3R8ZW58MHx8fHwxNzcwMzgxOTY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "suburban plot"
+    },
+    {
+      "id": "land_5",
+      "description": "A scenic plot with rolling hills in the background.",
+      "imageUrl": "https://images.unsplash.com/photo-1524337927558-ca3777ac5969?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyb2xsaW5nJTIwaGlsbHN8ZW58MHx8fHwxNzcwMzgxOTY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rolling hills"
+    },
+    {
+      "id": "land_6",
+      "description": "A large expanse of savanna land.",
+      "imageUrl": "https://images.unsplash.com/photo-1759767119537-3ea0e5ff75de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzYXZhbm5hJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3MDM4MTk2N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "savanna landscape"
+    },
+    {
+      "id": "land_7",
+      "description": "Coastal land with palm trees near the ocean.",
+      "imageUrl": "https://images.unsplash.com/photo-1722082839766-cb0bf9c8a189?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y29hc3RhbCUyMGxhbmR8ZW58MHx8fHwxNzcwMzgxOTY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coastal land"
+    },
+    {
+      "id": "land_8",
+      "description": "Fertile land in the Rift Valley.",
+      "imageUrl": "https://images.unsplash.com/photo-1583363054463-a2b5f9904641?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyaWZ0JTIwdmFsbGV5fGVufDB8fHx8MTc3MDM4MTk2N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rift valley"
+    }
+  ]
 }

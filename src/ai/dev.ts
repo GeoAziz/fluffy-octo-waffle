@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/flag-suspicious-upload-patterns.ts';
+import '@/ai/flows/summarize-evidence-for-admin-review.ts';

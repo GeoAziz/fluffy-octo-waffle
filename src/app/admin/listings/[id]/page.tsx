@@ -1,0 +1,77 @@
+import { notFound } from 'next/navigation';
+import { getListingById } from '@/lib/data';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { FileText, Bot, AlertTriangle } from 'lucide-react';
+import { TrustBadge } from '@/components/trust-badge';
+import { AdminActions } from './_components/admin-actions';
+import { BadgeStatus } from '@/lib/types';
+
+
+export default async function AdminReviewPage({ params }: { params: { id: string } }) {
+  const listing = await getListingById(params.id);
+
+  if (!listing) {
+    notFound();
+  }
+
+  return (
+    <div className="container mx-auto max-w-7xl py-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Review</h1>
+        <p className="text-muted-foreground">Listing ID: {listing.id}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {/* Listing Details */}
+        <div className="md:col-span-2 space-y-6">
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-2xl">{listing.title}</CardTitle>
+                            <CardDescription>{listing.location}</CardDescription>
+                        </div>
+                        <TrustBadge status={listing.badge} />
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="font-semibold text-2xl text-primary mb-4">Ksh {listing.price.toLocaleString()}</p>
+                    <p className="text-sm">{listing.description}</p>
+                    <Separator className="my-4" />
+                    <h3 className="font-semibold mb-2">Seller: {listing.seller.name}</h3>
+                </CardContent>
+            </Card>
+
+            <Card>
+            <CardHeader>
+                <CardTitle>Uploaded Evidence</CardTitle>
+                <CardDescription>Documents provided by the seller for verification.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {listing.evidence.length > 0 ? (
+                <ul className="space-y-3">
+                    {listing.evidence.map((doc) => (
+                    <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">
+                        <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
+                        <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{doc.name}</span>
+                    </li>
+                    ))}
+                </ul>
+                ) : (
+                <div className="text-center py-6">
+                    <p className="text-muted-foreground">No evidence has been uploaded for this listing.</p>
+                </div>
+                )}
+            </CardContent>
+            </Card>
+        </div>
+
+        {/* Admin Actions */}
+        <div className="space-y-6">
+            <AdminActions listing={listing} />
+        </div>
+      </div>
+    </div>
+  );
+}
