@@ -1,30 +1,42 @@
 import admin from 'firebase-admin';
 import { getApps } from 'firebase-admin/app';
-
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+import fs from 'fs';
+import path from 'path';
 
 if (!getApps().length) {
-  // This check is critical for server-side actions to work.
-  if (!serviceAccount) {
+  const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
+  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+  let serviceAccount;
+
+  if (fs.existsSync(serviceAccountPath)) {
+    try {
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    } catch (error: any) {
+      console.error('Error parsing serviceAccountKey.json:', error.message);
+      throw new Error(
+        'Could not initialize Firebase Admin SDK. The `serviceAccountKey.json` file appears to be malformed. Please ensure it is a valid JSON object.'
+      );
+    }
+  } else if (serviceAccountEnv) {
+    try {
+      serviceAccount = JSON.parse(serviceAccountEnv);
+    } catch (error: any) {
+      console.error('Error parsing FIREBASE_SERVICE_ACCOUNT env var:', error.message);
+      throw new Error(
+        'Could not initialize Firebase Admin SDK. The `FIREBASE_SERVICE_ACCOUNT` environment variable is malformed. It must be a valid JSON string.'
+      );
+    }
+  } else {
     throw new Error(
-      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is not set. Go to your Firebase Project Settings > Service Accounts and generate a new private key. Then, add it to your environment variables.'
+      'Firebase Admin SDK Error: Could not find `serviceAccountKey.json` in the project root, and the `FIREBASE_SERVICE_ACCOUNT` environment variable is not set. Please provide one of them.'
     );
   }
 
-  try {
-    // Attempt to parse the service account JSON.
-    const serviceAccountJson = JSON.parse(serviceAccount);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccountJson),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-  } catch (error: any) {
-    // This error happens if the JSON is malformed.
-    console.error('Firebase Admin SDK Initialization Error:', error.message);
-    throw new Error(
-      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is malformed. It must be a valid JSON string. Please copy the entire JSON object from your Firebase service account key file.'
-    );
-  }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  });
 }
 
 export const adminAuth = admin.auth();
