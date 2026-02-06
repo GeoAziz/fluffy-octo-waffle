@@ -75,7 +75,7 @@ export default async function SellerDashboard() {
                                 <TrustBadge status={listing.badge} />
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                                {listing.createdAt ? formatRelative(listing.createdAt.toDate(), new Date()) : 'N/A'}
+                                {listing.createdAt ? formatRelative(listing.createdAt, new Date()) : 'N/A'}
                             </TableCell>
                             <TableCell className="text-right">
                                 {listing.price.toLocaleString()}
