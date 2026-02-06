@@ -99,7 +99,7 @@ export function Header() {
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label="Open user menu">
                         <Avatar className="h-8 w-8">
                            <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
                            <AvatarFallback>{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>

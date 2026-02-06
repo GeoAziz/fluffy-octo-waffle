@@ -309,7 +309,11 @@ export default function ListingsPage() {
                 {activeFilters.map(filter => (
                     <Badge key={filter.label} variant="secondary" className="pl-2">
                         {filter.label}
-                        <button onClick={() => removeFilter(filter.type, filter.value)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                        <button
+                          onClick={() => removeFilter(filter.type, filter.value)}
+                          className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                          aria-label={`Remove ${filter.label} filter`}
+                        >
                             <X className="h-3 w-3" />
                         </button>
                     </Badge>
