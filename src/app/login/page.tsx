@@ -107,7 +107,6 @@ export default function LoginPage() {
     }
     const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
     router.push(redirectUrl);
-    router.refresh();
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

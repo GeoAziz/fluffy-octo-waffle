@@ -89,7 +89,6 @@ export default function SignupPage() {
     
     const redirectUrl = '/onboarding';
     router.push(redirectUrl);
-    router.refresh();
   }
 
 
