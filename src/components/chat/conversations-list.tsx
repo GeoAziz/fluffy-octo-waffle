@@ -6,10 +6,10 @@ import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestor
 import type { Conversation } from '@/lib/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
 
 export function ConversationsList() {
     const { user, loading: authLoading } = useAuth();
@@ -45,7 +45,7 @@ export function ConversationsList() {
     if (loading || authLoading) {
         return (
             <div className="p-4 space-y-4">
-                {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
             </div>
         )
     }
@@ -68,24 +68,30 @@ export function ConversationsList() {
                         const isActive = pathname.includes(convo.id);
                         return (
                             <Link href={`/messages/${convo.id}`} key={convo.id} className={cn(
-                                "flex items-start gap-3 p-4 border-b hover:bg-muted/50",
+                                "flex items-center gap-3 p-4 border-b hover:bg-muted/50",
                                 isActive && "bg-secondary"
                             )}>
-                                <Avatar className="h-10 w-10 border">
-                                    <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
-                                    <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <div className="relative h-12 w-12 flex-shrink-0">
+                                    <Image
+                                        src={convo.listingImage || 'https://picsum.photos/seed/property/100/100'}
+                                        alt={convo.listingTitle}
+                                        fill
+                                        className="rounded-md object-cover"
+                                    />
+                                </div>
                                 <div className="flex-1 overflow-hidden">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-semibold truncate">{otherParticipant.displayName}</p>
+                                    <div className="flex justify-between items-start gap-2">
+                                        <p className="font-semibold truncate">{convo.listingTitle}</p>
                                         {convo.lastMessage?.timestamp && (
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground flex-shrink-0">
                                                 {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true })}
                                             </p>
                                         )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground truncate">{convo.listingTitle}</p>
                                     <p className="text-sm text-muted-foreground truncate">
+                                        With: {otherParticipant.displayName}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground truncate mt-1">
                                         {convo.lastMessage?.senderId === user?.uid && 'You: '}
                                         {convo.lastMessage?.text}
                                     </p>

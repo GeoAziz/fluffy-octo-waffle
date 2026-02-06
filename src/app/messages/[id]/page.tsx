@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ConversationPage({ params }: { params: { id: string } }) {
@@ -77,7 +78,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
         
         try {
             const messagesColRef = collection(db, 'conversations', params.id, 'messages');
-            const newDocRef = await addDoc(messagesColRef, {
+            await addDoc(messagesColRef, {
                 senderId: user.uid,
                 text: text,
                 timestamp: serverTimestamp(),
@@ -114,19 +115,29 @@ export default function ConversationPage({ params }: { params: { id: string } })
 
     return (
         <Card className="h-full flex flex-col">
-            <CardHeader className="flex flex-row items-center gap-4 border-b">
-                 {otherParticipant && (
-                    <Avatar className="h-10 w-10 border">
+            <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
+                 <Link href={`/listings/${conversation.listingId}`} className="flex items-center gap-3 overflow-hidden group">
+                    <div className="relative h-12 w-12 flex-shrink-0">
+                        <Image
+                            src={conversation.listingImage || 'https://picsum.photos/seed/conversation/100/100'}
+                            alt={conversation.listingTitle}
+                            fill
+                            className="rounded-md object-cover"
+                        />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="truncate font-semibold group-hover:underline">{conversation.listingTitle}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                            Conversation with {otherParticipant?.displayName}
+                        </p>
+                    </div>
+                </Link>
+                {otherParticipant && (
+                    <Avatar className="h-10 w-10 border hidden sm:flex">
                         <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
                         <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
-                <div>
-                    <p className="font-semibold">{otherParticipant?.displayName}</p>
-                    <Link href={`/listings/${conversation.listingId}`} className="text-sm text-muted-foreground hover:underline truncate">
-                        Re: {conversation.listingTitle}
-                    </Link>
-                </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
                 <Alert variant="default" className="border-warning/50 bg-warning/10 text-warning [&>svg]:text-warning">
