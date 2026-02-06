@@ -24,10 +24,10 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Legal & Contact</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Report a Listing</Link></li>
+              <li><Link href="/terms" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+              <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
+              <li><Link href="/report" className="text-muted-foreground hover:text-primary">Report a Listing</Link></li>
             </ul>
           </div>
         </div>
