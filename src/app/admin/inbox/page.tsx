@@ -7,6 +7,7 @@ import { Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AdminPage } from '../_components/admin-page';
 import { ContactMessageActions, ListingReportActions } from '../_components/inbox-actions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 type ContactMessage = {
@@ -72,83 +73,90 @@ export default async function AdminInboxPage() {
       description="Review user messages and listing reports."
       breadcrumbs={[{ href: '/admin', label: 'Dashboard' }, { href: '/admin/inbox', label: 'Inbox' }]}
     >
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Contact Messages</h2>
-         {contactMessages.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">No contact messages yet.</p>
-             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {contactMessages.map((message) => (
-                <Card key={message.id} className="flex flex-col">
-                    <CardHeader>
-                        <div className="flex justify-between items-start gap-4">
-                            <div>
-                                <CardTitle className="text-lg">{message.name}</CardTitle>
-                                <CardDescription>{message.email}</CardDescription>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                                <Badge variant={message.status === 'new' ? 'warning' : 'outline'}>{message.status}</Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
-                                </p>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                        <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                    </CardContent>
-                    <CardFooter className="flex items-center gap-2">
-                        <ContactMessageActions messageId={message.id} currentStatus={message.status} />
-                    </CardFooter>
-                </Card>
-              ))}
-            </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold tracking-tight mb-4">Listing Reports</h2>
-        {listingReports.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">No listing reports yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {listingReports.map((report) => (
-                  <Card key={report.id} className="flex flex-col">
-                    <CardHeader>
-                        <div className="flex justify-between items-start gap-4">
-                            <div>
-                                <CardTitle className="text-lg">Report for: {report.listingId}</CardTitle>
-                                <CardDescription>
-                                    By: {report.reporter?.displayName || 'Anonymous'} ({report.reporter?.email || 'No email'})
-                                </CardDescription>
-                            </div>
-                             <div className="text-right flex-shrink-0">
-                                <Badge variant={report.status === 'new' ? 'warning' : 'outline'}>{report.status}</Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
-                                </p>
-                            </div>
-                        </div>
-                    </CardHeader>
-                     <CardContent className="flex-1">
-                        <p className="text-sm font-semibold mb-2">Reason:</p>
-                        <p className="text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded-md">{report.reason}</p>
-                    </CardContent>
-                    <CardFooter className="flex items-center gap-2">
-                        <Button asChild size="sm" variant="outline">
-                           <Link href={`/admin/listings/${report.listingId}`}><Eye className="mr-2 h-4 w-4"/> View Listing</Link>
-                        </Button>
-                        <ListingReportActions reportId={report.id} currentStatus={report.status} />
-                    </CardFooter>
-                  </Card>
-                ))}
-            </div>
-          )}
-      </section>
+        <Tabs defaultValue="messages" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="messages">Contact Messages</TabsTrigger>
+                <TabsTrigger value="reports">Listing Reports</TabsTrigger>
+            </TabsList>
+            <TabsContent value="messages">
+                {contactMessages.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">No contact messages yet.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {contactMessages.map((message) => (
+                        <Card key={message.id} className="flex flex-col">
+                            <CardHeader>
+                                <div className="flex justify-between items-start gap-4">
+                                    <div>
+                                        <CardTitle className="text-lg">{message.name}</CardTitle>
+                                        <CardDescription>{message.email}</CardDescription>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                        <Badge variant={message.status === 'new' ? 'warning' : 'outline'}>{message.status}</Badge>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {message.createdAt ? formatDistanceToNow(message.createdAt, { addSuffix: true }) : 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                            </CardContent>
+                            <CardFooter className="flex items-center gap-2">
+                                <ContactMessageActions messageId={message.id} currentStatus={message.status} />
+                            </CardFooter>
+                        </Card>
+                    ))}
+                    </div>
+                )}
+            </TabsContent>
+            <TabsContent value="reports">
+                {listingReports.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">No listing reports yet.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {listingReports.map((report) => (
+                        <Card key={report.id} className="flex flex-col">
+                            <CardHeader>
+                                <div className="flex justify-between items-start gap-4">
+                                    <div>
+                                        <CardTitle className="text-lg">Report for listing</CardTitle>
+                                        <CardDescription>ID: {report.listingId}</CardDescription>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                        <Badge variant={report.status === 'new' ? 'warning' : 'outline'}>{report.status}</Badge>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {report.createdAt ? formatDistanceToNow(report.createdAt, { addSuffix: true }) : 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-1 space-y-4">
+                                <div>
+                                    <p className="text-sm font-semibold mb-1">Reporter:</p>
+                                    <p className="text-sm text-muted-foreground">{report.reporter?.displayName || 'Anonymous'} ({report.reporter?.email || 'No email'})</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold mb-1">Reason:</p>
+                                    <p className="text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded-md">{report.reason}</p>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="flex items-center gap-2">
+                                <Button asChild size="sm" variant="outline">
+                                <Link href={`/admin/listings/${report.listingId}`}><Eye className="mr-2 h-4 w-4"/> View Listing</Link>
+                                </Button>
+                                <ListingReportActions reportId={report.id} currentStatus={report.status} />
+                            </CardFooter>
+                        </Card>
+                        ))}
+                    </div>
+                )}
+            </TabsContent>
+      </Tabs>
     </AdminPage>
   );
 }
