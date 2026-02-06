@@ -7,7 +7,7 @@ if (!getApps().length) {
   // This check is critical for server-side actions to work.
   if (!serviceAccount) {
     throw new Error(
-      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is not set. Please add it to your project environment settings to enable backend features.'
+      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is not set. Go to your Firebase Project Settings > Service Accounts and generate a new private key. Then, add it to your environment variables.'
     );
   }
 
@@ -22,7 +22,7 @@ if (!getApps().length) {
     // This error happens if the JSON is malformed.
     console.error('Firebase Admin SDK Initialization Error:', error.message);
     throw new Error(
-      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is malformed. Please ensure it is a valid JSON key from your Firebase project console.'
+      'Firebase Admin SDK Error: The `FIREBASE_SERVICE_ACCOUNT` environment variable is malformed. It must be a valid JSON string. Please copy the entire JSON object from your Firebase service account key file.'
     );
   }
 }
