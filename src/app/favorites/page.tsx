@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useFavorites } from '@/hooks/use-favorites';
 import { getListingsByIds } from '@/app/actions';
 import type { Listing } from '@/lib/types';
-import { Loader2, LandPlot } from 'lucide-react';
+import { LandPlot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
 import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
+import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 
 export default function FavoritesPage() {
     const { favoriteIds, loading: favoritesLoading } = useFavorites();
@@ -40,8 +41,9 @@ export default function FavoritesPage() {
     if (loading || favoritesLoading) {
         return (
             <div className="container mx-auto py-10">
-                <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight mb-8">My Favorites</h1>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {Array.from({length: 4}).map((_, i) => <ListingCardSkeleton key={i} />)}
                 </div>
             </div>
         );

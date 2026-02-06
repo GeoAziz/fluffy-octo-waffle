@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { useFormContext } from 'react-hook-form';
 import { FormItem, FormLabel, FormControl, FormDescription, FormMessage } from './ui/form';
 import { Skeleton } from './ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // Leaflet's default icon paths fix
 const customIcon = new L.Icon({
@@ -34,15 +35,20 @@ export function ListingLocationPicker({ initialPosition = DEFAULT_CENTER }: List
 
   useEffect(() => {
     if (typeof window !== 'undefined' && mapRef.current && !mapInstance.current) {
-        setIsLoaded(true);
         
         mapInstance.current = L.map(mapRef.current, {
             scrollWheelZoom: true,
         }).setView([initialPosition.lat, initialPosition.lon], initialPosition.lat === DEFAULT_CENTER.lat ? 6 : 13);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mapInstance.current);
+        });
+
+        tileLayer.on('load', () => {
+            setIsLoaded(true);
+        });
+        
+        tileLayer.addTo(mapInstance.current);
 
         markerInstance.current = L.marker([initialPosition.lat, initialPosition.lon], { 
             icon: customIcon,
@@ -88,8 +94,8 @@ export function ListingLocationPicker({ initialPosition = DEFAULT_CENTER }: List
           <FormDescription>Click on the map or drag the marker to set the precise location.</FormDescription>
           <FormControl>
              <div className="h-[400px] w-full rounded-md border relative">
-                {!isLoaded && <Skeleton className="h-full w-full" />}
                 <div ref={mapRef} style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)', zIndex: 0 }} />
+                {!isLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
             </div>
           </FormControl>
           {(errors.latitude || errors.longitude) && <FormMessage>Please select a location on the map.</FormMessage>}
