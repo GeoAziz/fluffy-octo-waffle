@@ -11,6 +11,7 @@ import { auth, db } from '@/lib/firebase';
 import {
   Sheet,
   SheetContent,
+  SheetClose,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -28,6 +29,7 @@ import { Skeleton } from './ui/skeleton';
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 
 export function Header() {
@@ -98,7 +100,7 @@ export function Header() {
             <Skeleton className="h-8 w-24" />
           ) : (
             <>
-              {user ? (
+              {user && userProfile ? (
                 <>
                   {isSellerOrAdmin && (
                     <Button asChild className="hidden md:inline-flex">
@@ -125,6 +127,11 @@ export function Header() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        {userProfile.role === 'ADMIN' && (
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin"><LayoutDashboard className="mr-2 h-4 w-4" />Admin Panel</Link>
+                            </DropdownMenuItem>
+                        )}
                         {isSellerOrAdmin && (
                           <DropdownMenuItem asChild>
                                <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
@@ -163,57 +170,52 @@ export function Header() {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-72">
+                <SheetContent side="right" className="w-full max-w-sm">
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6 flex flex-col gap-4">
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={cn(
-                          'text-sm font-medium',
-                          pathname === link.href ? 'text-foreground' : 'text-muted-foreground'
+                  <div className="mt-6 flex h-full flex-col">
+                    <div className="flex flex-col gap-4">
+                        <SheetClose asChild>
+                            <Link href="/" className={cn('text-sm font-medium', pathname === '/' ? 'text-foreground' : 'text-muted-foreground')}>Home</Link>
+                        </SheetClose>
+
+                        {user && userProfile ? (
+                        // Logged-in user links
+                        <>
+                            {userProfile.role === 'ADMIN' && (
+                                <SheetClose asChild>
+                                    <Link href="/admin" className={cn('text-sm font-medium flex items-center', pathname.startsWith('/admin') ? 'text-foreground' : 'text-muted-foreground')}>
+                                        Admin
+                                        {pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount}</Badge>}
+                                    </Link>
+                                </SheetClose>
+                            )}
+                            {isSellerOrAdmin && (
+                                <>
+                                    <SheetClose asChild><Link href="/dashboard" className={cn('text-sm font-medium', pathname === '/dashboard' ? 'text-foreground' : 'text-muted-foreground')}>Dashboard</Link></SheetClose>
+                                    <SheetClose asChild><Link href="/listings/new" className={cn('text-sm font-medium', pathname === '/listings/new' ? 'text-foreground' : 'text-muted-foreground')}>New Listing</Link></SheetClose>
+                                </>
+                            )}
+                            <SheetClose asChild><Link href="/favorites" className={cn('text-sm font-medium', pathname === '/favorites' ? 'text-foreground' : 'text-muted-foreground')}>Favorites</Link></SheetClose>
+                            <SheetClose asChild><Link href="/messages" className={cn('text-sm font-medium', pathname.startsWith('/messages') ? 'text-foreground' : 'text-muted-foreground')}>Messages</Link></SheetClose>
+                            <SheetClose asChild><Link href="/profile" className={cn('text-sm font-medium', pathname === '/profile' ? 'text-foreground' : 'text-muted-foreground')}>Manage Profile</Link></SheetClose>
+                        </>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-auto pt-6">
+                        <Separator className="mb-4" />
+                        {user ? (
+                            <Button variant="outline" onClick={handleLogout} className="w-full">Log out</Button>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <SheetClose asChild><Button asChild variant="outline" className="w-full"><Link href="/login">Log In</Link></Button></SheetClose>
+                                <SheetClose asChild><Button asChild variant="accent" className="w-full"><Link href="/signup">Sign Up</Link></Button></SheetClose>
+                            </div>
                         )}
-                      >
-                        {link.label}
-                        {link.label === 'Admin' && pendingCount > 0 && (
-                          <Badge variant="destructive" className="ml-2 h-5 w-5 justify-center p-0">
-                            {pendingCount}
-                          </Badge>
-                        )}
-                      </Link>
-                    ))}
-                    {user ? (
-                      <>
-                        {isSellerOrAdmin && (
-                          <Link href="/listings/new" className="text-sm font-medium">
-                            New Listing
-                          </Link>
-                        )}
-                         {isSellerOrAdmin && (
-                          <Link href="/dashboard" className="text-sm font-medium">
-                            Dashboard
-                          </Link>
-                        )}
-                        <Link href="/messages" className="text-sm font-medium">
-                          Messages
-                        </Link>
-                        <Button variant="outline" onClick={handleLogout}>
-                          Log out
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Link href="/login" className="text-sm font-medium">
-                          Log in
-                        </Link>
-                        <Link href="/signup" className="text-sm font-medium">
-                          Sign Up
-                        </Link>
-                      </>
-                    )}
+                    </div>
+
                   </div>
                 </SheetContent>
               </Sheet>
