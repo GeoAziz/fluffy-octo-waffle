@@ -24,7 +24,7 @@ if (!getApps().length) {
     } catch (error: any) {
       console.error('Error parsing FIREBASE_SERVICE_ACCOUNT env var:', error.message);
       throw new Error(
-        'Could not initialize Firebase Admin SDK. The `FIREBASE_SERVICE_ACCOUNT` environment variable is malformed. It must be a valid JSON string.'
+        "Firebase Admin SDK Error: 'serviceAccountKey.json' was not found. The fallback 'FIREBASE_SERVICE_ACCOUNT' environment variable was used, but it is malformed. Please ensure the env var is a valid JSON string or that 'serviceAccountKey.json' exists in your project root."
       );
     }
   } else {
