@@ -1,20 +1,20 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cookies } from 'next/headers';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { redirect } from 'next/navigation';
+import { adminDb } from '@/lib/firebase-admin';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Mail, CheckCircle } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AdminPage } from '../_components/admin-page';
+import { ContactMessageActions, ListingReportActions } from '../_components/inbox-actions';
+
 
 type ContactMessage = {
   id: string;
   name: string;
   email: string;
   message: string;
-  status: string;
+  status: 'new' | 'handled';
   createdAt?: Date | null;
 };
 
@@ -27,7 +27,7 @@ type ListingReport = {
     email?: string | null;
     displayName?: string | null;
   } | null;
-  status: string;
+  status: 'new' | 'handled';
   createdAt?: Date | null;
 };
 
@@ -100,12 +100,7 @@ export default async function AdminInboxPage() {
                         <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                     </CardContent>
                     <CardFooter className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" disabled>
-                            <Mail className="mr-2 h-4 w-4"/> Reply
-                        </Button>
-                        <Button size="sm" variant="outline" disabled>
-                             <CheckCircle className="mr-2 h-4 w-4"/> Mark Handled
-                        </Button>
+                        <ContactMessageActions messageId={message.id} currentStatus={message.status} />
                     </CardFooter>
                 </Card>
               ))}
@@ -147,9 +142,7 @@ export default async function AdminInboxPage() {
                         <Button asChild size="sm" variant="outline">
                            <Link href={`/admin/listings/${report.listingId}`}><Eye className="mr-2 h-4 w-4"/> View Listing</Link>
                         </Button>
-                        <Button size="sm" variant="outline" disabled>
-                            <CheckCircle className="mr-2 h-4 w-4"/> Mark Handled
-                        </Button>
+                        <ListingReportActions reportId={report.id} currentStatus={report.status} />
                     </CardFooter>
                   </Card>
                 ))}

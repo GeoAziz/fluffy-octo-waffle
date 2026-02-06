@@ -470,6 +470,29 @@ export async function bulkUpdateListingStatus(listingIds: string[], status: List
   return { success: true };
 }
 
+export async function markContactMessageStatus(messageId: string, status: 'new' | 'handled'): Promise<{ success: boolean }> {
+    const authUser = await getAuthenticatedUser();
+    if (authUser?.role !== 'ADMIN') {
+        throw new Error('Authorization required.');
+    }
+    await adminDb.collection('contactMessages').doc(messageId).update({ status });
+    revalidatePath('/admin/inbox');
+    revalidatePath('/admin');
+    return { success: true };
+}
+
+export async function markListingReportStatus(reportId: string, status: 'new' | 'handled'): Promise<{ success: boolean }> {
+    const authUser = await getAuthenticatedUser();
+    if (authUser?.role !== 'ADMIN') {
+        throw new Error('Authorization required.');
+    }
+    await adminDb.collection('listingReports').doc(reportId).update({ status });
+    revalidatePath('/admin/inbox');
+    revalidatePath('/admin');
+    return { success: true };
+}
+
+
 // Action to delete a listing and its associated evidence
 export async function deleteListing(listingId: string) {
     const authUser = await getAuthenticatedUser();
