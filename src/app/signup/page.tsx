@@ -92,15 +92,7 @@ export default function SignupPage() {
     console.log('handleAuthSuccess: Session created successfully.');
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    let redirectUrl = '/dashboard';
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      const role = userDoc.exists() ? userDoc.data()?.role : null;
-      redirectUrl = role === 'ADMIN' ? '/admin' : '/dashboard';
-    } catch (roleError) {
-      console.error('handleAuthSuccess: Failed to read user role. Falling back to dashboard.', roleError);
-    }
+    const redirectUrl = '/'; // New users start at the home page
     console.log('handleAuthSuccess: Redirecting to', redirectUrl);
     window.location.href = redirectUrl;
   }
@@ -127,7 +119,7 @@ export default function SignupPage() {
         displayName: values.displayName,
         photoURL: user.photoURL,
         phone: values.phone || null,
-        role: 'SELLER', // Default role
+        role: 'BUYER', // Default role
         verified: false, // For future verification processes
         createdAt: serverTimestamp(),
       });
@@ -169,7 +161,7 @@ export default function SignupPage() {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 phone: user.phoneNumber || null,
-                role: 'SELLER', // Default role for new sign-ups
+                role: 'BUYER', // Default role for new sign-ups
                 verified: false,
                 createdAt: serverTimestamp(),
             });

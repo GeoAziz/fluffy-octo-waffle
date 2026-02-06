@@ -36,6 +36,8 @@ export function Header() {
   const router = useRouter();
   const [pendingCount, setPendingCount] = useState(0);
 
+  const isSellerOrAdmin = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
+
   useEffect(() => {
     if (userProfile?.role !== 'ADMIN') return;
 
@@ -98,12 +100,14 @@ export function Header() {
             <>
               {user ? (
                 <>
-                  <Button asChild className="hidden md:inline-flex">
-                    <Link href="/listings/new">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      New Listing
-                    </Link>
-                  </Button>
+                  {isSellerOrAdmin && (
+                    <Button asChild className="hidden md:inline-flex">
+                      <Link href="/listings/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Listing
+                      </Link>
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label="Open user menu">
@@ -121,9 +125,11 @@ export function Header() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                             <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
-                        </DropdownMenuItem>
+                        {isSellerOrAdmin && (
+                          <DropdownMenuItem asChild>
+                               <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem asChild>
                              <Link href="/favorites"><Heart className="mr-2 h-4 w-4" />Favorites</Link>
                         </DropdownMenuItem>
@@ -181,12 +187,16 @@ export function Header() {
                     ))}
                     {user ? (
                       <>
-                        <Link href="/listings/new" className="text-sm font-medium">
-                          New Listing
-                        </Link>
-                        <Link href="/dashboard" className="text-sm font-medium">
-                          Dashboard
-                        </Link>
+                        {isSellerOrAdmin && (
+                          <Link href="/listings/new" className="text-sm font-medium">
+                            New Listing
+                          </Link>
+                        )}
+                         {isSellerOrAdmin && (
+                          <Link href="/dashboard" className="text-sm font-medium">
+                            Dashboard
+                          </Link>
+                        )}
                         <Link href="/messages" className="text-sm font-medium">
                           Messages
                         </Link>

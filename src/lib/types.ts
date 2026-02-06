@@ -69,7 +69,7 @@ export type UserProfile = {
   displayName: string | null;
   photoURL: string | null;
   phone: string | null;
-  role: 'SELLER' | 'ADMIN';
+  role: 'BUYER' | 'SELLER' | 'ADMIN';
   createdAt: any; // Firestore timestamp
   verified: boolean;
 };

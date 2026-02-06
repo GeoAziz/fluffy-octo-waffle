@@ -5,6 +5,7 @@ import type { UserProfile, BadgeValue, ListingStatus, ListingImage } from './typ
 import { FieldValue } from 'firebase-admin/firestore';
 
 const SEED_USERS = [
+    { email: 'buyer1@example.com', displayName: 'Chausiku Mchaji', role: 'BUYER' as const },
     { email: 'seller1@example.com', displayName: 'Amani Properties', role: 'SELLER' as const },
     { email: 'seller2@example.com', displayName: 'Baraka Lands', role: 'SELLER' as const },
     { email: 'admin@example.com', displayName: 'Admin User', role: 'ADMIN' as const },

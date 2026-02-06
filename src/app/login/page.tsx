@@ -100,10 +100,17 @@ export default function LoginPage() {
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
-      const role = userDoc.exists() ? userDoc.data()?.role : null;
-      fallbackRedirect = role === 'ADMIN' ? '/admin' : '/dashboard';
+      const role = userDoc.exists() ? userDoc.data()?.role : 'BUYER';
+      if (role === 'ADMIN') {
+        fallbackRedirect = '/admin';
+      } else if (role === 'SELLER') {
+        fallbackRedirect = '/dashboard';
+      } else {
+        fallbackRedirect = '/'; // Buyers go to home page
+      }
     } catch (roleError) {
-      console.error('handleLoginSuccess: Failed to read user role. Falling back to dashboard.', roleError);
+      console.error('handleLoginSuccess: Failed to read user role. Falling back to home.', roleError);
+      fallbackRedirect = '/';
     }
     const redirectUrl = searchParams.get('redirect') || fallbackRedirect;
     console.log('handleLoginSuccess: Redirecting to', redirectUrl);
@@ -150,7 +157,7 @@ export default function LoginPage() {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 phone: user.phoneNumber || null,
-                role: 'SELLER', // Default role for new sign-ups
+                role: 'BUYER', // Default role for new sign-ups
                 verified: false,
                 createdAt: serverTimestamp(),
             });

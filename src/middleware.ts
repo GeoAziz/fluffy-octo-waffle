@@ -9,49 +9,56 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = await cookies().get('__session')?.value;
+  const sessionCookie = (await cookies()).get('__session')?.value;
   
   // These are public pages, but if a user is logged in, we don't want them to see it.
   const authPages = ['/login', '/signup'];
   if (authPages.includes(pathname) && sessionCookie) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // All pages that require a user to be logged in
-  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages', '/profile', '/favorites'];
-  let isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
+  // All pages that require a user to be logged in just to access
+  const generalProtectedPages = ['/messages', '/profile', '/favorites'];
 
-  // Regex to match /listings/{any-id}/edit
+  // All pages that require a SELLER or ADMIN role
+  const sellerPages = ['/dashboard', '/listings/new'];
   const editListingPattern = /^\/listings\/[^/]+\/edit$/;
-  if (!isProtectedRoute) {
-    isProtectedRoute = editListingPattern.test(pathname);
-  }
+
+  const isGeneralProtectedRoute = generalProtectedPages.some(p => pathname.startsWith(p));
+  const isSellerRoute = sellerPages.some(p => pathname.startsWith(p)) || editListingPattern.test(pathname);
+  const isAdminRoute = pathname.startsWith('/admin');
 
   // Handle all protected routes
-  if (isProtectedRoute) {
+  if (isGeneralProtectedRoute || isSellerRoute || isAdminRoute) {
       if (!sessionCookie) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
       }
 
-      // If it's an admin route, perform an additional role check
-      if (pathname.startsWith('/admin')) {
-          try {
-            const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-            const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-            if (!userDoc.exists || userDoc.data()?.role !== 'ADMIN') {
-              // Not an admin, redirect to access denied page
-              return NextResponse.redirect(new URL('/denied', request.url));
-            }
-          } catch (error) {
-            // Invalid session cookie, clear it and redirect to login
-            const loginUrl = new URL('/login', request.url);
-            loginUrl.searchParams.set('redirect', pathname);
-            const response = NextResponse.redirect(loginUrl);
-            response.cookies.set('__session', '', { maxAge: 0 });
-            return response;
-          }
+      // Verify the session cookie and get the user's role
+      try {
+        const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+        const userRole = userDoc.exists() ? userDoc.data()?.role : null;
+
+        // Admin Role Check
+        if (isAdminRoute && userRole !== 'ADMIN') {
+          return NextResponse.redirect(new URL('/denied', request.url));
+        }
+
+        // Seller Role Check
+        if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
+            return NextResponse.redirect(new URL('/denied', request.url));
+        }
+
+      } catch (error) {
+        // Invalid session cookie, clear it and redirect to login
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        const response = NextResponse.redirect(loginUrl);
+        response.cookies.set('__session', '', { maxAge: 0 });
+        return response;
       }
   }
   
