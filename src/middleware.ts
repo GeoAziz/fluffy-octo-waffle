@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = (await cookies()).get('__session')?.value;
+  const sessionCookie = cookies().get('__session')?.value;
   
   // These are public pages, but if a user is logged in, we don't want them to see it.
   const authPages = ['/login', '/signup'];
