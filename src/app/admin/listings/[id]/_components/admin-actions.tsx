@@ -7,10 +7,21 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Listing, ListingStatus } from '@/lib/types';
-import { updateListingStatus, getAiSummary, checkSuspiciousPatterns } from '@/app/actions';
+import { updateListingStatus, getAiSummary, checkSuspiciousPatterns, deleteListing } from '@/app/actions';
 import { Separator } from '@/components/ui/separator';
-import { Bot, Sparkles, AlertTriangle, FileText, Loader2 } from 'lucide-react';
+import { Bot, Sparkles, AlertTriangle, FileText, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const statusOptions: { value: ListingStatus; label: string }[] = [
   { value: 'approved', label: 'Approve' },
@@ -22,6 +33,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<ListingStatus>(listing.status);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [summaries, setSummaries] = useState<Record<string, string>>(
@@ -54,6 +66,27 @@ export function AdminActions({ listing }: { listing: Listing }) {
       setIsSaving(false);
     }
   };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+     try {
+      await deleteListing(listing.id);
+      toast({
+        title: 'Success',
+        description: 'Listing has been deleted.',
+      });
+      router.push('/admin');
+      router.refresh();
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete listing.',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   const handleSummarize = async (docId: string, docContent: string) => {
     setIsSummarizing(docId);
@@ -100,8 +133,8 @@ export function AdminActions({ listing }: { listing: Listing }) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Manage Listing Status</CardTitle>
-          <CardDescription>Approve, reject, or mark this listing as pending.</CardDescription>
+          <CardTitle>Manage Listing</CardTitle>
+          <CardDescription>Approve, reject, or delete this listing.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <RadioGroup value={currentStatus} onValueChange={(value: ListingStatus) => setCurrentStatus(value)}>
@@ -112,10 +145,34 @@ export function AdminActions({ listing }: { listing: Listing }) {
               </div>
             ))}
           </RadioGroup>
-          <Button onClick={handleSaveStatus} disabled={isSaving || currentStatus === listing.status}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Status
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSaveStatus} disabled={isSaving || currentStatus === listing.status}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Status
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon" disabled={isDeleting}>
+                  <Trash2 />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the
+                    listing and all of its associated evidence files.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { Listing, ListingStatus, UserProfile } from '@/lib/types';
+import type { ListingStatus, UserProfile } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -39,7 +39,11 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
     ownerId: authUser.uid,
     title: formData.get('title') as string,
     location: formData.get('location') as string,
+    county: formData.get('county') as string,
     price: Number(formData.get('price')),
+    area: Number(formData.get('area')),
+    size: formData.get('size') as string,
+    landType: formData.get('landType') as string,
     description: formData.get('description') as string,
     status: 'pending' as ListingStatus,
     image: 'https://picsum.photos/seed/newland/1200/800', // Placeholder
@@ -90,7 +94,10 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
                     console.error(`OCR failed for ${file.name}:`, ocrError);
                     contentForAi = `(OCR failed for image: ${file.name})`;
                 }
-            } else {
+            } else if (file.type === 'application/pdf') {
+                contentForAi = `(PDF file: ${file.name} - OCR not yet implemented for PDFs)`;
+            }
+             else {
                  contentForAi = `(Unsupported file type for summarization: ${file.name})`;
             }
 
@@ -99,9 +106,10 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
                 ownerId: authUser.uid,
                 name: file.name,
                 type: 'other',
-                storagePath: filePath, // Store path instead of full URL
-                content: contentForAi, // The extracted text or placeholder
+                storagePath: filePath,
                 uploadedAt: FieldValue.serverTimestamp(),
+                content: contentForAi,
+                verified: false,
             });
         }
     }));
@@ -134,6 +142,65 @@ export async function updateListingStatus(listingId: string, status: ListingStat
   revalidatePath(`/listings/${listingId}`);
   revalidatePath('/');
 }
+
+// Action to delete a listing and its associated evidence
+export async function deleteListing(listingId: string) {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) throw new Error("Authentication required.");
+
+    const listingRef = adminDb.collection('listings').doc(listingId);
+    const listingDoc = await listingRef.get();
+
+    if (!listingDoc.exists) throw new Error("Listing not found.");
+
+    const listing = listingDoc.data();
+    if (!listing) throw new Error("Listing data is missing.");
+
+
+    // Authorization Check: Must be owner or admin
+    if (listing.ownerId !== authUser.uid && authUser.role !== 'ADMIN') {
+        throw new Error("Authorization required: You do not have permission to delete this listing.");
+    }
+
+    const writeBatch = adminDb.batch();
+
+    // 1. Delete evidence documents from Firestore
+    const evidenceQuery = adminDb.collection('evidence').where('listingId', '==', listingId);
+    const evidenceSnapshot = await evidenceQuery.get();
+    
+    evidenceSnapshot.forEach(doc => {
+        writeBatch.delete(doc.ref);
+    });
+
+    // 2. Delete files from Cloud Storage
+    const bucket = adminStorage.bucket();
+    const prefix = `evidence/${listing.ownerId}/${listingId}/`;
+    try {
+        await bucket.deleteFiles({ prefix });
+    } catch (error: any) {
+        console.error(`Failed to delete files from storage for prefix ${prefix}`, error);
+        // We will continue to delete firestore docs even if storage deletion fails
+        if (error.code === 404) {
+          // Ignore not found errors if the folder was already deleted or never existed.
+        } else {
+            throw new Error("Failed to clean up evidence files from storage.");
+        }
+    }
+
+    // 3. Delete the main listing document
+    writeBatch.delete(listingRef);
+
+    // 4. Commit all deletions
+    await writeBatch.commit();
+
+    // 5. Revalidate paths
+    revalidatePath('/');
+    revalidatePath('/dashboard');
+    if (authUser.role === 'ADMIN') {
+        revalidatePath('/admin');
+    }
+}
+
 
 // Action to call the AI summarization flow
 export async function getAiSummary(documentText: string) {

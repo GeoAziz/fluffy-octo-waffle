@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check for Admin role
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // Users can read/write their own profile, Admins can read any profile
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || isAdmin();
+      allow write: if request.auth.uid == userId;
+      // Note: Role changes must be done server-side or by an admin via a trusted flow.
+    }
+
+    // Listings have granular access control
+    match /listings/{listingId} {
+      // Allow public read only for 'approved' listings.
+      // Authenticated users can read their own listings regardless of status.
+      // Admins can read all listings.
+      allow read: if resource.data.status == 'approved' ||
+                     (request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin()));
+
+      // Any authenticated user can create a listing.
+      // We tie ownership via request.resource.data.ownerId.
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+
+      // Users can update their own listings, but cannot change the status.
+      // Admins can update any listing, including status.
+      allow update: if request.auth != null &&
+                       ( (resource.data.ownerId == request.auth.uid && !('status' in request.resource.data)) || isAdmin() );
+
+      // Users can delete their own listings. Admins can delete any.
+      allow delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Evidence documents require ownership or admin privileges.
+    match /evidence/{evidenceId} {
+      // An owner or an admin can read evidence documents.
+      allow read: if request.auth != null && (
+        get(/databases/$(database)/documents/listings/$(resource.data.listingId)).data.ownerId == request.auth.uid || isAdmin()
+      );
+
+      // Only the owner of the listing can create evidence for it.
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      
+      // Deletion and updates are restricted to owner or admin.
+      allow delete, update: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}

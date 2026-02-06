@@ -25,8 +25,12 @@ import { Progress } from '@/components/ui/progress';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
-  location: z.string().min(5, 'Location must be at least 5 characters.'),
+  location: z.string().min(3, 'Location must be at least 3 characters.'),
+  county: z.string().min(3, 'County must be at least 3 characters.'),
   price: z.coerce.number().min(1, 'Price must be a positive number.'),
+  area: z.coerce.number().min(0.01, 'Area must be a positive number.'),
+  size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
+  landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   evidence: z.custom<FileList>().optional(),
 });
@@ -42,7 +46,11 @@ export default function NewListingPage() {
     defaultValues: {
       title: '',
       location: '',
+      county: '',
       price: 0,
+      area: 0,
+      size: '',
+      landType: '',
       description: '',
     },
   });
@@ -59,7 +67,7 @@ export default function NewListingPage() {
         }
         return prev + 5;
       });
-    }, 100);
+    }, 200);
 
     try {
       const formData = new FormData();
@@ -102,85 +110,121 @@ export default function NewListingPage() {
         <CardHeader>
           <CardTitle>Create a New Listing</CardTitle>
           <CardDescription>
-            Fill in the details of your property to list it on the platform. It will be reviewed by an admin before being made public.
+            Fill in the details of your property. It will be reviewed by an admin before being made public.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* Basic Info */}
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Property Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 5 Acres in Kitengela" {...field} />
-                    </FormControl>
+                    <FormControl><Input placeholder="e.g., 5 Acres in Kitengela" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Kitengela, Kajiado County" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price (Ksh)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g., 5500000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>General Location</FormLabel>
+                      <FormControl><Input placeholder="e.g., Isinya" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="county"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>County</FormLabel>
+                      <FormControl><Input placeholder="e.g., Kajiado County" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+               {/* Property Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <FormField
+                  control={form.control}
+                  name="area"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Area (in Acres)</FormLabel>
+                      <FormControl><Input type="number" placeholder="e.g., 5" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="size"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plot Dimensions</FormLabel>
+                      <FormControl><Input placeholder="e.g., 100x100 ft" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <FormField
+                  control={form.control}
+                  name="landType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Land Type</FormLabel>
+                      <FormControl><Input placeholder="e.g., Residential, Agricultural" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price (Ksh)</FormLabel>
+                      <FormControl><Input type="number" placeholder="e.g., 5500000" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide a detailed description of the property..."
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
+                    <FormControl><Textarea placeholder="Provide a detailed description of the property..." className="min-h-[120px]" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Evidence */}
               <FormField
                 control={form.control}
                 name="evidence"
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
                     <FormLabel>Evidence Documents</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="file" 
-                        multiple 
-                        {...rest}
-                        onChange={(e) => onChange(e.target.files)}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Upload title deed, survey maps, agreements, etc. (max 5 files).
-                    </FormDescription>
+                    <FormControl><Input type="file" multiple {...rest} onChange={(e) => onChange(e.target.files)} /></FormControl>
+                    <FormDescription>Upload title deed, survey maps, agreements, etc. (max 5 files).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -194,14 +238,7 @@ export default function NewListingPage() {
               )}
 
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit for Review'
-                )}
+                {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting... </> ) : ( 'Submit for Review' )}
               </Button>
             </form>
           </Form>

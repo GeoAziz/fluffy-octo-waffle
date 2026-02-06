@@ -20,6 +20,7 @@ const formSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
+  phone: z.string().optional(),
 });
 
 export default function SignupPage() {
@@ -49,7 +50,9 @@ export default function SignupPage() {
         email: user.email,
         displayName: values.displayName,
         photoURL: user.photoURL,
+        phone: values.phone || null,
         role: 'SELLER', // Default role
+        verified: false, // For future verification processes
         createdAt: serverTimestamp(),
       });
       
@@ -104,6 +107,17 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number (Optional)</FormLabel>
+                    <FormControl><Input placeholder="+254 712 345678" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

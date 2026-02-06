@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if a user is an admin from Firestore
+    function isAdmin() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+  
+    // Match any file in the evidence directory
+    // The path is structured as evidence/{ownerId}/{listingId}/{fileName}
+    match /evidence/{ownerId}/{listingId}/{allPaths=**} {
+      
+      // READ: Allow access only to the user who owns the file or an admin.
+      allow read: if request.auth != null && (request.auth.uid == ownerId || isAdmin());
+      
+      // WRITE (Create, Update, Delete): Allow access only to the user who is creating the resource.
+      // This ensures users can only upload files into their own designated folder path.
+      allow write: if request.auth != null && request.auth.uid == ownerId;
+    }
+  }
+}

@@ -8,6 +8,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -16,6 +17,11 @@ import {
   ShieldAlert,
   ShieldQuestion,
   EyeOff,
+  MapPin,
+  Mountain,
+  Square,
+  LandPlot,
+  Coins
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
@@ -73,6 +79,7 @@ export default async function ListingDetailPage({
   const {
     title,
     location,
+    county,
     price,
     description,
     image,
@@ -80,7 +87,18 @@ export default async function ListingDetailPage({
     status,
     seller,
     evidence,
+    area,
+    size,
+    landType,
   } = listing;
+
+  const listingDetails = [
+    { icon: Coins, label: "Price", value: `Ksh ${price.toLocaleString()}`},
+    { icon: MapPin, label: "Location", value: `${location}, ${county}` },
+    { icon: Mountain, label: "Area", value: `${area} Acres` },
+    { icon: Square, label: "Dimensions", value: size },
+    { icon: LandPlot, label: "Land Type", value: landType },
+  ];
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12">
@@ -105,16 +123,21 @@ export default async function ListingDetailPage({
                   <h1 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">
                     {title}
                   </h1>
-                  <p className="mt-1 text-lg text-muted-foreground">
-                    {location}
-                  </p>
                 </div>
                 <StatusBadge status={status} className="text-base px-4 py-2" />
               </div>
 
-              <p className="text-4xl font-semibold text-primary mb-6">
-                Ksh {price.toLocaleString()}
-              </p>
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2 my-6 text-sm text-foreground/90">
+                {listingDetails.map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex items-start gap-2">
+                    <Icon className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold">{label}</p>
+                        <p className="text-muted-foreground">{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               <Separator className="my-6" />
 
@@ -150,12 +173,13 @@ export default async function ListingDetailPage({
           <Card>
             <CardHeader>
               <CardTitle>Uploaded Evidence</CardTitle>
+              <CardDescription>Documents provided by seller</CardDescription>
             </CardHeader>
             <CardContent>
               {evidence.length > 0 ? (
                 <ul className="space-y-3">
                   {evidence.map((doc) => (
-                    <li key={doc.id} className="flex items-center gap-3">
+                    <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">
                       <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
                       <span className="text-sm font-medium text-foreground/90 truncate" title={doc.name}>{doc.name}</span>
                     </li>

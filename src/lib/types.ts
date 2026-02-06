@@ -10,6 +10,7 @@ export type Evidence = {
   uploadedAt: any; // Firestore timestamp
   summary?: string;
   content: string; // Plain text content for AI summarization, or filename if content not available
+  verified: boolean;
 };
 
 export type Listing = {
@@ -19,6 +20,10 @@ export type Listing = {
   description: string;
   price: number;
   location: string; // General location string for display
+  county: string;
+  area: number; // e.g., in Acres
+  size: string; // e.g., "50x100 ft"
+  landType: string; // e.g., "Agricultural", "Residential"
   status: ListingStatus;
   seller: {
     name: string;
@@ -37,6 +42,8 @@ export type UserProfile = {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  phone: string | null;
   role: 'SELLER' | 'ADMIN';
   createdAt: any; // Firestore timestamp
+  verified: boolean;
 };
