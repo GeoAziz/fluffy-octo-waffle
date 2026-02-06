@@ -17,6 +17,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { TrustBadge } from '@/components/trust-badge';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 async function checkAdmin() {
   const cookieStore = await cookies();
@@ -45,6 +46,7 @@ export default async function AdminDashboard() {
   return (
     <div className="container mx-auto py-12">
       <div className="mb-8">
+        <Breadcrumbs items={[{ href: '/admin', label: 'Admin Dashboard' }]} />
         <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
         <p className="text-muted-foreground">Review and manage all property listings. {pendingListings.length} listing(s) require your review.</p>
       </div>

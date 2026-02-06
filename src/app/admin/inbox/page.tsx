@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Mail, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 type ContactMessage = {
   id: string;
@@ -84,13 +85,14 @@ export default async function AdminInboxPage() {
   });
 
   return (
-    <div className="container mx-auto py-12 space-y-8">
-       <div>
+    <div className="container mx-auto py-12">
+      <div className="mb-8">
+        <Breadcrumbs items={[{ href: '/admin', label: 'Admin Dashboard' }, { href: '/admin/inbox', label: 'Inbox' }]} />
         <h1 className="text-4xl font-bold tracking-tight">Inbox</h1>
         <p className="text-muted-foreground">Review user messages and listing reports.</p>
       </div>
 
-      <section>
+      <section className="mb-8">
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Contact Messages</h2>
          {contactMessages.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">

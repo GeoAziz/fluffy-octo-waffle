@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
 import { cn } from '@/lib/utils';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 async function checkAdmin() {
   const cookieStore = await cookies();
@@ -39,6 +40,10 @@ export default async function AdminReviewPage({ params }: { params: { id: string
 
   return (
     <div className="container mx-auto max-w-7xl py-12">
+      <Breadcrumbs items={[
+        { href: '/admin', label: 'Admin Dashboard' },
+        { href: `/admin/listings/${params.id}`, label: listing.title },
+      ]} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight">Admin Review</h1>
         <p className="text-muted-foreground">Listing ID: <code className="text-sm font-mono bg-muted px-1 py-0.5 rounded">{listing.id}</code></p>
