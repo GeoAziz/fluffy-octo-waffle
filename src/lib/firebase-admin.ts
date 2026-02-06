@@ -8,6 +8,7 @@ if (!getApps().length) {
     try {
       admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(serviceAccount)),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       });
     } catch (e: any) {
       console.error('Error parsing FIREBASE_SERVICE_ACCOUNT:', e.message);
@@ -21,3 +22,4 @@ if (!getApps().length) {
 
 export const adminAuth = admin.auth();
 export const adminDb = admin.firestore();
+export const adminStorage = admin.storage();

@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
 import type { Listing, ListingStatus, UserProfile } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue } from 'firebase-admin/firestore';
+import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
@@ -55,25 +56,56 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 
   // Handle evidence upload
   const evidenceFiles = formData.getAll('evidence') as File[];
-  if (evidenceFiles.length > 0) {
+  if (evidenceFiles.length > 0 && evidenceFiles[0].size > 0) {
     const evidenceBatch = adminDb.batch();
-    for(const file of evidenceFiles) {
+    const bucket = adminStorage.bucket();
+
+    await Promise.all(evidenceFiles.map(async (file) => {
         if (file.size > 0) {
             const evidenceRef = adminDb.collection('evidence').doc();
-            // NOTE: File upload to a bucket (e.g., Firebase Storage) is NOT implemented.
-            // We are storing file metadata and content directly in Firestore for this PoC,
-            // which is not a scalable practice for real files.
+            const filePath = `evidence/${authUser.uid}/${docRef.id}/${Date.now()}-${file.name}`;
+            const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+            await bucket.file(filePath).save(fileBuffer, {
+                metadata: {
+                    contentType: file.type,
+                    metadata: { // Custom metadata for security rules
+                        ownerId: authUser.uid,
+                        listingId: docRef.id,
+                    }
+                }
+            });
+
+            let contentForAi = `(File: ${file.name}, Type: ${file.type} - cannot be summarized)`;
+            if (file.type.startsWith('image/')) {
+                try {
+                    const imageDataUri = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
+                    const ocrResult = await extractTextFromImage({ imageDataUri });
+                    if(ocrResult.extractedText && ocrResult.extractedText.trim().length > 0) {
+                        contentForAi = ocrResult.extractedText;
+                    } else {
+                        contentForAi = `(Image file: ${file.name} - No text found)`;
+                    }
+                } catch (ocrError) {
+                    console.error(`OCR failed for ${file.name}:`, ocrError);
+                    contentForAi = `(OCR failed for image: ${file.name})`;
+                }
+            } else {
+                 contentForAi = `(Unsupported file type for summarization: ${file.name})`;
+            }
+
             evidenceBatch.set(evidenceRef, {
                 listingId: docRef.id,
                 ownerId: authUser.uid,
                 name: file.name,
-                type: 'other', // In a real app, you might determine this from file type
-                storageUrl: 'placeholder/path/to/' + file.name,
-                content: `(Simulated content of ${file.name})`, // In a real app, you'd extract text via OCR if needed
+                type: 'other',
+                storagePath: filePath, // Store path instead of full URL
+                content: contentForAi, // The extracted text or placeholder
                 uploadedAt: FieldValue.serverTimestamp(),
             });
         }
-    }
+    }));
+    
     await evidenceBatch.commit();
   }
   

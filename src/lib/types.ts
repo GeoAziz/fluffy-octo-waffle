@@ -6,7 +6,7 @@ export type Evidence = {
   ownerId: string;
   type: 'title_deed' | 'survey_map' | 'other';
   name: string;
-  storageUrl: string; // In a real app, this would be a secure URL to the document in Firebase Storage
+  storagePath: string; // Path to the document in Firebase Storage
   uploadedAt: any; // Firestore timestamp
   summary?: string;
   content: string; // Plain text content for AI summarization, or filename if content not available
