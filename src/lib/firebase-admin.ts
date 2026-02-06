@@ -8,7 +8,7 @@ if (!getApps().length) {
     try {
       admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(serviceAccount)),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
     } catch (e: any) {
       console.error('Error parsing FIREBASE_SERVICE_ACCOUNT:', e.message);

@@ -14,18 +14,25 @@ import {
   FileText,
   ShieldCheck,
   ShieldAlert,
-  ShieldHelp,
+  ShieldQuestion,
   EyeOff,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import type { UserProfile } from '@/lib/types';
 
-async function getAuthenticatedUser() {
+
+async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const sessionCookie = cookies().get('__session')?.value;
     if (!sessionCookie) return null;
+
     try {
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-        return decodedToken;
+        const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+        if (!userDoc.exists) return null;
+        
+        const userProfile = userDoc.data() as UserProfile;
+        return { uid: decodedToken.uid, role: userProfile.role };
     } catch(e) {
         return null;
     }
@@ -47,7 +54,7 @@ export default async function ListingDetailPage({
   // Security check: Only show approved listings to the public.
   // The owner and admins can see listings in any state.
   const isOwner = user?.uid === listing.ownerId;
-  const isAdmin = user?.token.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN';
 
   if (listing.status !== 'approved' && !isOwner && !isAdmin) {
     return (
