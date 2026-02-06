@@ -51,6 +51,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
   );
   const [suspicionResult, setSuspicionResult] = useState<{ isSuspicious: boolean; reason: string } | null>(null);
   const { toast } = useToast();
+  const [isRejectConfirmOpen, setRejectConfirmOpen] = useState(false);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -69,6 +70,15 @@ export function AdminActions({ listing }: { listing: Listing }) {
       });
     } finally {
       setIsSaving(false);
+      setRejectConfirmOpen(false);
+    }
+  };
+
+  const handleSaveClick = () => {
+    if (currentStatus === 'rejected' && listing.status !== 'rejected') {
+      setRejectConfirmOpen(true);
+    } else {
+      handleSave();
     }
   };
 
@@ -175,7 +185,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleSave} disabled={isSaving || !isChanged}>
+            <Button onClick={handleSaveClick} disabled={isSaving || !isChanged}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
@@ -197,6 +207,22 @@ export function AdminActions({ listing }: { listing: Listing }) {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={isRejectConfirmOpen} onOpenChange={setRejectConfirmOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to reject this listing?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will mark the listing as 'Rejected' and it will no longer be visible to the public. The seller will see this status in their dashboard. This can be undone later.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSave} disabled={isSaving}>
+                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Yes, Reject Listing"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

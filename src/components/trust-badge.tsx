@@ -26,25 +26,25 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
     variant: 'gold',
     icon: Award,
     label: 'Gold',
-    description: 'Highest trust level based on submitted documents. Not a legal guarantee.',
+    description: 'All key documents (e.g., title deed, survey map) appear to be present, clear, and consistent.',
   },
   Silver: {
     variant: 'silver',
     icon: BadgeCheck,
     label: 'Silver',
-    description: 'High trust level based on submitted documents. Not a legal guarantee.',
+    description: 'Most key documents are present, but some minor information may be missing or slightly inconsistent.',
   },
   Bronze: {
     variant: 'bronze',
     icon: Shield,
     label: 'Bronze',
-    description: 'Good trust level based on submitted documents. Not a legal guarantee.',
+    description: 'Some evidence is provided, but key documents may be missing or have significant inconsistencies.',
   },
   None: {
     variant: 'secondary',
     icon: ShieldQuestion,
     label: 'Not Badged',
-    description: 'No trust badge assigned yet. Verification may be incomplete.',
+    description: 'This listing has not been assigned a trust badge. This may be because it is new or has insufficient evidence.',
   },
 };
 
