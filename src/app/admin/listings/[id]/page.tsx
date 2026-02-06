@@ -3,7 +3,7 @@ import { getListingById } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { FileText } from 'lucide-react';
-import { TrustBadge } from '@/components/trust-badge';
+import { StatusBadge } from '@/components/status-badge';
 import { AdminActions } from './_components/admin-actions';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
@@ -48,7 +48,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
                             <CardTitle className="text-2xl">{listing.title}</CardTitle>
                             <CardDescription>{listing.location}</CardDescription>
                         </div>
-                        <TrustBadge status={listing.badge} />
+                        <StatusBadge status={listing.status} />
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -70,7 +70,7 @@ export default async function AdminReviewPage({ params }: { params: { id: string
                     {listing.evidence.map((doc) => (
                     <li key={doc.id} className="flex items-center gap-3 p-2 rounded-md border">
                         <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
-                        <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{doc.name}</span>
+                        <span className="text-sm font-medium text-foreground/90 flex-1 truncate" title={doc.name}>{doc.name}</span>
                     </li>
                     ))}
                 </ul>

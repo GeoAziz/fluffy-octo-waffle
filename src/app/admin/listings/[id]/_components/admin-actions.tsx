@@ -6,22 +6,21 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import type { Listing, BadgeStatus } from '@/lib/types';
-import { updateListingBadge, getAiSummary, checkSuspiciousPatterns } from '@/app/actions';
+import type { Listing, ListingStatus } from '@/lib/types';
+import { updateListingStatus, getAiSummary, checkSuspiciousPatterns } from '@/app/actions';
 import { Separator } from '@/components/ui/separator';
 import { Bot, Sparkles, AlertTriangle, FileText, Loader2 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
-const badgeOptions: { value: BadgeStatus; label: string }[] = [
-  { value: 'TrustedSignal', label: 'Trusted Signal' },
-  { value: 'EvidenceReviewed', label: 'Evidence Reviewed' },
-  { value: 'EvidenceSubmitted', label: 'Evidence Submitted' },
-  { value: 'Suspicious', label: 'Suspicious' },
-  { value: 'None', label: 'None' },
+const statusOptions: { value: ListingStatus; label: string }[] = [
+  { value: 'approved', label: 'Approve' },
+  { value: 'pending', label: 'Set to Pending' },
+  { value: 'rejected', label: 'Reject' },
 ];
 
 export function AdminActions({ listing }: { listing: Listing }) {
-  const [currentBadge, setCurrentBadge] = useState<BadgeStatus>(listing.badge);
+  const router = useRouter();
+  const [currentStatus, setCurrentStatus] = useState<ListingStatus>(listing.status);
   const [isSaving, setIsSaving] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
@@ -36,19 +35,20 @@ export function AdminActions({ listing }: { listing: Listing }) {
   const [suspicionResult, setSuspicionResult] = useState<{ isSuspicious: boolean; reason: string } | null>(null);
   const { toast } = useToast();
 
-  const handleSaveBadge = async () => {
+  const handleSaveStatus = async () => {
     setIsSaving(true);
     try {
-      await updateListingBadge(listing.id, currentBadge);
+      await updateListingStatus(listing.id, currentStatus);
       toast({
         title: 'Success',
-        description: 'Trust badge has been updated.',
+        description: 'Listing status has been updated.',
       });
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to update badge.',
+        description: 'Failed to update status.',
       });
     } finally {
       setIsSaving(false);
@@ -78,6 +78,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
         const descriptions = listing.evidence.map(e => e.content);
         if (descriptions.length === 0) {
             toast({ variant: 'destructive', title: 'Error', description: 'No evidence to check.' });
+            setIsChecking(false);
             return;
         }
         const result = await checkSuspiciousPatterns(descriptions);
@@ -99,21 +100,21 @@ export function AdminActions({ listing }: { listing: Listing }) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Manage Trust Badge</CardTitle>
-          <CardDescription>Assign a trust signal to this listing.</CardDescription>
+          <CardTitle>Manage Listing Status</CardTitle>
+          <CardDescription>Approve, reject, or mark this listing as pending.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <RadioGroup value={currentBadge} onValueChange={(value: BadgeStatus) => setCurrentBadge(value)}>
-            {badgeOptions.map(({ value, label }) => (
+          <RadioGroup value={currentStatus} onValueChange={(value: ListingStatus) => setCurrentStatus(value)}>
+            {statusOptions.map(({ value, label }) => (
               <div key={value} className="flex items-center space-x-2">
-                <RadioGroupItem value={value} id={`badge-${value}`} />
-                <Label htmlFor={`badge-${value}`}>{label}</Label>
+                <RadioGroupItem value={value} id={`status-${value}`} />
+                <Label htmlFor={`status-${value}`}>{label}</Label>
               </div>
             ))}
           </RadioGroup>
-          <Button onClick={handleSaveBadge} disabled={isSaving || currentBadge === listing.badge}>
+          <Button onClick={handleSaveStatus} disabled={isSaving || currentStatus === listing.status}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Badge
+            Save Status
           </Button>
         </CardContent>
       </Card>
@@ -134,7 +135,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
                     <div key={doc.id}>
                         <div className="flex items-center gap-2 mb-2">
                             <FileText className="h-4 w-4 flex-shrink-0" />
-                            <p className="text-sm font-medium truncate flex-1">{doc.name}</p>
+                            <p className="text-sm font-medium truncate flex-1" title={doc.name}>{doc.name}</p>
                              <Button size="sm" variant="outline" onClick={() => handleSummarize(doc.id, doc.content)} disabled={!!isSummarizing}>
                                 {isSummarizing === doc.id ? <Loader2 className="h-4 w-4 animate-spin"/> : "Summarize"}
                             </Button>
@@ -150,7 +151,7 @@ export function AdminActions({ listing }: { listing: Listing }) {
           <Separator />
           <div>
             <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-warning h-4 w-4"/>Suspicious Pattern Detection</h4>
-            <Button className="w-full" onClick={handleSuspicionCheck} disabled={isChecking}>
+            <Button className="w-full" onClick={handleSuspicionCheck} disabled={isChecking || listing.evidence.length === 0}>
                 {isChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check for Suspicious Patterns"}
             </Button>
              {suspicionResult && (

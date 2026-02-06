@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import type { BadgeStatus, Listing, UserProfile } from '@/lib/types';
+import type { Listing, ListingStatus, UserProfile } from '@/lib/types';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -20,13 +20,12 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
         const userProfile = userDoc.data() as UserProfile;
         return { uid: decodedToken.uid, role: userProfile.role };
     } catch(e) {
-        // Invalid cookie, it will be cleared on next request by middleware
         return null;
     }
 }
 
 // Action to create a new listing
-export async function createListing(formData: FormData): Promise<Listing> {
+export async function createListing(formData: FormData): Promise<{id: string}> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) {
     throw new Error('Authentication required. Please log in.');
@@ -35,49 +34,73 @@ export async function createListing(formData: FormData): Promise<Listing> {
   // Get user profile to get displayName and photoURL
   const userRecord = await adminAuth.getUser(authUser.uid);
 
-  const newListingData: Omit<Listing, 'id'> = {
+  const newListingData = {
+    ownerId: authUser.uid,
     title: formData.get('title') as string,
     location: formData.get('location') as string,
     price: Number(formData.get('price')),
     description: formData.get('description') as string,
-    badge: formData.has('evidence') && (formData.get('evidence') as File).size > 0 ? ('EvidenceSubmitted' as BadgeStatus) : ('None' as BadgeStatus),
-    image: 'https://picsum.photos/seed/newland/600/400', // Placeholder
+    status: 'pending' as ListingStatus,
+    image: 'https://picsum.photos/seed/newland/1200/800', // Placeholder
     imageHint: 'generic landscape',
-    sellerId: authUser.uid,
     seller: {
         name: userRecord.displayName || 'Anonymous Seller',
         avatarUrl: userRecord.photoURL || `https://i.pravatar.cc/150?u=${authUser.uid}`
     },
-    evidence: [], // In a real app, you would handle file upload to a bucket here
     createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
   const docRef = await adminDb.collection('listings').add(newListingData);
+
+  // Handle evidence upload
+  const evidenceFiles = formData.getAll('evidence') as File[];
+  if (evidenceFiles.length > 0) {
+    const evidenceBatch = adminDb.batch();
+    for(const file of evidenceFiles) {
+        if (file.size > 0) {
+            const evidenceRef = adminDb.collection('evidence').doc();
+            // NOTE: File upload to a bucket (e.g., Firebase Storage) is NOT implemented.
+            // We are storing file metadata and content directly in Firestore for this PoC,
+            // which is not a scalable practice for real files.
+            evidenceBatch.set(evidenceRef, {
+                listingId: docRef.id,
+                ownerId: authUser.uid,
+                name: file.name,
+                type: 'other', // In a real app, you might determine this from file type
+                storageUrl: 'placeholder/path/to/' + file.name,
+                content: `(Simulated content of ${file.name})`, // In a real app, you'd extract text via OCR if needed
+                uploadedAt: FieldValue.serverTimestamp(),
+            });
+        }
+    }
+    await evidenceBatch.commit();
+  }
   
   revalidatePath('/');
   revalidatePath('/dashboard');
   
-  // Create a version of the object that is serializable to the client
-  return { 
-      id: docRef.id, 
-      ...newListingData, 
-      createdAt: new Date()
-    } as unknown as Listing;
+  return { id: docRef.id };
 }
 
-// Action to update a listing's badge
-export async function updateListingBadge(listingId: string, badge: BadgeStatus) {
+// Action to update a listing's status
+export async function updateListingStatus(listingId: string, status: ListingStatus) {
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') {
-    throw new Error('Authorization required: Only admins can update badges.');
+    throw new Error('Authorization required: Only admins can update status.');
   }
 
   const listingRef = adminDb.collection('listings').doc(listingId);
-  await listingRef.update({ badge });
+  await listingRef.update({ 
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+      adminReviewedAt: FieldValue.serverTimestamp(),
+  });
 
   revalidatePath('/admin');
   revalidatePath(`/admin/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidatePath('/');
 }
 
 // Action to call the AI summarization flow

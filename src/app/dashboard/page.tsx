@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { getListingsForSeller } from '@/lib/data';
-import { TrustBadge } from '@/components/trust-badge';
+import { StatusBadge } from '@/components/status-badge';
 import {
   Table,
   TableBody,
@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatRelative } from 'date-fns';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
 
 async function getAuthenticatedUser() {
@@ -33,15 +33,15 @@ export default async function SellerDashboard() {
   const user = await getAuthenticatedUser();
 
   if (!user) {
-    // This should be handled by middleware, but as a safeguard.
-    return notFound();
+    // This is handled by middleware, but as a safeguard.
+    redirect('/login');
   }
 
   const listings = await getListingsForSeller(user.uid);
   const userProfileDoc = await adminDb.collection('users').doc(user.uid).get();
   if (!userProfileDoc.exists) {
       // This should not happen if they are logged in and have a user record
-      return notFound();
+      redirect('/login');
   }
   const userProfile = userProfileDoc.data() as UserProfile;
 
@@ -72,7 +72,7 @@ export default async function SellerDashboard() {
 
                             </TableCell>
                             <TableCell>
-                                <TrustBadge status={listing.badge} />
+                                <StatusBadge status={listing.status} />
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                                 {listing.createdAt ? formatRelative(listing.createdAt, new Date()) : 'N/A'}

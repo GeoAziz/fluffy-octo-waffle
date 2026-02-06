@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { getListings } from '@/lib/data';
-import { TrustBadge } from '@/components/trust-badge';
+import { getAllListingsForAdmin } from '@/lib/data';
+import { StatusBadge } from '@/components/status-badge';
 import {
   Table,
   TableBody,
@@ -33,7 +33,7 @@ async function checkAdmin() {
 
 export default async function AdminDashboard() {
   await checkAdmin();
-  const listings = await getListings();
+  const listings = await getAllListingsForAdmin();
 
   return (
     <div className="container mx-auto py-10">
@@ -60,7 +60,7 @@ export default async function AdminDashboard() {
                   <TableCell className="hidden md:table-cell">{listing.location}</TableCell>
                   <TableCell className="hidden sm:table-cell">{listing.seller.name}</TableCell>
                   <TableCell>
-                    <TrustBadge status={listing.badge} />
+                    <StatusBadge status={listing.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">

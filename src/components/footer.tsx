@@ -16,9 +16,9 @@ export function Footer() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">Our Philosophy</h3>
+            <h3 className="font-semibold mb-4">Our Mission</h3>
             <p className="text-muted-foreground text-sm">
-                We believe in the power of clear, verifiable information. Our trust badges are designed to help you make informed decisions by providing signals about the evidence we've been able to review for each listing.
+                We believe in the power of clear, verifiable information. Our platform provides a structured review process to help you make informed decisions when buying or selling land.
             </p>
           </div>
           <div>
@@ -33,7 +33,7 @@ export function Footer() {
         </div>
         <div className="mt-8 border-t pt-4 text-center text-xs text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} Kenya Land Trust. All rights reserved.</p>
-            <p className="mt-2">Disclaimer: Kenya Land Trust provides trust signals based on submitted documents but does not constitute a legal guarantee of title. Buyers are advised to conduct their own due diligence.</p>
+            <p className="mt-2">Disclaimer: Kenya Land Trust provides an approval status based on submitted documents but does not constitute a legal guarantee of title. Buyers are advised to conduct their own due diligence.</p>
         </div>
       </div>
     </footer>

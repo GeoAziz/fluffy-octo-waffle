@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createListing } from '@/app/actions';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 const formSchema = z.object({
@@ -51,7 +51,6 @@ export default function NewListingPage() {
     setIsSubmitting(true);
     setUploadProgress(0);
 
-    // Simulate file upload progress
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 95) {
@@ -63,32 +62,26 @@ export default function NewListingPage() {
     }, 100);
 
     try {
-      // The `createListing` action needs FormData
       const formData = new FormData();
       Object.entries(values).forEach(([key, value]) => {
-        if (key === 'evidence') {
-          if (value) {
-            Array.from(value).forEach((file) => {
-              formData.append('evidence', file);
-            });
-          }
-        } else {
+        if (key === 'evidence' && value) {
+          Array.from(value as FileList).forEach(file => formData.append('evidence', file));
+        } else if (value) {
             formData.append(key, String(value));
         }
       });
       
-      const newListing = await createListing(formData);
+      const { id } = await createListing(formData);
       clearInterval(progressInterval);
       setUploadProgress(100);
       
       toast({
-        title: 'Listing Created!',
-        description: 'Your property has been successfully listed.',
+        title: 'Listing Submitted!',
+        description: 'Your property is now pending review by our team.',
       });
 
-      // Redirect to the new listing or admin page after a short delay
       setTimeout(() => {
-        router.push(`/listings/${newListing.id}`);
+        router.push(`/listings/${id}`);
       }, 1000);
 
     } catch (error) {
@@ -98,7 +91,7 @@ export default function NewListingPage() {
       toast({
         variant: 'destructive',
         title: 'Something went wrong',
-        description: 'Could not create the listing. Please try again.',
+        description: error instanceof Error ? error.message : 'Could not create the listing. Please try again.',
       });
     }
   }
@@ -109,7 +102,7 @@ export default function NewListingPage() {
         <CardHeader>
           <CardTitle>Create a New Listing</CardTitle>
           <CardDescription>
-            Fill in the details of your property to list it on the platform.
+            Fill in the details of your property to list it on the platform. It will be reviewed by an admin before being made public.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -186,7 +179,7 @@ export default function NewListingPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Upload title deed, survey maps, agreements, etc.
+                      Upload title deed, survey maps, agreements, etc. (max 5 files).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -195,7 +188,7 @@ export default function NewListingPage() {
 
               {isSubmitting && (
                 <div className="space-y-2">
-                    <Label>Uploading...</Label>
+                    <Label>Submitting for Review...</Label>
                     <Progress value={uploadProgress} />
                 </div>
               )}
@@ -207,7 +200,7 @@ export default function NewListingPage() {
                     Submitting...
                   </>
                 ) : (
-                  'Create Listing'
+                  'Submit for Review'
                 )}
               </Button>
             </form>
