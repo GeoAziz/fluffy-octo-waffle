@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { LandPlot, LayoutDashboard, LogOut, PlusCircle, MessageSquare, Menu } from 'lucide-react';
+import { LandPlot, LayoutDashboard, LogOut, PlusCircle, MessageSquare, UserCircle, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers';
@@ -126,6 +126,9 @@ export function Header() {
                         </DropdownMenuItem>
                          <DropdownMenuItem asChild>
                              <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />Messages</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                             <Link href="/profile"><UserCircle className="mr-2 h-4 w-4" />Manage Profile</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>

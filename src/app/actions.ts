@@ -560,3 +560,34 @@ export async function getOrCreateConversation(listingId: string): Promise<{ conv
     return { conversationId };
   }
 }
+
+export async function updateUserProfileAction(formData: FormData) {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error('Authentication required.');
+  }
+
+  const displayName = formData.get('displayName') as string;
+  const phone = formData.get('phone') as string;
+
+  if (!displayName) {
+    throw new Error('Display name cannot be empty.');
+  }
+  
+  const updatePayload: { displayName: string; phone?: string } = { displayName };
+  if (phone) {
+    updatePayload.phone = phone;
+  }
+
+  // Update Firebase Auth
+  await adminAuth.updateUser(authUser.uid, { displayName });
+
+  // Update Firestore user profile
+  await adminDb.collection('users').doc(authUser.uid).update({
+    displayName: displayName,
+    phone: phone || null,
+  });
+
+  revalidatePath('/profile');
+  revalidatePath('/dashboard');
+}

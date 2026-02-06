@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // All pages that require a user to be logged in
-  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages'];
+  const protectedPages = ['/admin', '/dashboard', '/listings/new', '/messages', '/profile'];
   let isProtectedRoute = protectedPages.some(p => pathname.startsWith(p));
 
   // Regex to match /listings/{any-id}/edit
