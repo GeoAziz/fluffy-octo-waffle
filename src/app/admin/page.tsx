@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Shield, Award, BadgeCheck, Inbox } from 'lucide-react';
+import { Eye, Inbox } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
@@ -61,54 +61,7 @@ export default async function AdminDashboard() {
               </Link>
             </Button>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Property</TableHead>
-                <TableHead className="hidden sm:table-cell">Seller</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">AI Badge</TableHead>
-                <TableHead>Assigned Badge</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {[...pendingListings, ...otherListings].map((listing) => (
-                <TableRow key={listing.id} className={cn(listing.status === 'pending' && 'bg-warning/10 hover:bg-warning/20')}>
-                  <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{listing.title}</span>
-                        <span className="text-xs text-muted-foreground">{listing.location}</span>
-                      </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{listing.seller.name}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={listing.status} />
-                    {listing.badgeSuggestion ? (
-                      <TrustBadge badge={listing.badgeSuggestion.badge} />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">AI Badge: N/A</span>
-                    )}
-                    {listing.badge ? (
-                      <TrustBadge badge={listing.badge} />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Assigned: None</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Seller: {listing.seller.name}</span>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/listings/${listing.id}`}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Review
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="hidden md:block overflow-x-auto">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
