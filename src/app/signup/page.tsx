@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, LandPlot } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4">
@@ -60,7 +59,6 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 
 export default function SignupPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -106,13 +104,10 @@ export default function SignupPage() {
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
-    // Wait longer for the cookie to be fully set in the browser
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
-    // Navigate directly to onboarding
-    router.push('/onboarding');
+    // On signup, we always go to the onboarding page.
+    window.location.assign('/onboarding');
   }
 
 

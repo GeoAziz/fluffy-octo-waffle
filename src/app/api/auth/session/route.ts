@@ -1,3 +1,5 @@
+'use server';
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
@@ -43,11 +45,9 @@ export async function POST(request: NextRequest) {
 
   // 5 days
   const expiresInMs = 60 * 60 * 24 * 5 * 1000;
-  console.log('/api/auth/session POST: Attempting to create session cookie...');
 
   try {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
-    console.log('/api/auth/session POST: Session cookie created successfully.');
 
     // Allow HTTP during local development; rely on request protocol or production env for HTTPS.
     const forwardedProto = request.headers.get('x-forwarded-proto');
@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
         path: '/' 
     };
     
-    console.log('/api/auth/session POST: Setting cookie and sending success response.');
     const response = NextResponse.json({ status: 'success' });
     response.cookies.set(options);
     return response;
