@@ -16,6 +16,9 @@ import {
   Inbox,
   LogOut,
   User,
+  List,
+  AreaChart,
+  Settings
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers';
@@ -92,8 +95,11 @@ export function AdminNav() {
   };
 
   const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, badge: pendingCount > 0 ? pendingCount : undefined },
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/listings', label: 'Listings', icon: List, badge: pendingCount > 0 ? pendingCount : undefined },
     { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: inboxCount > 0 ? inboxCount : undefined },
+    { href: '/admin/analytics', label: 'Analytics', icon: AreaChart },
+    { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   return (

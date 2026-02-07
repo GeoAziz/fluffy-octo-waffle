@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import type { ListingStatus } from '@/lib/types';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +10,12 @@ export async function POST(request: NextRequest) {
     const { listingIds, status } = body || {};
 
     if (!Array.isArray(listingIds) || listingIds.length === 0) {
-      return NextResponse.json({ status: 'error', message: 'No listing ids provided.' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'No listing IDs provided.' }, { status: 400 });
+    }
+    
+    const validStatuses: ListingStatus[] = ['pending', 'approved', 'rejected'];
+    if (!validStatuses.includes(status)) {
+        return NextResponse.json({ status: 'error', message: 'Invalid status provided.' }, { status: 400 });
     }
 
     // Verify session cookie
@@ -22,7 +29,7 @@ export async function POST(request: NextRequest) {
     const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
     if (userRole !== 'ADMIN') {
-      return NextResponse.json({ status: 'error', message: 'Only admins are allowed.' }, { status: 403 });
+      return NextResponse.json({ status: 'error', message: 'Authorization required: Only admins can perform this action.' }, { status: 403 });
     }
 
     const batch = adminDb.batch();
@@ -36,6 +43,15 @@ export async function POST(request: NextRequest) {
     });
 
     await batch.commit();
+
+    // Revalidate relevant paths
+    revalidatePath('/admin');
+    revalidatePath('/admin/listings');
+    revalidatePath('/');
+    listingIds.forEach(id => {
+      revalidatePath(`/listings/${id}`);
+      revalidatePath(`/admin/listings/${id}`);
+    });
 
     return NextResponse.json({ status: 'success' });
   } catch (err: any) {
