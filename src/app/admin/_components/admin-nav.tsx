@@ -114,20 +114,23 @@ export function AdminNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.label}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                  {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/admin' && pathname.startsWith(`${item.href}/`));
+
+            return (
+              <SidebarMenuItem key={item.label}>
+                <Link href={item.href} passHref>
+                  <SidebarMenuButton isActive={isActive} tooltip={item.label}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                    {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
