@@ -98,7 +98,7 @@ export default function SignupPage() {
     const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, requestedRedirect: '/onboarding' }),
     });
 
     if (!response.ok) {
@@ -106,10 +106,12 @@ export default function SignupPage() {
         throw new Error(errorData.message || 'Failed to create session on the server.');
     }
 
+    const { redirectUrl } = await response.json();
+
     toast({ title: 'Account Created', description: "Welcome to Kenya Land Trust!" });
     
     // On signup, we always go to the onboarding page.
-    window.location.assign('/onboarding');
+    window.location.assign(redirectUrl || '/onboarding');
   }
 
 

@@ -63,40 +63,6 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
     }
 }
 
-// Helper function to validate and compute redirect (client-side, no Server Action needed)
-function computeRedirectUrl(
-  userRole: string,
-  requestedRedirect: string | null,
-  fallbackRedirect: string
-): string {
-  if (!requestedRedirect) {
-    return fallbackRedirect;
-  }
-
-  try {
-    const redirectPath = new URL(requestedRedirect, 'http://localhost').pathname;
-    const isAdminRoute = redirectPath.startsWith('/admin');
-    const isSellerRoute = 
-      ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || 
-      /^\/listings\/[^/]+\/edit$/.test(redirectPath);
-
-    // Only allow redirect if user has permission
-    if (isAdminRoute && userRole !== 'ADMIN') {
-      console.log('[Login] User not admin, using fallback');
-      return fallbackRedirect;
-    }
-    if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
-      console.log('[Login] User not seller, using fallback');
-      return fallbackRedirect;
-    }
-    // If no restriction or user has permission, allow the redirect
-    return requestedRedirect;
-  } catch (err) {
-    console.error('[Login] Error parsing redirect URL:', err);
-    return fallbackRedirect;
-  }
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -135,65 +101,27 @@ export default function LoginPage() {
     try {
       console.log('[Login] Starting handleLoginSuccess for user:', user.uid);
       const idToken = await user.getIdToken();
+      const requestedRedirect = searchParams.get('redirect');
 
-      console.log('[Login] Got idToken, calling /api/auth/session to create cookie.');
+      console.log('[Login] Got idToken, calling /api/auth/session to create cookie and get redirect.');
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, requestedRedirect }),
       });
       
       if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: 'Could not parse error response from server.' }));
           throw new Error(errorData.message || 'Failed to create session on the server.');
       }
+      
+      const { redirectUrl } = await response.json();
 
-      console.log('[Login] Session cookie created. Determining redirect path...');
+      console.log('[Login] Session cookie created. Server redirecting to:', redirectUrl);
 
       toast({ title: 'Login Successful', description: "Welcome back!" });
       
-      let fallbackRedirect = '/';
-      let userRole = 'BUYER';
-      try {
-        console.log('[Login] Fetching user role from Firestore');
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        userRole = userDoc.exists() ? userDoc.data()?.role : 'BUYER';
-        console.log('[Login] User role:', userRole);
-        
-        if (userRole === 'ADMIN') {
-          fallbackRedirect = '/admin';
-        } else if (userRole === 'SELLER') {
-          fallbackRedirect = '/dashboard';
-        }
-      } catch (roleError) {
-        console.error('[Login] Error fetching user role:', roleError);
-        // Fallback already set to '/'
-      }
-      
-      // Validate the redirect URL against the user's role
-      let redirectUrl = searchParams.get('redirect') || fallbackRedirect;
-      console.log('[Login] Redirect URL from params:', searchParams.get('redirect'), 'Fallback:', fallbackRedirect, 'Final:', redirectUrl);
-      
-      const redirectPath = new URL(redirectUrl, 'http://localhost').pathname;
-      
-      // Check if user has access to the redirect URL
-      const isAdminRoute = redirectPath.startsWith('/admin');
-      const isSellerRoute = ['/dashboard', '/listings/new'].some(p => redirectPath.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(redirectPath);
-      
-      if (isAdminRoute && userRole !== 'ADMIN') {
-        console.log('[Login] User not admin, using fallback');
-        redirectUrl = fallbackRedirect;
-      } else if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
-        console.log('[Login] User not seller, using fallback');
-        redirectUrl = fallbackRedirect;
-      }
-      
-      console.log('[Login] Final redirect URL:', redirectUrl);
-      // Using window.location.assign to ensure the browser sends the new session cookie with the next request.
-      // This is more reliable for HttpOnly cookies than client-side routing.
-      window.location.assign(redirectUrl);
-      console.log('[Login] window.location.assign called');
+      window.location.assign(redirectUrl || '/');
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);
       throw err; // Let the calling onSubmit handler show the toast
