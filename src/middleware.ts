@@ -41,6 +41,22 @@ export async function middleware(request: NextRequest) {
       console.warn('[Middleware] Auth page session verification failed:', e);
       // If verification fails, clear cookie and show login/signup as usual
       const response = NextResponse.next();
+      if (isDev) {
+        response.headers.set(
+          'Content-Security-Policy',
+          [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "connect-src 'self' https: ws: wss:",
+            "font-src 'self' data: https:",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'self'",
+          ].join('; ')
+        );
+      }
       response.cookies.set('__session', '', { maxAge: 0 });
       return response;
     }
@@ -63,7 +79,24 @@ export async function middleware(request: NextRequest) {
         console.log(`[Middleware] ${pathname} requires auth but no session cookie found, redirecting to /login`);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
+        const response = NextResponse.redirect(loginUrl);
+        if (isDev) {
+          response.headers.set(
+            'Content-Security-Policy',
+            [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "connect-src 'self' https: ws: wss:",
+              "font-src 'self' data: https:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'self'",
+            ].join('; ')
+          );
+        }
+        return response;
       }
 
       // Verify the session cookie and get the user's role
@@ -91,12 +124,45 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         const response = NextResponse.redirect(loginUrl);
+        if (isDev) {
+          response.headers.set(
+            'Content-Security-Policy',
+            [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "connect-src 'self' https: ws: wss:",
+              "font-src 'self' data: https:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'self'",
+            ].join('; ')
+          );
+        }
         response.cookies.set('__session', '', { maxAge: 0 });
         return response;
       }
   }
-  
-  return NextResponse.next();
+
+  const response = NextResponse.next();
+  if (isDev) {
+    response.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "connect-src 'self' https: ws: wss:",
+        "font-src 'self' data: https:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'self'",
+      ].join('; ')
+    );
+  }
+  return response;
 }
 
 export const config = {
