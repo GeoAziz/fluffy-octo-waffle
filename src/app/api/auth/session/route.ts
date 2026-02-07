@@ -49,8 +49,11 @@ export async function POST(request: NextRequest) {
   try {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
 
-    // For development, allow localhost over HTTP. For production, require HTTPS.
-    const isSecureContext = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
+    // Allow HTTP during local development; rely on request protocol or production env for HTTPS.
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const isSecureContext = process.env.NODE_ENV === 'production'
+      || forwardedProto === 'https'
+      || request.nextUrl.protocol === 'https:';
     
     const options = { 
         name: '__session', 
