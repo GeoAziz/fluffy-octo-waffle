@@ -14,14 +14,14 @@ export function SellerPage({ title, description, actions, children }: SellerPage
   return (
     <SellerShell>
       <div className="flex w-full h-full flex-col overflow-hidden">
-        <header className="sticky top-0 z-10 flex h-auto min-h-16 flex-wrap items-center justify-between gap-4 border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 flex-shrink-0">
-          <div className="flex items-center gap-3 w-full">
+        <header className="sticky top-0 z-10 flex h-auto min-h-16 flex-wrap items-center justify-between gap-4 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 flex-shrink-0">
+          <div className="flex items-center gap-4 w-full">
             <div className="lg:hidden">
               <SidebarTrigger />
             </div>
-            <div className="flex-1 space-y-1 min-w-0">
-              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl" title={title}>{title}</h1>
-              {description && <p className="text-sm text-muted-foreground leading-relaxed sm:text-base">{description}</p>}
+            <div className="flex-1 space-y-0.5 min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl" title={title}>{title}</h1>
+              {description && <p className="text-sm text-muted-foreground">{description}</p>}
             </div>
           </div>
           {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

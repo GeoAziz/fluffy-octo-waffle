@@ -34,7 +34,7 @@ export default async function MessagesLayout({
       title="Messages"
       description="Keep track of buyer conversations and respond quickly."
     >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-220px)]">
         <div className="lg:col-span-1 h-full">
           <Card className="h-full">
             <CardContent className="p-0 h-full">

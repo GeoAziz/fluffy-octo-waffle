@@ -34,16 +34,16 @@ export function SellerNav() {
 
   return (
     <>
-      <SidebarHeader className="pb-2">
+      <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
           <LandPlot className="size-6 text-primary" />
-          <h2 className="text-base font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+          <h2 className="text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
             Kenya Land Trust
           </h2>
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="gap-1">
+        <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.label}>
               <Link href={item.href} passHref>
@@ -72,8 +72,8 @@ export function SellerNav() {
               <AvatarFallback>{userProfile.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-medium leading-tight truncate">{userProfile.displayName}</span>
-              <span className="text-xs text-muted-foreground leading-snug truncate">{userProfile.email}</span>
+              <span className="text-sm font-medium truncate">{userProfile.displayName}</span>
+              <span className="text-xs text-muted-foreground truncate">{userProfile.email}</span>
             </div>
           </div>
         )}

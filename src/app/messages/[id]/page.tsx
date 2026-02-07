@@ -212,7 +212,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     const otherParticipant = otherParticipantId ? conversation.participants[otherParticipantId] : null;
 
     return (
-        <div className="h-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-4">
+        <div className="h-full grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-4">
             <Card className="h-full flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
                     <Link href={`/listings/${conversation.listingId}`} className="flex items-center gap-3 overflow-hidden group">
@@ -291,7 +291,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
                 </CardFooter>
             </Card>
 
-            <Card className="h-full order-2 lg:order-none lg:sticky lg:top-4">
+            <Card className="h-full">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold">Conversation Details</p>
