@@ -98,8 +98,12 @@ export default function AdminListingsPage() {
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="col-span-2">
           <div className="relative">
+            <label htmlFor="listing-search" className="sr-only">
+              Search listings
+            </label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              id="listing-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search title, location, seller..."
@@ -108,7 +112,11 @@ export default function AdminListingsPage() {
           </div>
         </div>
         <div>
+          <label htmlFor="status-filter" className="sr-only">
+            Filter listings by status
+          </label>
           <select
+            id="status-filter"
             className="w-full rounded-md border px-3 py-2 text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -156,7 +164,11 @@ export default function AdminListingsPage() {
             <div className="space-y-2">
               {listings.map((l) => (
                 <div key={l.id} className="flex items-center gap-3 rounded-md border px-3 py-2">
-                  <Checkbox checked={!!selected[l.id]} onCheckedChange={() => toggleSelect(l.id)} />
+                  <Checkbox
+                    checked={!!selected[l.id]}
+                    onCheckedChange={() => toggleSelect(l.id)}
+                    aria-label={`Select listing ${l.title}`}
+                  />
                   <div className="flex-1">
                     <Link href={`/admin/listings/${l.id}`} className="font-medium">
                       {l.title}
