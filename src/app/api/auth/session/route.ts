@@ -1,3 +1,5 @@
+'use server';
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
 // This route is called on login/signup to create a session cookie
 export async function POST(request: NextRequest) {
   console.log('/api/auth/session POST: Received request to create session cookie.');
-  const { idToken, requestedRedirect } = await request.json();
+  const { idToken } = await request.json();
 
   if (!idToken) {
     console.error('/api/auth/session POST: No idToken provided in the request body.');
@@ -45,31 +47,7 @@ export async function POST(request: NextRequest) {
   const expiresInMs = 60 * 60 * 24 * 5 * 1000;
 
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
-
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    const userRole = userDoc.exists() ? userDoc.data()?.role : 'BUYER';
-    
-    let fallbackRedirect = '/';
-    if (userRole === 'ADMIN') {
-      fallbackRedirect = '/admin';
-    } else if (userRole === 'SELLER') {
-      fallbackRedirect = '/dashboard';
-    }
-    
-    let finalRedirect = requestedRedirect || fallbackRedirect;
-
-    // Security check: ensure user can access the requested redirect
-    const isAdminRoute = finalRedirect.startsWith('/admin');
-    const isSellerRoute = ['/dashboard', '/listings/new'].some(p => finalRedirect.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(finalRedirect);
-
-    if (isAdminRoute && userRole !== 'ADMIN') {
-      finalRedirect = fallbackRedirect;
-    }
-    if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
-      finalRedirect = fallbackRedirect;
-    }
 
     // For development, allow localhost over HTTP. For production, require HTTPS.
     const isSecureContext = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
@@ -84,7 +62,7 @@ export async function POST(request: NextRequest) {
         path: '/' 
     };
     
-    const response = NextResponse.json({ status: 'success', redirectUrl: finalRedirect });
+    const response = NextResponse.json({ status: 'success' });
     response.cookies.set(options);
     return response;
   } catch (error: any) {

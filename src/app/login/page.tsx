@@ -79,6 +79,13 @@ export default function LoginPage() {
         if (!response.ok) return;
         const data = await response.json();
         if (!isActive || !data?.authenticated) return;
+        
+        const requestedRedirect = searchParams.get('redirect');
+        if (requestedRedirect) {
+          router.replace(requestedRedirect);
+          return;
+        }
+
         const role = data.role ?? 'BUYER';
         const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
         router.replace(redirectTarget);
@@ -90,7 +97,7 @@ export default function LoginPage() {
     return () => {
       isActive = false;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -101,13 +108,12 @@ export default function LoginPage() {
     try {
       console.log('[Login] Starting handleLoginSuccess for user:', user.uid);
       const idToken = await user.getIdToken();
-      const requestedRedirect = searchParams.get('redirect');
 
-      console.log('[Login] Got idToken, calling /api/auth/session to create cookie and get redirect.');
+      console.log('[Login] Got idToken, calling /api/auth/session to create cookie.');
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, requestedRedirect }),
+        body: JSON.stringify({ idToken }),
       });
       
       if (!response.ok) {
@@ -115,13 +121,11 @@ export default function LoginPage() {
           throw new Error(errorData.message || 'Failed to create session on the server.');
       }
       
-      const { redirectUrl } = await response.json();
-
-      console.log('[Login] Session cookie created. Server redirecting to:', redirectUrl);
-
       toast({ title: 'Login Successful', description: "Welcome back!" });
       
-      window.location.assign(redirectUrl || '/');
+      console.log('[Login] Session cookie created request sent. Reloading page to apply session.');
+      window.location.reload();
+
     } catch (err: any) {
       console.error('[Login] handleLoginSuccess error:', err);
       throw err; // Let the calling onSubmit handler show the toast
