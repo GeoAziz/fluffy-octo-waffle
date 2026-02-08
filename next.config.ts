@@ -38,26 +38,10 @@ const nextConfig: NextConfig = {
 // Add security headers (CSP) with a relaxed dev policy including
 // the known inline script hash reported by the browser, and a
 // stricter policy for production.
+// Disable automatic Content-Security-Policy emission here.
+// CSP can be managed later via a stricter, reviewed policy with nonces.
 nextConfig.headers = async () => {
-  const devCsp =
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'sha256-kPx0AsF0oz2kKiZ875xSvv693TBHkQ/0SkMJZnnNpnQ=' https://apis.google.com https://www.googletagmanager.com https://vercel.live https://firebase.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src * data: blob:; connect-src *; font-src 'self' https://fonts.gstatic.com;";
-
-  const prodCsp =
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' https://apis.google.com https://www.googletagmanager.com https://vercel.live https://firebase.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; connect-src 'self' https://firebaseinstallations.googleapis.com https://www.google-analytics.com https://firebase.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none';";
-
-  const value = process.env.NODE_ENV === 'production' ? prodCsp : devCsp;
-
-  return [
-    {
-      source: '/(.*)',
-      headers: [
-        {
-          key: 'Content-Security-Policy',
-          value,
-        },
-      ],
-    },
-  ];
+  return [];
 };
 
 export default nextConfig;
