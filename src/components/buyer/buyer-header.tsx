@@ -157,7 +157,7 @@ export function BuyerHeader() {
                   <Button variant="ghost" asChild>
                     <Link href="/login">Log in</Link>
                   </Button>
-                  <Button asChild>
+                  <Button variant="accent" asChild>
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
@@ -286,7 +286,7 @@ export function BuyerHeader() {
                       </Button>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Button asChild>
+                      <Button variant="accent" asChild>
                         <Link href="/signup">Sign Up</Link>
                       </Button>
                     </SheetClose>
