@@ -72,7 +72,6 @@ export async function middleware(request: NextRequest) {
             "font-src 'self' data: https:",
             "object-src 'none'",
             "base-uri 'self'",
-            "frame-ancestors 'self'",
           ].join('; ')
         );
       }
@@ -111,7 +110,6 @@ export async function middleware(request: NextRequest) {
               "font-src 'self' data: https:",
               "object-src 'none'",
               "base-uri 'self'",
-              "frame-ancestors 'self'",
             ].join('; ')
           );
         }
@@ -159,7 +157,6 @@ export async function middleware(request: NextRequest) {
               "font-src 'self' data: https:",
               "object-src 'none'",
               "base-uri 'self'",
-              "frame-ancestors 'self'",
             ].join('; ')
           );
         }
@@ -181,7 +178,6 @@ export async function middleware(request: NextRequest) {
         "font-src 'self' data: https:",
         "object-src 'none'",
         "base-uri 'self'",
-        "frame-ancestors 'self'",
       ].join('; ')
     );
   }
