@@ -28,7 +28,7 @@ export function ContactSellerButton({ listingId }: { listingId: string }) {
     };
 
     return (
-        <Button onClick={handleContact} disabled={isLoading} className="w-full">
+        <Button onClick={handleContact} disabled={isLoading} className="w-full font-semibold" variant="accent">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
             Contact Seller
         </Button>

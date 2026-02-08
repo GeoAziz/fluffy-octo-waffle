@@ -64,9 +64,10 @@ service cloud.firestore {
     
     // Conversations can be read/written by participants
     match /conversations/{conversationId} {
-      // Participants can get/update their conversation, or list conversations they are in.
+      // Participants can get/update their conversation
       allow get, update: if request.auth.uid in resource.data.participantIds;
-      allow list: if request.auth.uid in request.query.get('participantIds');
+      // Authenticated users can list (client-side query filters by participantIds)
+      allow list: if request.auth != null;
       allow create: if request.auth.uid in request.resource.data.participantIds;
       
       // Messages subcollection

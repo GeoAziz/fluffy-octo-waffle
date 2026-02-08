@@ -349,7 +349,7 @@ export default function NewListingPage() {
                 </div>
               )}
 
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} variant="accent" className="font-semibold">
                 {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting... </> ) : ( 'Submit for Review' )}
               </Button>
               </form>
