@@ -3,6 +3,20 @@ import type { Listing, Evidence, ListingStatus, BadgeValue, ListingImage } from 
 import { cache } from 'react';
 import { Timestamp, type FieldValue } from 'firebase-admin/firestore';
 
+const isNetworkError = (error: unknown): boolean => {
+    const message = error instanceof Error ? error.message : String(error);
+    const anyError = error as { code?: number | string; errorInfo?: { code?: string } } | null;
+    const code = anyError?.code ?? anyError?.errorInfo?.code;
+
+    return (
+        code === 14 ||
+        code === 'EAI_AGAIN' ||
+        message.includes('EAI_AGAIN') ||
+        message.includes('Name resolution failed') ||
+        message.includes('getaddrinfo')
+    );
+};
+
 // Helper to convert a Firestore Timestamp to a serializable Date
 const toDate = (timestamp: Timestamp | FieldValue | undefined): Date | null => {
     if (timestamp instanceof Timestamp) {
@@ -218,7 +232,16 @@ export const getListings = async (options: {
 
   listingsQuery = listingsQuery.limit(queryLimit);
 
-  const snapshot = await listingsQuery.get();
+  let snapshot: FirebaseFirestore.QuerySnapshot;
+  try {
+      snapshot = await listingsQuery.get();
+  } catch (error) {
+      if (isNetworkError(error)) {
+          console.warn('[getListings] Firestore unavailable, returning empty results.');
+          return { listings: [], lastVisibleId: null };
+      }
+      throw error;
+  }
 
   let listings = snapshot.docs.map(doc => toListing(doc, []));
   
@@ -252,7 +275,16 @@ export const getListingsForSeller = cache(async (sellerId: string): Promise<List
     if (!sellerId) return [];
     const listingsRef = adminDb.collection("listings");
     const q = listingsRef.where("ownerId", "==", sellerId).orderBy('createdAt', 'desc');
-    const snapshot = await q.get();
+    let snapshot: FirebaseFirestore.QuerySnapshot;
+    try {
+        snapshot = await q.get();
+    } catch (error) {
+        if (isNetworkError(error)) {
+            console.warn('[getListingsForSeller] Firestore unavailable, returning empty results.');
+            return [];
+        }
+        throw error;
+    }
 
     return Promise.all(snapshot.docs.map(async (doc) => {
         // We don't need full evidence for the dashboard view to keep it fast
@@ -261,7 +293,16 @@ export const getListingsForSeller = cache(async (sellerId: string): Promise<List
 });
 
 export const getAdminDashboardStats = cache(async () => {
-    const snapshot = await adminDb.collection('listings').get();
+    let snapshot: FirebaseFirestore.QuerySnapshot;
+    try {
+        snapshot = await adminDb.collection('listings').get();
+    } catch (error) {
+        if (isNetworkError(error)) {
+            console.warn('[getAdminDashboardStats] Firestore unavailable, returning zeroed stats.');
+            return { total: 0, pending: 0, approved: 0, rejected: 0 };
+        }
+        throw error;
+    }
     const stats = {
         total: snapshot.size,
         pending: 0,
@@ -282,12 +323,21 @@ export const getListingStatsByDay = cache(async (days = 30): Promise<{ date: str
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
 
-    const snapshot = await adminDb.collection('listings')
-        .where('status', '==', 'approved')
-        .where('adminReviewedAt', '>=', startDate)
-        .where('adminReviewedAt', '<=', endDate)
-        .orderBy('adminReviewedAt')
-        .get();
+    let snapshot: FirebaseFirestore.QuerySnapshot;
+    try {
+        snapshot = await adminDb.collection('listings')
+            .where('status', '==', 'approved')
+            .where('adminReviewedAt', '>=', startDate)
+            .where('adminReviewedAt', '<=', endDate)
+            .orderBy('adminReviewedAt')
+            .get();
+    } catch (error) {
+        if (isNetworkError(error)) {
+            console.warn('[getListingStatsByDay] Firestore unavailable, returning empty stats.');
+            return [];
+        }
+        throw error;
+    }
 
     const statsByDay: { [key: string]: number } = {};
 
@@ -321,7 +371,16 @@ export const getListingStatsByDay = cache(async (days = 30): Promise<{ date: str
 
 export const getListingById = cache(async (id: string): Promise<Listing | null> => {
   const docRef = adminDb.collection('listings').doc(id);
-  const docSnap = await docRef.get();
+    let docSnap: FirebaseFirestore.DocumentSnapshot;
+    try {
+            docSnap = await docRef.get();
+    } catch (error) {
+            if (isNetworkError(error)) {
+                    console.warn('[getListingById] Firestore unavailable, returning null.');
+                    return null;
+            }
+            throw error;
+    }
   if (docSnap.exists) {
     const evidence = await getEvidenceForListing(id);
     return toListing(docSnap, evidence);

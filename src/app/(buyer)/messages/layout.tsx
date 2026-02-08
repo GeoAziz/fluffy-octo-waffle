@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
-import { SellerPage } from '@/components/seller/seller-page';
+import { BuyerPage } from '@/components/buyer/buyer-page';
 
 async function getAuthenticatedUser() {
     const cookieStore = await cookies();
@@ -30,9 +30,9 @@ export default async function MessagesLayout({
   }
 
   return (
-    <SellerPage
+    <BuyerPage
       title="Messages"
-      description="Keep track of buyer conversations and respond quickly."
+      description="Communicate with sellers about listings."
     >
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-220px)]">
         <div className="lg:col-span-1 h-full">
@@ -46,6 +46,6 @@ export default async function MessagesLayout({
           {children}
         </div>
       </div>
-    </SellerPage>
+    </BuyerPage>
   );
 }

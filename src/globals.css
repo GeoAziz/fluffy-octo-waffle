@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 38 27% 94%;
+    --foreground: 161 58% 10%;
+    --card: 38 27% 94%;
+    --card-foreground: 161 58% 10%;
+    --popover: 38 27% 94%;
+    --popover-foreground: 161 58% 10%;
+    --primary: 161 58% 15%;
+    --primary-foreground: 38 27% 98%;
+    --secondary: 38 27% 88%;
+    --secondary-foreground: 161 58% 15%;
+    --muted: 38 27% 88%;
+    --muted-foreground: 161 58% 30%;
+    --accent: 203 51% 38%;
+    --accent-foreground: 38 27% 98%;
+    --destructive: 353 50% 37%;
+    --destructive-foreground: 38 27% 98%;
+    --warning: 36 63% 48%;
+    --warning-foreground: 38 27% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 38 27% 98%;
+    --border: 38 27% 84%;
+    --input: 38 27% 88%;
+    --ring: 203 51% 38%;
+    --radius: 0.5rem;
+    
+    --sidebar-background: 38 27% 91%;
+    --sidebar-foreground: 161 58% 15%;
+    --sidebar-border: 38 27% 84%;
+    --sidebar-ring: 203 51% 38%;
+    --sidebar-accent: 203 51% 38%;
+    --sidebar-accent-foreground: 38 27% 98%;
+  }
+
+  .dark {
+    --background: 161 30% 5%;
+    --foreground: 38 27% 94%;
+    --card: 161 30% 8%;
+    --card-foreground: 38 27% 94%;
+    --popover: 161 30% 5%;
+    --popover-foreground: 38 27% 94%;
+    --primary: 38 27% 94%;
+    --primary-foreground: 161 58% 15%;
+    --secondary: 161 30% 12%;
+    --secondary-foreground: 38 27% 94%;
+    --muted: 161 30% 12%;
+    --muted-foreground: 38 27% 70%;
+    --accent: 203 51% 48%;
+    --accent-foreground: 38 27% 98%;
+    --destructive: 353 50% 47%;
+    --destructive-foreground: 38 27% 98%;
+    --warning: 36 63% 58%;
+    --warning-foreground: 38 27% 98%;
+    --success: 142 71% 55%;
+    --success-foreground: 38 27% 98%;
+    --border: 161 30% 15%;
+    --input: 161 30% 12%;
+    --ring: 203 51% 48%;
+
+    --sidebar-background: 161 30% 10%;
+    --sidebar-foreground: 38 27% 94%;
+    --sidebar-border: 161 30% 15%;
+    --sidebar-ring: 203 51% 48%;
+    --sidebar-accent: 203 51% 48%;
+    --sidebar-accent-foreground: 38 27% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    @apply border-destructive;
+  }
+}

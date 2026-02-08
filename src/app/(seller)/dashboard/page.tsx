@@ -83,50 +83,74 @@ export default async function SellerDashboard() {
         </Button>
       )}
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
+      {/* Quick Actions */}
+      <div className="grid gap-3 md:grid-cols-3 mb-8">
+        <Button asChild className="h-14 text-base">
+          <Link href="/listings/new">
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Create New Listing
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-14 text-base">
+          <Link href="/messages">
+            <MessageSquareText className="mr-2 h-5 w-5" />
+            View Messages
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-14 text-base">
+          <Link href="/dashboard/listings">
+            <ListChecks className="mr-2 h-5 w-5" />
+            Manage Listings
+          </Link>
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-10">
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
-            <ListChecks className="h-4 w-4 text-muted-foreground" />
+            <ListChecks className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.total}</div>
-            <p className="text-xs text-muted-foreground">Across all statuses</p>
+            <div className="text-3xl font-bold">{statusCounts.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all statuses</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-5 w-5 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.pending}</div>
-            <p className="text-xs text-muted-foreground">Awaiting admin approval</p>
+            <div className="text-3xl font-bold">{statusCounts.pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting admin approval</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Approved</CardTitle>
             <StatusBadge status="approved" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.approved}</div>
-            <p className="text-xs text-muted-foreground">Visible to buyers</p>
+            <div className="text-3xl font-bold text-green-600">{statusCounts.approved}</div>
+            <p className="text-xs text-muted-foreground mt-1">Visible to buyers</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rejected</CardTitle>
             <StatusBadge status="rejected" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.rejected}</div>
-            <p className="text-xs text-muted-foreground">Needs changes</p>
+            <div className="text-3xl font-bold text-red-600">{statusCounts.rejected}</div>
+            <p className="text-xs text-muted-foreground mt-1">Needs changes</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      {/* Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           <CardHeader className="flex items-center justify-between gap-4">
             <div>

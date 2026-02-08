@@ -11,11 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search } from "lucide-react";
+import { Search, ChevronRight, Eye, Check, X } from "lucide-react";
 import { searchListingsAction, bulkUpdateListingStatus } from "@/app/actions";
 import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -200,22 +201,87 @@ export default function AdminListingsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {listings.map((l) => (
-                <div key={l.id} className="flex items-center gap-3 rounded-md border px-3 py-2">
-                  <Checkbox
-                    checked={!!selected[l.id]}
-                    onCheckedChange={() => toggleSelect(l.id)}
-                    aria-label={`Select listing ${l.title}`}
-                  />
-                  <div className="flex-1">
-                    <Link href={`/admin/listings/${l.id}`} className="font-medium">
-                      {l.title}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">{l.location} — Ksh {l.price.toLocaleString()}</div>
+              {listings.map((l) => {
+                const statusColor = {
+                  pending: 'bg-yellow-50 text-yellow-900 border-yellow-200',
+                  approved: 'bg-green-50 text-green-900 border-green-200',
+                  rejected: 'bg-red-50 text-red-900 border-red-200',
+                };
+                const statusIcon = {
+                  pending: null,
+                  approved: <Check className="h-4 w-4" />,
+                  rejected: <X className="h-4 w-4" />,
+                };
+
+                return (
+                  <div key={l.id} className={`flex items-center gap-3 rounded-lg border p-3 transition-all hover:shadow-md ${statusColor[l.status as keyof typeof statusColor]}`}>
+                    <Checkbox
+                      checked={!!selected[l.id]}
+                      onCheckedChange={() => toggleSelect(l.id)}
+                      aria-label={`Select listing ${l.title}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/listings/${l.id}`} className="font-medium hover:underline">
+                          {l.title}
+                        </Link>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                          {l.landType}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">{l.location} • Ksh {l.price.toLocaleString()}</div>
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge variant="secondary" className="capitalize flex items-center gap-1">
+                        {statusIcon[l.status as keyof typeof statusIcon] && (
+                          <>
+                            {statusIcon[l.status as keyof typeof statusIcon]}
+                          </>
+                        )}
+                        {l.status}
+                      </Badge>
+                    </div>
+
+                    {/* Quick Actions - Desktop */}
+                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                      <Link href={`/admin/listings/${l.id}`}>
+                        <Button size="sm" variant="ghost" title="View details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {l.status === 'pending' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleBulk('approved')}
+                            title="Approve listing"
+                            disabled={!selected[l.id]}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleBulk('rejected')}
+                            title="Reject listing"
+                            disabled={!selected[l.id]}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="ghost">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">{l.status}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

@@ -1,0 +1,510 @@
+'use client';
+
+import { useEffect, useState, useTransition, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/status-badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { TrustBadge } from '@/components/trust-badge';
+import { FavoriteButton } from '@/components/favorite-button';
+import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot } from 'lucide-react';
+import { searchListingsAction } from '@/app/actions';
+import type { Listing, BadgeValue } from '@/lib/types';
+
+const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
+const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
+
+/**
+ * ListingsContent - Reusable component for browsing and filtering listings
+ * Used by both home page and dedicated explore page
+ */
+export function ListingsContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [lastVisibleId, setLastVisibleId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+
+  // Filter states
+  const [query, setQuery] = useState('');
+  const [landType, setLandType] = useState('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
+  const [badges, setBadges] = useState<BadgeValue[]>([]);
+
+  const activeFilters = useMemo(() => {
+    const filters = [];
+    if (query) filters.push({type: 'query', value: query, label: `Query: ${query}`});
+    if (landType) filters.push({type: 'landType', value: landType, label: `Type: ${landType}`});
+    if (priceRange[0] > 0 || priceRange[1] < 50000000) filters.push({type: 'price', value: priceRange, label: `Price: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}`});
+    if (areaRange[0] > 0 || areaRange[1] < 100) filters.push({type: 'area', value: areaRange, label: `Area: ${areaRange[0]} - ${areaRange[1]} acres`});
+    badges.forEach(b => filters.push({type: 'badge', value: b, label: `${b} Badge`}));
+    return filters;
+  }, [query, landType, priceRange, areaRange, badges]);
+
+  const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
+
+  const updateUrlParams = useDebouncedCallback(() => {
+    const params = new URLSearchParams();
+    if (query) params.set('query', query);
+    if (landType) params.set('landType', landType);
+    params.set('minPrice', String(priceRange[0]));
+    params.set('maxPrice', String(priceRange[1]));
+    params.set('minArea', String(areaRange[0]));
+    params.set('maxArea', String(areaRange[1]));
+    if (badges.length > 0) params.set('badges', badges.join(','));
+    
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  }, 500);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setQuery(params.get('query') || '');
+    setLandType(params.get('landType') || '');
+    setPriceRange([Number(params.get('minPrice') || 0), Number(params.get('maxPrice') || 50000000)]);
+    setAreaRange([Number(params.get('minArea') || 0), Number(params.get('maxArea') || 100)]);
+    setBadges(params.get('badges')?.split(',') as BadgeValue[] || []);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = {
+      query: query || undefined,
+      landType: landType || undefined,
+      badges: badges.length > 0 ? badges : undefined,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+      minArea: areaRange[0],
+      maxArea: areaRange[1],
+      limit: 12,
+    };
+    
+    searchListingsAction(params).then(result => {
+      setListings(result.listings);
+      setLastVisibleId(result.lastVisibleId);
+      setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
+      setLoading(false);
+      setIsFilterSheetOpen(false);
+    });
+  }, [query, landType, priceRange, areaRange, badges]);
+
+  const handleLoadMore = async () => {
+    if (!lastVisibleId || !hasMore) return;
+    setLoadingMore(true);
+
+    const params = {
+      query: query || undefined,
+      landType: landType || undefined,
+      badges: badges.length > 0 ? badges : undefined,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+      minArea: areaRange[0],
+      maxArea: areaRange[1],
+      limit: 12,
+      startAfter: lastVisibleId,
+    };
+    
+    const result = await searchListingsAction(params);
+    setListings(prev => [...prev, ...result.listings]);
+    setLastVisibleId(result.lastVisibleId);
+    setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
+    setLoadingMore(false);
+  };
+  
+  const resetFilters = () => {
+    setQuery('');
+    setLandType('');
+    setPriceRange([0, 50000000]);
+    setAreaRange([0, 100]);
+    setBadges([]);
+    updateUrlParams();
+  }
+
+  const removeFilter = (type: string, value: any) => {
+    if (type === 'query') setQuery('');
+    if (type === 'landType') setLandType('');
+    if (type === 'price') setPriceRange([0, 50000000]);
+    if (type === 'area') setAreaRange([0, 100]);
+    if (type === 'badge') setBadges(badges.filter(b => b !== value));
+    updateUrlParams();
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Filter Section */}
+      <div className="space-y-4">
+        {/* Desktop Filters */}
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end p-6 rounded-lg border bg-card">
+          <div className="space-y-2 lg:col-span-3">
+            <Label htmlFor="search-query">Search by Keyword</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input 
+                id="search-query"
+                placeholder="e.g., Kajiado, Kitengela, farm..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onBlur={updateUrlParams}
+                onKeyDown={(e) => e.key === 'Enter' && updateUrlParams()}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="land-type">Land Type</Label>
+            <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); updateUrlParams(); }}>
+              <SelectTrigger id="land-type">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {LAND_TYPES.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Trust Badge</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <span>{badges.length > 0 ? `${badges.length} selected` : 'Any Badge'}</span>
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {BADGE_OPTIONS.map(badge => (
+                  <DropdownMenuCheckboxItem
+                    key={badge}
+                    checked={badges.includes(badge)}
+                    onCheckedChange={(checked) => {
+                      const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
+                      setBadges(newBadges);
+                      updateUrlParams();
+                    }}
+                  >
+                    {badge}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="space-y-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Price Range (Ksh)</Label>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{priceRange[0].toLocaleString()}</span>
+                <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
+              </div>
+              <Slider
+                value={priceRange}
+                onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                onValueCommit={updateUrlParams}
+                max={50000000}
+                min={0}
+                step={100000}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Area (Acres)</Label>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{areaRange[0]}</span>
+                <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
+              </div>
+              <Slider
+                value={areaRange}
+                onValueChange={(value) => setAreaRange([value[0], value[1]])}
+                onValueCommit={updateUrlParams}
+                max={100}
+                min={0}
+                step={1}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Filter Sheet */}
+        <div className="md:hidden">
+          <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full gap-2">
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters {activeFilters.length > 0 && `(${activeFilters.length})`}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filter Properties</SheetTitle>
+                <SheetDescription>Refine your search to find the perfect property</SheetDescription>
+              </SheetHeader>
+              <div className="space-y-6 mt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-search">Search by Keyword</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                      id="mobile-search"
+                      placeholder="e.g., Kajiado, farm..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onBlur={updateUrlParams}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Land Type</Label>
+                  <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); updateUrlParams(); }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {LAND_TYPES.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Price Range</Label>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                    <span>{priceRange[0].toLocaleString()}</span>
+                    <span>{priceRange[1].toLocaleString()}+</span>
+                  </div>
+                  <Slider
+                    value={priceRange}
+                    onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                    onValueCommit={updateUrlParams}
+                    max={50000000}
+                    min={0}
+                    step={100000}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Area (Acres)</Label>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                    <span>{areaRange[0]}</span>
+                    <span>{areaRange[1]}+</span>
+                  </div>
+                  <Slider
+                    value={areaRange}
+                    onValueChange={(value) => setAreaRange([value[0], value[1]])}
+                    onValueCommit={updateUrlParams}
+                    max={100}
+                    min={0}
+                    step={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Trust Badge</Label>
+                  <div className="space-y-2">
+                    {BADGE_OPTIONS.map(badge => (
+                      <div key={badge} className="flex items-center">
+                        <input 
+                          type="checkbox" 
+                          id={`badge-${badge}`}
+                          checked={badges.includes(badge)}
+                          onChange={(e) => {
+                            const newBadges = e.target.checked ? [...badges, badge] : badges.filter(b => b !== badge);
+                            setBadges(newBadges);
+                            updateUrlParams();
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <label htmlFor={`badge-${badge}`} className="ml-2 text-sm cursor-pointer">{badge}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {activeFilters.length > 0 && (
+                  <Button variant="outline" className="w-full" onClick={resetFilters}>
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Active Filters Display */}
+      {activeFilters.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            {activeFilters.map((filter, idx) => (
+              <Badge key={idx} variant="secondary" className="gap-2">
+                {filter.label}
+                <button 
+                  onClick={() => removeFilter(filter.type, filter.value)}
+                  className="ml-1 hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+          {activeFilters.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {listings.length === 0 && !loading ? (
+                'No listings match your filters.'
+              ) : (
+                `Showing ${listingCountLabel} propert${listings.length === 1 ? 'y' : 'ies'}`
+              )}
+            </div>
+          )}
+          {activeFilters.length > 0 && (
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Clear All Filters
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Listings Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ListingCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : listings.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listings-section">
+            {listings.map((listing) => (
+              <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                <div className="relative h-48 overflow-hidden bg-muted">
+                  {listing.images && listing.images.length > 0 ? (
+                    <Image
+                      src={listing.images[0].url}
+                      alt={listing.images[0].hint || listing.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <LandPlot className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2">
+                    <FavoriteButton listingId={listing.id} />
+                  </div>
+                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 left-2" />}
+                </div>
+
+                <CardHeader className="flex-1">
+                  <CardTitle className="line-clamp-2">{listing.title}</CardTitle>
+                  <CardDescription className="line-clamp-2">{listing.location}</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Price</span>
+                      <span className="font-semibold">Ksh {listing.price.toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Area</span>
+                      <span className="font-semibold">{listing.area} acres</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Type</span>
+                      <span className="font-semibold text-xs">{listing.landType}</span>
+                    </div>
+                  </div>
+
+                  {listing.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">{listing.description}</p>
+                  )}
+                </CardContent>
+
+                <CardFooter>
+                  <Button asChild className="w-full">
+                    <Link href={`/listings/${listing.id}`}>View Details</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center py-8">
+              <Button onClick={handleLoadMore} disabled={loadingMore} className="gap-2">
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Properties'
+                )}
+              </Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-20 rounded-lg border-2 border-dashed">
+          <p className="text-muted-foreground text-lg font-medium">No listings found.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Try adjusting your filters or search terms to explore more options.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
+            <Button asChild>
+              <Link href="/contact">Get help</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

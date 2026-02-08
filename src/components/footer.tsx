@@ -42,15 +42,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-8 border-t pt-4 text-center text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Kenya Land Trust. All rights reserved.</p>
-            <p className="mt-2">
-              Kenya Land Trust is an independent marketplace and is not affiliated with the Government of Kenya.
-            </p>
-            <p className="mt-2">
-              Disclaimer: Kenya Land Trust provides an approval status based on submitted documents but does not constitute a legal guarantee of title. Buyers are advised to conduct their own due diligence.
-            </p>
-        </div>
+        
       </div>
     </footer>
   );

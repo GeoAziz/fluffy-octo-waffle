@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { updateUserProfileAction } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SellerPage } from '@/components/seller/seller-page';
+import { BuyerPage } from '@/components/buyer/buyer-page';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -67,7 +67,7 @@ export default function ProfilePage() {
   
   if (!userProfile) {
     return (
-        <SellerPage title="Profile">
+        <BuyerPage title="Profile">
           <div className="max-w-2xl">
             <Card>
               <CardHeader>
@@ -78,12 +78,12 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           </div>
-        </SellerPage>
+        </BuyerPage>
     )
   }
 
   return (
-    <SellerPage
+    <BuyerPage
       title="Profile"
       description="Update your personal information. Your email address cannot be changed."
     >
@@ -146,14 +146,14 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
-    </SellerPage>
+    </BuyerPage>
   );
 }
 
 
 function ProfileSkeleton() {
     return (
-        <SellerPage title="Profile">
+        <BuyerPage title="Profile">
           <div className="max-w-2xl">
             <Card>
               <CardHeader>
@@ -177,6 +177,6 @@ function ProfileSkeleton() {
               </CardContent>
             </Card>
           </div>
-        </SellerPage>
+        </BuyerPage>
     )
 }

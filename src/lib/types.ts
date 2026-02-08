@@ -101,3 +101,28 @@ export type Message = {
   text: string;
   timestamp: any; // or Date
 };
+export type PlatformSettings = {
+  id?: string; // Firestore doc ID, always 'config'
+  platformName: string;
+  contactEmail: string;
+  supportEmail: string;
+  siteDescription: string;
+  maxUploadSizeMB: number;
+  moderationThresholdDays: number;
+  maintenanceMode: boolean;
+  maintenanceMessage?: string;
+  enableUserSignups: boolean;
+  enableListingCreation: boolean;
+  updatedAt?: any; // Firestore timestamp
+  updatedBy?: string; // User UID who last updated
+};
+
+export type AuditLog = {
+  id?: string;
+  adminId: string;
+  action: string;
+  entityType: string; // 'settings', 'listing', 'user', etc.
+  entityId?: string;
+  changes: Record<string, any>;
+  timestamp?: any; // Firestore timestamp
+};

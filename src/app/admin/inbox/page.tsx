@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Loader2 } from 'lucide-react';
+import { Mail, AlertTriangle, Loader2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { AdminPage } from '../_components/admin-page';
 import { ContactMessageActions, ListingReportActions } from '../_components/inbox-actions';
@@ -101,25 +101,32 @@ export default function AdminInboxPage() {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {contactMessages.map((message) => (
-                <Card key={message.id} className="flex flex-col">
-                    <CardHeader>
+                <Card key={message.id} className="flex flex-col border-l-4 border-l-blue-500 overflow-hidden hover:shadow-lg transition-shadow">
+                    <CardHeader className="bg-blue-50/50">
                         <div className="flex justify-between items-start gap-4">
-                            <div>
-                                <CardTitle className="text-lg">{message.name}</CardTitle>
-                                <CardDescription>{message.email}</CardDescription>
+                            <div className="flex items-start gap-3 flex-1">
+                                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                                    <Mail className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <CardTitle className="text-lg truncate">{message.name}</CardTitle>
+                                    <CardDescription className="truncate">{message.email}</CardDescription>
+                                </div>
                             </div>
                             <div className="text-right flex-shrink-0">
-                                <Badge variant={message.status === 'new' ? 'warning' : 'outline'}>{message.status}</Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <Badge variant={message.status === 'new' ? 'destructive' : 'outline'} className="mb-1">
+                                    {message.status === 'new' ? 'Unread' : 'Read'}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground">
                                     {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true }) : 'N/A'}
                                 </p>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="flex-1">
-                        <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    <CardContent className="flex-1 pt-4">
+                        <p className="text-sm text-foreground/80 line-clamp-3">{message.message}</p>
                     </CardContent>
-                    <CardFooter className="flex items-center gap-2">
+                    <CardFooter className="flex items-center gap-2 pt-4 border-t">
                         <ContactMessageActions messageId={message.id} currentStatus={message.status} />
                     </CardFooter>
                 </Card>
@@ -140,34 +147,45 @@ export default function AdminInboxPage() {
       return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {listingReports.map((report) => (
-            <Card key={report.id} className="flex flex-col">
-                <CardHeader>
+            <Card key={report.id} className="flex flex-col border-l-4 border-l-red-500 overflow-hidden hover:shadow-lg transition-shadow">
+                <CardHeader className="bg-red-50/50">
                     <div className="flex justify-between items-start gap-4">
-                        <div>
-                            <CardTitle className="text-lg">Report for listing</CardTitle>
-                            <CardDescription>ID: {report.listingId}</CardDescription>
+                        <div className="flex items-start gap-3 flex-1">
+                            <div className="p-2 bg-red-100 rounded-lg flex-shrink-0">
+                                <AlertTriangle className="h-5 w-5 text-red-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <CardTitle className="text-lg">Report Against Listing</CardTitle>
+                                <CardDescription className="font-mono text-sm">ID: {report.listingId}</CardDescription>
+                            </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                            <Badge variant={report.status === 'new' ? 'warning' : 'outline'}>{report.status}</Badge>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <Badge variant={report.status === 'new' ? 'destructive' : 'outline'} className="mb-1">
+                                {report.status === 'new' ? 'Pending' : 'Resolved'}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground">
                                 {report.createdAt ? formatDistanceToNow(new Date(report.createdAt), { addSuffix: true }) : 'N/A'}
                             </p>
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 space-y-4">
+                <CardContent className="flex-1 space-y-3 pt-4">
                     <div>
-                        <p className="text-sm font-semibold mb-1">Reporter:</p>
-                        <p className="text-sm text-muted-foreground">{report.reporter?.displayName || 'Anonymous'} ({report.reporter?.email || 'No email'})</p>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">REPORTED BY</p>
+                        <p className="text-sm">{report.reporter?.displayName || 'Anonymous'}</p>
+                        {report.reporter?.email && <p className="text-xs text-muted-foreground">{report.reporter.email}</p>}
                     </div>
                     <div>
-                        <p className="text-sm font-semibold mb-1">Reason:</p>
-                        <p className="text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded-md">{report.reason}</p>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">REASON FOR REPORT</p>
+                        <p className="text-sm text-foreground/80 line-clamp-3 bg-secondary/30 p-2 rounded border border-secondary">{report.reason}</p>
                     </div>
                 </CardContent>
-                <CardFooter className="flex items-center gap-2">
+                <CardFooter className="flex items-center gap-2 pt-4 border-t">
                     <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/listings/${report.listingId}`}><Eye className="mr-2 h-4 w-4"/> View Listing</Link>
+                        <Link href={`/admin/listings/${report.listingId}`} className="flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4"/>
+                            View Listing
+                        </Link>
                     </Button>
                     <ListingReportActions reportId={report.id} currentStatus={report.status} />
                 </CardFooter>

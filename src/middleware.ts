@@ -5,6 +5,20 @@ import { adminAuth, adminDb } from './lib/firebase-admin';
 // Force the middleware to run on the Node.js runtime
 export const runtime = 'nodejs';
 
+const isNetworkError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error);
+  const anyError = error as { code?: number | string; errorInfo?: { code?: string } } | null;
+  const code = anyError?.code ?? anyError?.errorInfo?.code;
+
+  return (
+    code === 14 ||
+    code === 'EAI_AGAIN' ||
+    message.includes('EAI_AGAIN') ||
+    message.includes('Name resolution failed') ||
+    message.includes('getaddrinfo')
+  );
+};
+
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -40,6 +54,10 @@ export async function middleware(request: NextRequest) {
       }
     } catch (e) {
       console.warn('[Middleware] Auth page session verification failed:', e);
+      if (isNetworkError(e)) {
+        // Allow navigation when Firebase is temporarily unreachable.
+        return NextResponse.next();
+      }
       // If verification fails, clear cookie and show login/signup as usual
       const response = NextResponse.next();
       if (isDev) {
@@ -121,6 +139,10 @@ export async function middleware(request: NextRequest) {
 
       } catch (error) {
         console.warn('[Middleware] Protected route session verification failed:', error);
+        if (isDev && isNetworkError(error)) {
+          // Avoid blocking dev navigation when Firebase is unreachable.
+          return NextResponse.next();
+        }
         // Invalid session cookie, clear it and redirect to login
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);

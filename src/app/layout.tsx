@@ -1,13 +1,8 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import '../globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
 import { AuthProvider } from '@/components/providers';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Kenya Land Trust',
@@ -20,19 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body
-        className={cn(
-          'relative h-full w-full font-sans antialiased',
-          inter.variable
-        )}
-      >
+    <html lang="en">
+      <body className="w-full font-sans antialiased">
         <AuthProvider>
-          <div className="flex h-full w-full flex-col">
-            <Header />
-            <main className="flex-1 w-full overflow-auto">{children}</main>
-            <Footer />
-          </div>
+          {children}
           <Toaster />
         </AuthProvider>
       </body>

@@ -12,13 +12,16 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-import { BuyerHeader } from '@/components/buyer/buyer-header';
-import { BuyerFooter } from '@/components/buyer/buyer-footer';
+import { LandingHero } from '@/components/buyer/landing-hero';
+import { BadgeLegend } from '@/components/buyer/badge-legend';
 import { TestimonialsSection } from '@/components/buyer/testimonials-section';
+import { FeaturedListings } from '@/components/buyer/featured-listings';
+import { HowToFind } from '@/components/buyer/how-to-find';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { useEffect, useState, useTransition, useMemo } from 'react';
 import { searchListingsAction } from '@/app/actions';
 import { Loader2, Search, SlidersHorizontal, X, Award, Shield, BadgeCheck, LandPlot } from 'lucide-react';
+import { Suspense } from 'react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -56,26 +59,28 @@ import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
-const TRUST_HIGHLIGHTS = [
-  {
-    title: 'Verified Listings',
-    description: 'Every plot is vetted with clear ownership and honest details.',
-    icon: Shield,
-  },
-  {
-    title: 'Trust Badges',
-    description: 'Gold, Silver, and Bronze ratings help you decide with confidence.',
-    icon: BadgeCheck,
-  },
-  {
-    title: 'Guided Buying',
-    description: 'We help you understand zoning, utilities, and next steps.',
-    icon: Award,
-  },
-];
 
 
 export default function ListingsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ListingsContent />
+    </Suspense>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="w-full py-20 flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <p className="text-muted-foreground">Loading properties...</p>
+      </div>
+    </div>
+  );
+}
+
+function ListingsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
@@ -103,8 +108,6 @@ export default function ListingsPage() {
     badges.forEach(b => filters.push({type: 'badge', value: b, label: `${b} Badge`}));
     return filters;
   }, [query, landType, priceRange, areaRange, badges]);
-
-  const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
 
 
   const updateUrlParams = useDebouncedCallback(() => {
@@ -203,7 +206,7 @@ export default function ListingsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                     id="search-query"
-                    placeholder="e.g., Kajiado, Kitengela, farm..."
+                    placeholder="Search location, property name, or seller..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onBlur={updateUrlParams}
@@ -263,7 +266,7 @@ export default function ListingsPage() {
                     </div>
                     <Slider
                         value={priceRange}
-                        onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                        onValueChange={setPriceRange}
                         onValueCommit={updateUrlParams}
                         max={50000000}
                         min={0}
@@ -278,7 +281,7 @@ export default function ListingsPage() {
                     </div>
                     <Slider
                         value={areaRange}
-                        onValueChange={(value) => setAreaRange([value[0], value[1]])}
+                        onValueChange={setAreaRange}
                         onValueCommit={updateUrlParams}
                         max={100}
                         min={0}
@@ -290,208 +293,200 @@ export default function ListingsPage() {
   );
   
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <BuyerHeader />
-      <main className="flex-1 w-full">
-        <div className="container mx-auto px-4 py-8 md:py-12">
-      <section className="mb-12 rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-accent/10 px-6 py-10 text-center shadow-sm md:px-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Trusted land marketplace</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          Secure Your Piece of Kenya
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
-          Browse verified land listings with transparent trust signals and effortless filtering.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild>
-            <Link href="#listings">Browse listings</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/about">How it works</Link>
-          </Button>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Listings</p>
-            <p className="text-2xl font-semibold text-primary">{listingCountLabel}</p>
-          </div>
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Trust badges</p>
-            <p className="text-2xl font-semibold text-primary">3-tier verification</p>
-          </div>
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Coverage</p>
-            <p className="text-2xl font-semibold text-primary">Nationwide</p>
-          </div>
-        </div>
-      </section>
+    <>
+      {/* ===== SECTION 1: Hero & CTA ===== */}
+      <LandingHero />
+      
+      {/* ===== SECTION 2: How to Find - Step Guide ===== */}
+      <HowToFind />
 
-      <section className="mb-12 grid gap-6 md:grid-cols-3">
-        {TRUST_HIGHLIGHTS.map((highlight) => {
-          const Icon = highlight.icon;
-          return (
-            <Card key={highlight.title} className="border-muted/60 shadow-sm">
-              <CardHeader className="space-y-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <CardTitle className="text-lg">{highlight.title}</CardTitle>
-                <CardDescription>{highlight.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          );
-        })}
-      </section>
+      {/* ===== SECTION 3: Featured Gold-Badge Properties ===== */}
+      {!loading && listings.length > 0 && (
+        <>
+          <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Top Verified Listings</h2>
+              <p className="mt-2 text-muted-foreground">Our best Gold-badge properties</p>
+            </div>
+            <FeaturedListings listings={listings.filter(l => l.badge === 'Gold').slice(0, 6)} />
+          </div>
+        </>
+      )}
 
-      <div className="mb-8 p-6 border rounded-lg bg-card shadow-sm">
-        <div className="lg:hidden mb-4">
+      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* ===== SECTION 4: Badge Legend Explanation ===== */}
+        <div className="mb-12 sm:mb-16">
+          <BadgeLegend />
+        </div>
+
+        {/* ===== SECTION 5: Search & Filter Controls ===== */}
+        <div className="mb-8 p-6 border rounded-lg bg-card shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Refine Your Search</h3>
+            {activeFilters.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">
+                Clear All Filters
+              </Button>
+            )}
+          </div>
+
+          <div className="lg:hidden mb-4">
             <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-            <SheetTrigger asChild>
-                <Button variant="outline" className="w-full">
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Search & Filter
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full relative">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Search & Filter
+                  {activeFilters.length > 0 && (
+                    <Badge className="ml-2 bg-primary text-primary-foreground" variant="default">
+                      {activeFilters.length}
+                    </Badge>
+                  )}
                 </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[90vh] flex flex-col">
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[90vh] flex flex-col">
                 <SheetHeader>
-                <SheetTitle>Search & Filter</SheetTitle>
-                <SheetDescription>Find the perfect property for you.</SheetDescription>
+                  <SheetTitle>Search & Filter</SheetTitle>
+                  <SheetDescription>Find the perfect property for you.</SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-1">
-                <div className="p-4">
+                  <div className="p-4">
                     <FilterControls />
+                  </div>
                 </div>
-                </div>
-            </SheetContent>
+              </SheetContent>
             </Sheet>
+          </div>
+          <div className="hidden lg:block">
+            <FilterControls />
+          </div>
         </div>
-        <div className="hidden lg:block">
-           <FilterControls />
+
+        {/* Active Filter Tags */}
+        {activeFilters.length > 0 && (
+          <div className="mb-6 flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium">Active Filters:</p>
+            {activeFilters.map(filter => (
+              <Badge key={filter.label} variant="secondary" className="pl-2">
+                {filter.label}
+                <button
+                  onClick={() => removeFilter(filter.type, filter.value)}
+                  className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                  aria-label={`Remove ${filter.label} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* ===== SECTION 6: Listings Grid ===== */}
+        <div id="listings-section">
+          {(loading || isPending) && listings.length === 0 ? (
+            <div>
+              <div className="mb-6 flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Searching verified properties...</span>
+              </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({length: 8}).map((_, i) => <ListingCardSkeleton key={i} />)}
+              </div>
+            </div>
+          ) : listings.length > 0 ? (
+            <>
+              <div className="mb-4 text-sm text-muted-foreground">
+                Showing {listings.length} properties
+              </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {listings.map((listing, index) => (
+                  <Card
+                    key={listing.id}
+                    className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-soft-fade-scale"
+                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
+                  >
+                    <CardHeader className="relative p-0">
+                      <Link href={`/listings/${listing.id}`} className="block">
+                        <Image
+                          src={listing.images[0]?.url || 'https://picsum.photos/seed/fallback/600/400'}
+                          alt={listing.title}
+                          width={600}
+                          height={400}
+                          className="aspect-[3/2] w-full object-cover"
+                          data-ai-hint={listing.images[0]?.hint || 'landscape'}
+                        />
+                      </Link>
+                      <div className="absolute top-3 left-3 z-10">
+                        <FavoriteButton listingId={listing.id} />
+                      </div>
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        {listing.badge && <TrustBadge badge={listing.badge} />}
+                        <StatusBadge status={listing.status} />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-4">
+                      <Link href={`/listings/${listing.id}`}>
+                        <CardTitle className="mb-1 text-lg font-semibold tracking-tight hover:text-accent leading-tight">
+                          {listing.title}
+                        </CardTitle>
+                      </Link>
+                      <CardDescription className="text-sm text-muted-foreground">
+                        {listing.location}, {listing.county}
+                      </CardDescription>
+                      <p className="text-sm text-foreground/80 mt-2 flex items-center gap-2">
+                        <LandPlot className="h-4 w-4 text-accent" />
+                        {listing.area} Acres
+                      </p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
+                      <p className="text-xl font-bold text-primary">
+                        Ksh {listing.price.toLocaleString()}
+                      </p>
+                      <Button asChild>
+                        <Link href={`/listings/${listing.id}`}>View</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+              {hasMore && (
+                <div className="mt-12 text-center">
+                  <Button onClick={handleLoadMore} disabled={loadingMore} size="lg">
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More Properties'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-20 rounded-lg border-2 border-dashed">
+              <p className="text-muted-foreground text-lg font-medium">
+                {activeFilters.length > 0 
+                  ? 'No properties match your filters.' 
+                  : 'No listings found yet.'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {activeFilters.length > 0
+                  ? 'Try: Checking other counties, broadening price range, or removing filters.'
+                  : 'Browse featured properties above or check back soon for new verified listings.'}
+              </p>
+              {activeFilters.length > 0 && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={resetFilters}>
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-       <div id="listings" className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">Results</p>
-            <p className="text-lg font-semibold text-primary">
-              {loading ? 'Fetching listings...' : `Showing ${listings.length} listing${listings.length === 1 ? '' : 's'}`}
-            </p>
-          </div>
-          {activeFilters.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-sm">Reset Filters</Button>
-          )}
-       </div>
-
-       {activeFilters.length > 0 && (
-            <div className="mb-4 flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium">Applied Filters:</p>
-                {activeFilters.map(filter => (
-                    <Badge key={filter.label} variant="secondary" className="pl-2">
-                        {filter.label}
-                        <button
-                          onClick={() => removeFilter(filter.type, filter.value)}
-                          className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                          aria-label={`Remove ${filter.label} filter`}
-                        >
-                            <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
-                ))}
-            </div>
-       )}
-
-      {(loading || isPending) && listings.length === 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({length: 8}).map((_, i) => <ListingCardSkeleton key={i} />)}
-        </div>
-      ) : listings.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {listings.map((listing, index) => (
-              <Card
-                key={listing.id}
-                className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-soft-fade-scale"
-                style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
-              >
-                <CardHeader className="relative p-0">
-                  <Link href={`/listings/${listing.id}`} className="block">
-                    <Image
-                      src={listing.images[0]?.url || 'https://picsum.photos/seed/fallback/600/400'}
-                      alt={listing.title}
-                      width={600}
-                      height={400}
-                      className="aspect-[3/2] w-full object-cover"
-                      data-ai-hint={listing.images[0]?.hint || 'landscape'}
-                    />
-                  </Link>
-                  <div className="absolute top-3 left-3 z-10">
-                    <FavoriteButton listingId={listing.id} />
-                  </div>
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                    {listing.badge && <TrustBadge badge={listing.badge} />}
-                    <StatusBadge status={listing.status} />
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 p-4">
-                  <Link href={`/listings/${listing.id}`}>
-                    <CardTitle className="mb-1 text-lg font-semibold tracking-tight hover:text-accent leading-tight">
-                      {listing.title}
-                    </CardTitle>
-                  </Link>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {listing.location}, {listing.county}
-                  </CardDescription>
-                   <p className="text-sm text-foreground/80 mt-2 flex items-center gap-2">
-                        <LandPlot className="h-4 w-4 text-accent" />
-                        {listing.area} Acres
-                    </p>
-                </CardContent>
-                <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                  <p className="text-xl font-bold text-primary">
-                    Ksh {listing.price.toLocaleString()}
-                  </p>
-                  <Button asChild>
-                    <Link href={`/listings/${listing.id}`}>View</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-           {hasMore && (
-                <div className="mt-12 text-center">
-                    <Button onClick={handleLoadMore} disabled={loadingMore}>
-                        {loadingMore ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Loading...
-                            </>
-                        ) : (
-                            'Load More'
-                        )}
-                    </Button>
-                </div>
-            )}
-        </>
-      ) : (
-        <div className="text-center py-20 rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground text-lg font-medium">No listings found.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Try adjusting your filters or search terms to explore more options.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
-            <Button asChild>
-              <Link href="/contact">Get help</Link>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Testimonials Section */}
+      {/* ===== SECTION 7: Testimonials ===== */}
       <TestimonialsSection />
-        </div>
-      </main>
-      <BuyerFooter />
-    </div>
+    </>
   );
 }
