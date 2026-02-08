@@ -719,27 +719,182 @@ export async function updateUserProfileAction(formData: FormData) {
 
   const displayName = formData.get('displayName') as string;
   const phone = formData.get('phone') as string;
+  const bio = formData.get('bio') as string;
+  const photoFile = formData.get('photo') as File | null;
 
   if (!displayName) {
     throw new Error('Display name cannot be empty.');
   }
   
-  const updatePayload: { displayName: string; phone?: string } = { displayName };
-  if (phone) {
-    updatePayload.phone = phone;
+  // Handle photo upload to Firebase Storage
+  let photoURL: string | null = null;
+  if (photoFile && photoFile.size > 0) {
+    try {
+      const buffer = await photoFile.arrayBuffer();
+      const photoPath = `profile-photos/${authUser.uid}/${Date.now()}-${photoFile.name}`;
+      const fileRef = adminStorage.bucket().file(photoPath);
+      
+      await fileRef.save(Buffer.from(buffer), {
+        metadata: { contentType: photoFile.type },
+      });
+      
+      // Make file publicly accessible
+      await fileRef.makePublic();
+      photoURL = `https://storage.googleapis.com/${adminStorage.bucket().name}/${photoPath}`;
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      throw new Error('Could not upload profile photo. Please try again.');
+    }
   }
 
   // Update Firebase Auth
   await adminAuth.updateUser(authUser.uid, { displayName });
 
-  // Update Firestore user profile
-  await adminDb.collection('users').doc(authUser.uid).update({
+  // Prepare Firestore update
+  const updateData: any = {
     displayName: displayName,
     phone: phone || FieldValue.delete(),
-  });
+    bio: bio || FieldValue.delete(),
+  };
+
+  if (photoURL) {
+    updateData.photoURL = photoURL;
+  }
+
+  // Update Firestore user profile
+  await adminDb.collection('users').doc(authUser.uid).update(updateData);
 
   revalidatePath('/profile');
   revalidatePath('/dashboard');
+}
+
+export async function deleteUserAccountAction() {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error('Authentication required.');
+  }
+
+  try {
+    // Delete user's listings
+    const listingsSnapshot = await adminDb
+      .collection('listings')
+      .where('sellerId', '==', authUser.uid)
+      .get();
+    
+    for (const doc of listingsSnapshot.docs) {
+      // Delete listing images from storage
+      const listing = doc.data() as Listing;
+      if (listing.images && listing.images.length > 0) {
+        for (const image of listing.images) {
+          try {
+            const fileRef = adminStorage.bucket().file(image.path || '');
+            await fileRef.delete();
+          } catch (e) {
+            console.warn('Could not delete image:', e);
+          }
+        }
+      }
+      await doc.ref.delete();
+    }
+
+    // Delete user's conversations and messages
+    const conversationsSnapshot = await adminDb
+      .collectionGroup('conversations')
+      .where('participantIds', 'array-contains', authUser.uid)
+      .get();
+    
+    for (const doc of conversationsSnapshot.docs) {
+      const messagesSnapshot = await doc.ref.collection('messages').get();
+      for (const msgDoc of messagesSnapshot.docs) {
+        await msgDoc.delete();
+      }
+      await doc.delete();
+    }
+
+    // Delete user's profile photo if exists
+    try {
+      const userDoc = await adminDb.collection('users').doc(authUser.uid).get();
+      const userData = userDoc.data() as UserProfile;
+      if (userData?.photoURL) {
+        const photoPath = userData.photoURL.split(`${adminStorage.bucket().name}/`)[1];
+        if (photoPath) {
+          await adminStorage.bucket().file(photoPath).delete();
+        }
+      }
+    } catch (e) {
+      console.warn('Could not delete profile photo:', e);
+    }
+
+    // Delete user document from Firestore
+    await adminDb.collection('users').doc(authUser.uid).delete();
+
+    // Delete Firebase Auth user
+    await adminAuth.deleteUser(authUser.uid);
+
+    revalidatePath('/');
+  } catch (error) {
+    console.error('Account deletion failed:', error);
+    throw new Error('Could not delete your account. Please try again or contact support.');
+  }
+}
+
+export async function sendEmailVerificationAction() {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error('Authentication required.');
+  }
+
+  try {
+    const userRecord = await adminAuth.getUser(authUser.uid);
+    if (userRecord.emailVerified) {
+      throw new Error('Email is already verified.');
+    }
+
+    // Generate verification link using Firebase admin SDK
+    const verificationLink = await adminAuth.generateEmailVerificationLink(userRecord.email!);
+    
+    // Queue email verification email in emailQueue collection
+    await adminDb.collection('emailQueue').add({
+      to: userRecord.email,
+      type: 'email-verification',
+      subject: 'Verify Your Kenya Land Trust Account',
+      template: 'email-verification',
+      variables: {
+        displayName: userRecord.displayName || 'User',
+        verificationLink: verificationLink,
+      },
+      createdAt: Timestamp.now(),
+      processed: false,
+    });
+
+    return { success: true, message: 'Verification email queued. Check your inbox shortly.' };
+  } catch (error) {
+    console.error('Email verification failed:', error);
+    throw new Error('Could not send verification email. Please try again.');
+  }
+}
+
+export async function changeUserPasswordAction(currentPassword: string, newPassword: string) {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error('Authentication required.');
+  }
+
+  try {
+    // Note: Verifying current password requires client-side reauthentication with Firebase SDK
+    // This function should only be called after client-side verification
+    // For production, implement proper password reset flow
+    
+    await adminAuth.updateUser(authUser.uid, {
+      password: newPassword,
+    });
+
+    revalidatePath('/profile');
+    return { success: true, message: 'Password changed successfully.' };
+  } catch (error) {
+    console.error('Password change failed:', error);
+    throw new Error('Could not change password. Please try again.');
+  }
 }
 
 export async function getListingsByIds(ids: string[]): Promise<Listing[]> {

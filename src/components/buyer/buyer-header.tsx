@@ -37,6 +37,8 @@ export function BuyerHeader() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
+  const isSeller = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
+
   const handleLogout = async () => {
     await auth.signOut();
     await fetch('/api/auth/session', { method: 'DELETE' });
@@ -172,8 +174,76 @@ export function BuyerHeader() {
               </SheetHeader>
 
               {/* Navigation Section */}
-              <div className="flex-1 overflow-y-auto px-4 py-4">
-                <div className="space-y-1 mb-6">
+              <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col">
+                
+                {/* SECTION 1: User Profile (Top Priority - Only if logged in) */}
+                {user && userProfile && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 px-3 py-2 mb-4">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
+                        <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
+                        <AvatarFallback className="text-lg font-bold">{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{userProfile?.displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{userProfile?.email}</p>
+                        <p className="text-xs font-medium text-primary mt-1">{userProfile?.role}</p>
+                      </div>
+                    </div>
+
+                    {/* User Actions - Role Based */}
+                    <div className="space-y-1">
+                      {isSeller ? (
+                        <>
+                          <SheetClose asChild>
+                            <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                              <LayoutDashboard className="h-4 w-4" />
+                              Dashboard
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link href="/dashboard/listings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                              <Heart className="h-4 w-4" />
+                              My Listings
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                              <MessageSquare className="h-4 w-4" />
+                              Messages
+                            </Link>
+                          </SheetClose>
+                        </>
+                      ) : (
+                        <>
+                          <SheetClose asChild>
+                            <Link href="/favorites" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                              <Heart className="h-4 w-4" />
+                              Saved Properties
+                            </Link>
+                          </SheetClose>
+                        </>
+                      )}
+                      <SheetClose asChild>
+                        <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                          <UserCircle className="h-4 w-4" />
+                          Profile
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/settings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                      </SheetClose>
+                    </div>
+                  </div>
+                )}
+
+                {/* SECTION 2: General Navigation (Separator if user logged in) */}
+                {user && userProfile && <div className="border-t my-4" />}
+                
+                <div className="space-y-1">
                   {navLinks.map((link) => (
                     <SheetClose key={link.href} asChild>
                       <Link 
@@ -206,29 +276,49 @@ export function BuyerHeader() {
                         </div>
                       </div>
 
+                {/* User Actions - Role Based */}
                       <div className="space-y-1">
-                          <SheetClose asChild>
-                            <Link href={dashboardUrl} className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                              <LayoutDashboard className="h-4 w-4" />
-                              Dashboard
-                            </Link>
-                          </SheetClose>
-                           <SheetClose asChild>
-                            <Link href="/favorites" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                              <Heart className="h-4 w-4" />
-                              Favorites
-                            </Link>
-                          </SheetClose>
-                          <SheetClose asChild>
-                            <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
-                              <MessageSquare className="h-4 w-4" />
-                              Messages
-                            </Link>
-                          </SheetClose>
+                        {isSeller ? (
+                          <>
+                            <SheetClose asChild>
+                              <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                                <LayoutDashboard className="h-4 w-4" />
+                                Dashboard
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                              <Link href="/dashboard/listings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                                <Heart className="h-4 w-4" />
+                                My Listings
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                              <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                                <MessageSquare className="h-4 w-4" />
+                                Messages
+                              </Link>
+                            </SheetClose>
+                          </>
+                        ) : (
+                          <>
+                            <SheetClose asChild>
+                              <Link href="/favorites" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                                <Heart className="h-4 w-4" />
+                                Saved Properties
+                              </Link>
+                            </SheetClose>
+                          </>
+                        )}
                         <SheetClose asChild>
                           <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
                             <UserCircle className="h-4 w-4" />
                             Profile
+                          </Link>
+                        </SheetClose>
+                        <SheetClose asChild>
+                          <Link href="/settings" className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:bg-accent/50 rounded-md">
+                            <Settings className="h-4 w-4" />
+                            Settings
                           </Link>
                         </SheetClose>
                       </div>

@@ -130,22 +130,10 @@ export function BuyerFooter() {
       description: 'Browse all verified land listings across Kenya',
     },
     {
-      href: '/trust',
-      label: 'Trust Badges',
-      isProtected: false,
-      description: 'Learn how we verify properties and trust badges',
-    },
-    {
       href: '/favorites',
       label: 'Saved Properties',
-      isProtected: false, // Shows empty state when not logged in
-      description: 'Your saved favorite listings',
-    },
-    {
-      href: '/',
-      label: 'Featured Listings',
       isProtected: false,
-      description: 'Discover top featured properties on our homepage',
+      description: 'Your saved favorite listings',
     },
   ];
 
@@ -278,22 +266,19 @@ export function BuyerFooter() {
                 </button>
               </li>
               <li>
-                <a 
-                  href="/" 
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline"
+                <button
+                  onClick={() => handleNavigation('/messages')}
+                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
+                  title="View your conversations"
                 >
-                  Property Guides
-                </a>
-              </li>
-              <li>
-                <a href="/" className="text-muted-foreground hover:text-primary transition-colors hover:underline">
-                  FAQ
-                </a>
+                  Conversations
+                </button>
               </li>
               <li>
                 <button
                   onClick={() => handleNavigation('/contact')}
                   className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
+                  title="Ask us a question"
                 >
                   Ask Questions
                 </button>
