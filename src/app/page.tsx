@@ -294,36 +294,48 @@ export default function ListingsPage() {
       <BuyerHeader />
       <main className="flex-1 w-full">
         <div className="container mx-auto px-4 py-8 md:py-12">
-      <section className="mb-12 rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-accent/10 px-6 py-10 text-center shadow-sm md:px-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Trusted land marketplace</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          Secure Your Piece of Kenya
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
-          Browse verified land listings with transparent trust signals and effortless filtering.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild>
-            <Link href="#listings">Browse listings</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/about">How it works</Link>
-          </Button>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Listings</p>
-            <p className="text-2xl font-semibold text-primary">{listingCountLabel}</p>
+      <section className="relative mb-12 rounded-2xl border overflow-hidden shadow-lg text-white">
+          <Image
+              src="https://images.unsplash.com/photo-1643365227235-1e29f7fcf0f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWVyaWFsJTIwbGFuZHxlbnwwfHx8fDE3NzAzODE5Njd8MA&ixlib=rb-4.1.0&q=80&w=1920"
+              alt="Aerial view of a Kenyan landscape"
+              fill
+              className="object-cover"
+              data-ai-hint="aerial landscape"
+              priority
+          />
+          <div className="absolute inset-0 bg-black/60" />
+
+          <div className="relative px-6 py-16 text-center md:px-10">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Trusted land marketplace</p>
+              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+              Secure Your Piece of Kenya
+              </h1>
+              <p className="mt-4 max-w-2xl mx-auto text-lg text-white/80">
+              Browse verified land listings with transparent trust signals and effortless filtering.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg">
+                  <Link href="#listings">Browse listings</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="border-white/50 bg-white/10 hover:bg-white/20 text-white">
+                  <Link href="/trust">How it works</Link>
+              </Button>
+              </div>
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-3 text-left shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-white/70">Listings</p>
+                  <p className="text-2xl font-semibold">{listingCountLabel}</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-3 text-left shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-white/70">Trust badges</p>
+                  <p className="text-2xl font-semibold">3-tier verification</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-3 text-left shadow-sm">
+                  <p className="text-xs uppercase tracking-wide text-white/70">Coverage</p>
+                  <p className="text-2xl font-semibold">Nationwide</p>
+              </div>
+              </div>
           </div>
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Trust badges</p>
-            <p className="text-2xl font-semibold text-primary">3-tier verification</p>
-          </div>
-          <div className="rounded-xl border bg-card/60 px-4 py-3 text-left shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Coverage</p>
-            <p className="text-2xl font-semibold text-primary">Nationwide</p>
-          </div>
-        </div>
       </section>
 
       <section className="mb-12 grid gap-6 md:grid-cols-3">
