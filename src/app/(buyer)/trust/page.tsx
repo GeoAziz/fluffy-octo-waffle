@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Trophy, Gem, Award, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 
 export default function TrustVerificationPage() {
@@ -34,7 +36,7 @@ export default function TrustVerificationPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white font-bold text-sm flex-shrink-0">
                   2
@@ -85,7 +87,6 @@ export default function TrustVerificationPage() {
             </p>
 
             <div className="space-y-6">
-              {/* Gold */}
               <div className="border rounded-lg p-6">
                 <div className="flex items-start gap-4">
                   <Trophy className="h-8 w-8 text-amber-500 flex-shrink-0 mt-1" />
@@ -103,45 +104,42 @@ export default function TrustVerificationPage() {
                       <li>✓ Complete and current title deed</li>
                       <li>✓ Approved survey plan with boundaries clearly marked</li>
                       <li>✓ Physical property photographs from multiple angles</li>
-                      <li>✓ Detailed property description matching documents</li>
-                      <li>✓ All documents cross-verified for consistency</li>
+                      <li>✓ Location and acreage consistent across all documents</li>
+                      <li>✓ Seller identity and ownership details match records</li>
                     </ul>
                     <p className="text-sm text-muted-foreground mt-3">
-                      <strong>For buyers:</strong> Gold badges indicate seller has invested in thorough documentation. This generally suggests more reliable transactions, though independent legal review is still essential.
+                      <strong>For buyers:</strong> Gold badges indicate strong documentation. Still perform independent legal due diligence before purchase.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Silver */}
               <div className="border rounded-lg p-6">
                 <div className="flex items-start gap-4">
-                  <Gem className="h-8 w-8 text-gray-400 flex-shrink-0 mt-1" />
+                  <Gem className="h-8 w-8 text-slate-500 flex-shrink-0 mt-1" />
                   <div className="flex-1">
                     <h3 className="font-bold text-lg flex items-center gap-2">
                       Silver Badge
-                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-normal">
-                        Good Coverage
+                      <span className="text-xs bg-slate-100 text-slate-800 px-2 py-1 rounded-full font-normal">
+                        Well Documented
                       </span>
                     </h3>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Property has most key documents, but one or more areas need attention:
+                      Property has most required documents with minor gaps:
                     </p>
                     <ul className="text-sm mt-3 space-y-1 ml-4">
-                      <li>✓ Title deed present but older or missing signatures</li>
-                      <li>✓ Survey plan available but boundaries unclear</li>
-                      <li>✓ Good photos but from limited angles</li>
-                      <li>✓ Description mostly matches documents</li>
-                      <li>⚠ Minor inconsistencies in document details</li>
+                      <li>✓ Title deed provided and appears valid</li>
+                      <li>✓ Survey map available but may need updates</li>
+                      <li>✓ Property photos available</li>
+                      <li>⚠ Minor documentation mismatches or missing supplemental documents</li>
                     </ul>
                     <p className="text-sm text-muted-foreground mt-3">
-                      <strong>For buyers:</strong> Silver badges suggest a straightforward property. You may want to request clarification on the missing documentation before proceeding.
+                      <strong>For buyers:</strong> Silver badges are generally reliable, but verify missing items before committing.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Bronze */}
               <div className="border rounded-lg p-6">
                 <div className="flex items-start gap-4">
                   <Award className="h-8 w-8 text-amber-700 flex-shrink-0 mt-1" />
@@ -169,7 +167,6 @@ export default function TrustVerificationPage() {
                 </div>
               </div>
 
-              {/* No Badge */}
               <div className="border rounded-lg p-6 bg-muted/50">
                 <div className="flex items-start gap-4">
                   <HelpCircle className="h-8 w-8 text-muted-foreground flex-shrink-0 mt-1" />
@@ -193,7 +190,6 @@ export default function TrustVerificationPage() {
           </CardContent>
         </Card>
 
-        {/* Important Disclaimers */}
         <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-2">
@@ -211,7 +207,7 @@ export default function TrustVerificationPage() {
                 <li>🚫 Kenya Land Trust is not responsible for transaction disputes</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-2">Your Responsibility</h3>
               <ul className="space-y-2 ml-4">
@@ -231,18 +227,22 @@ export default function TrustVerificationPage() {
           </CardContent>
         </Card>
 
-        {/* Questions */}
         <Card>
           <CardHeader>
             <CardTitle>Still Have Questions?</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              If you have questions about a specific listing's verification badge or need help understanding documentation, please contact our support team.
+              If you have questions about a specific listing&apos;s verification badge or need help understanding documentation, please contact our support team.
             </p>
-            <a href="/contact" className="text-primary font-medium hover:underline">
-              Contact Support →
-            </a>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/explore">Browse Verified Listings</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/contact">Contact Support</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
