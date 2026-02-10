@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 type Topic = 'general' | 'technical' | 'listing' | 'verification';
 
@@ -22,6 +22,9 @@ export default function ContactUsPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [confirmationId, setConfirmationId] = useState<string | null>(null);
+  const [expectedResponseHours, setExpectedResponseHours] = useState(24);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formState, setFormState] = useState({
     name: '',
@@ -66,6 +69,7 @@ export default function ContactUsPage() {
     }
 
     setIsSubmitting(true);
+    setErrorMessage('');
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -78,23 +82,31 @@ export default function ContactUsPage() {
         }),
       });
 
+      const payload = await response.json().catch(() => ({ message: 'Failed to submit message.' }));
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to submit message.' }));
-        throw new Error(error.message || 'Failed to submit message.');
+        throw new Error(payload.message || 'Failed to submit message.');
       }
+
+      const nextResponseHours = typeof payload.expectedResponseHours === 'number' ? payload.expectedResponseHours : 24;
 
       toast({
         title: 'Message sent',
-        description: 'Thanks for reaching out. We usually respond within 24 hours.',
+        description: `Thanks for reaching out. We typically respond within ${nextResponseHours} hours.`,
       });
       setSubmitted(true);
+      setConfirmationId(typeof payload.messageId === 'string' ? payload.messageId : null);
+      setExpectedResponseHours(nextResponseHours);
       setFieldErrors({});
       setFormState({ name: '', email: '', topic: 'general', message: '' });
     } catch (error) {
+      const details = error instanceof Error ? error.message : 'Unable to submit your message.';
+      setSubmitted(false);
+      setErrorMessage(details);
       toast({
         variant: 'destructive',
         title: 'Submission failed',
-        description: error instanceof Error ? error.message : 'Unable to submit your message.',
+        description: details,
       });
     } finally {
       setIsSubmitting(false);
@@ -119,8 +131,19 @@ export default function ContactUsPage() {
               <div>
                 <p className="font-semibold">Message received</p>
                 <p>
-                  We have your request and sent a confirmation email. If urgent, include your listing ID and contact phone in a follow-up message.
+                  We have your request and sent a confirmation email. Typical response time is within {expectedResponseHours} hours.
+                  {confirmationId ? ` Reference ID: ${confirmationId}.` : ''}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div aria-live="assertive" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 mt-0.5" />
+              <div>
+                <p className="font-semibold">We couldn't send your message yet</p>
+                <p>{errorMessage} Please retry in a moment. If this continues, email support@kenyalandtrust.com.</p>
               </div>
             </div>
           )}
@@ -136,6 +159,8 @@ export default function ContactUsPage() {
                 value={formState.name}
                 onChange={(event) => {
                   setSubmitted(false);
+                  setErrorMessage('');
+                  setConfirmationId(null);
                   setFormState((prev) => ({ ...prev, name: event.target.value }));
                   setFieldErrors((prev) => ({ ...prev, name: undefined }));
                 }}
@@ -153,6 +178,8 @@ export default function ContactUsPage() {
                 value={formState.email}
                 onChange={(event) => {
                   setSubmitted(false);
+                  setErrorMessage('');
+                  setConfirmationId(null);
                   setFormState((prev) => ({ ...prev, email: event.target.value }));
                   setFieldErrors((prev) => ({ ...prev, email: undefined }));
                 }}
@@ -165,6 +192,8 @@ export default function ContactUsPage() {
                 value={formState.topic}
                 onValueChange={(value: Topic) => {
                   setSubmitted(false);
+                  setErrorMessage('');
+                  setConfirmationId(null);
                   setFormState((prev) => ({ ...prev, topic: value }));
                 }}
               >
@@ -175,9 +204,10 @@ export default function ContactUsPage() {
                   <SelectItem value="general">General question</SelectItem>
                   <SelectItem value="technical">Technical issue</SelectItem>
                   <SelectItem value="listing">Listing issue</SelectItem>
-                  <SelectItem value="verification">Trust & verification question</SelectItem>
+                  <SelectItem value="verification">Trust question</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Choose a topic so your message is routed to the right support team faster.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="message">Message</Label>
@@ -190,6 +220,8 @@ export default function ContactUsPage() {
                 value={formState.message}
                 onChange={(event) => {
                   setSubmitted(false);
+                  setErrorMessage('');
+                  setConfirmationId(null);
                   setFormState((prev) => ({ ...prev, message: event.target.value }));
                   setFieldErrors((prev) => ({ ...prev, message: undefined }));
                 }}

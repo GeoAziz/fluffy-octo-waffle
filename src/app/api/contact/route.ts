@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       status: 'queued',
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, messageId: messageRef.id, expectedResponseHours: 24 });
   } catch (error) {
     console.error('Contact form submission failed:', error);
     return NextResponse.json({ message: 'Failed to submit message.' }, { status: 500 });
