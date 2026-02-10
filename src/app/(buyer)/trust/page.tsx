@@ -82,8 +82,11 @@ export default function TrustVerificationPage() {
             <CardTitle className="text-2xl">Understanding Trust Badges</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-2">
               Each badge indicates the level of documentation and verification confidence for a property.
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              We also include buyer impact examples so you can quickly understand what to verify next before contacting a seller.
             </p>
 
             <div className="space-y-6">
@@ -110,6 +113,9 @@ export default function TrustVerificationPage() {
                     <p className="text-sm text-muted-foreground mt-3">
                       <strong>For buyers:</strong> Gold badges indicate strong documentation. Still perform independent legal due diligence before purchase.
                     </p>
+                    <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
+                      <strong>Buyer impact example:</strong> You can usually move faster to site visits and legal checks because core documents are already present and consistent.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -136,6 +142,9 @@ export default function TrustVerificationPage() {
                     <p className="text-sm text-muted-foreground mt-3">
                       <strong>For buyers:</strong> Silver badges are generally reliable, but verify missing items before committing.
                     </p>
+                    <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <strong>Buyer impact example:</strong> Expect a good shortlist candidate, but budget an extra follow-up call to confirm outdated or missing supporting documents.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -163,6 +172,9 @@ export default function TrustVerificationPage() {
                     <p className="text-sm text-muted-foreground mt-3">
                       <strong>For buyers:</strong> Bronze badges require extra due diligence. Consider hiring a surveyor and getting independent legal review before committing to a purchase.
                     </p>
+                    <div className="mt-3 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm">
+                      <strong>Buyer impact example:</strong> Treat this as higher effort: request additional records early and plan for a full legal + boundary verification process.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -183,6 +195,9 @@ export default function TrustVerificationPage() {
                     <p className="text-sm text-muted-foreground mt-3">
                       <strong>For buyers:</strong> Contact the seller to request additional documentation before considering the property. Full due diligence is essential.
                     </p>
+                    <div className="mt-3 rounded-md border border-border bg-background p-3 text-sm">
+                      <strong>Buyer impact example:</strong> Use this only for early scouting until the seller provides complete records and the badge improves.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -235,6 +250,22 @@ export default function TrustVerificationPage() {
             <p className="text-sm text-muted-foreground mb-4">
               If you have questions about a specific listing&apos;s verification badge or need help understanding documentation, please contact our support team.
             </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline">
+                <Link href="/contact">Contact Support</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Ready to act on verified properties?</h2>
+              <p className="text-sm text-muted-foreground">
+                Compare verified opportunities now, or reach out for help understanding a listing&apos;s trust signals.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link href="/explore">Browse Verified Listings</Link>
