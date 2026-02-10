@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ReportListingPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportStatus, setReportStatus] = useState<'idle' | 'received' | 'under_review' | 'resolved'>('idle');
   const [formState, setFormState] = useState({
     listingId: '',
     reason: '',
@@ -40,6 +42,7 @@ export default function ReportListingPage() {
         throw new Error(error.message || 'Failed to submit report.');
       }
 
+      setReportStatus('received');
       toast({
         title: 'Report submitted',
         description: 'Thanks for flagging this listing. If you are signed in, we will email a confirmation.',
@@ -66,6 +69,18 @@ export default function ReportListingPage() {
           <p className="text-muted-foreground">
             If you believe a listing is fraudulent, misleading, or violates our terms, please let us know. Provide the Listing ID and a reason for your report.
           </p>
+
+          <div className="rounded-md border bg-muted/30 p-4 text-sm">
+            <p className="font-semibold mb-2">Report tracking</p>
+            <ul className="space-y-1 text-muted-foreground">
+              <li><strong>Received:</strong> your report has been captured.</li>
+              <li><strong>Under review:</strong> our trust team is validating evidence.</li>
+              <li><strong>Resolved:</strong> action taken and report closed.</li>
+            </ul>
+            {reportStatus !== 'idle' && (
+              <p className="mt-3 text-foreground">Current status: <span className="font-semibold">{reportStatus.replace('_', ' ')}</span></p>
+            )}
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="listingId">Listing ID or URL</Label>
@@ -89,6 +104,14 @@ export default function ReportListingPage() {
             <Button variant="destructive" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Report'}
             </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline">
+                <Link href="/contact">Contact Support</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/explore">Back to Listings</Link>
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

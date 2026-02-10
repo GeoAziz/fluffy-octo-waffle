@@ -24,6 +24,10 @@ export default function OnboardingPage() {
         <div className="container mx-auto max-w-2xl py-10">
             <Card className="border-2 border-primary/20 shadow-lg">
                 <CardHeader className="text-center">
+                    <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+                      <Circle className="h-3.5 w-3.5" />
+                      Step 1 of 3 · Set up your buyer account
+                    </div>
                     <CardTitle className="text-3xl">Welcome to Kenya Land Trust, {userProfile?.displayName || 'User'}!</CardTitle>
                     <CardDescription className="text-base">Your account has been successfully created. Here are a few things you can do next.</CardDescription>
                 </CardHeader>

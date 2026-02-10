@@ -15,6 +15,14 @@ export default function AccessDeniedPage() {
       <p className="mt-2 text-sm text-muted-foreground max-w-xl">
         If you believe this is an error, contact support and include the page you were trying to access.
       </p>
+      <div className="mt-6 max-w-xl rounded-lg border bg-muted/30 p-4 text-left">
+        <p className="text-sm font-semibold">Next steps</p>
+        <ul className="mt-2 list-disc ml-5 space-y-1 text-sm text-muted-foreground">
+          <li>Confirm you are signed in with the intended account.</li>
+          <li>Return to the buyer dashboard and use allowed routes.</li>
+          <li>Contact support with the blocked URL for access review.</li>
+        </ul>
+      </div>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button asChild>
           <Link href="/">Return Home</Link>

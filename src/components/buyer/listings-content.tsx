@@ -64,6 +64,7 @@ export function ListingsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const isExplorePage = pathname === '/explore';
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [lastVisibleId, setLastVisibleId] = useState<string | null>(null);
@@ -189,6 +190,25 @@ export function ListingsContent() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <p className="text-sm font-medium text-foreground">
+          {isExplorePage ? 'Advanced Search mode' : 'Quick Browse mode'}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {isExplorePage ? (
+            'Use the complete filter set below to narrow down listings precisely.'
+          ) : (
+            <>
+              Start with keyword and land type, then switch to{' '}
+              <Link href="/explore" className="underline underline-offset-4 hover:text-foreground">
+                Advanced Search
+              </Link>{' '}
+              for deeper filtering.
+            </>
+          )}
+        </p>
+      </div>
+
       {/* Filter Section */}
       <div className="space-y-4">
         {/* Desktop Filters */}

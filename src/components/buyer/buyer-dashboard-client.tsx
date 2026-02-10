@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { SavedSearch, Listing, Conversation } from '@/lib/types';
-import { Search, Trash2, Heart, MessageSquare, Loader2, LandPlot } from 'lucide-react';
+import { Search, Trash2, Heart, MessageSquare, Loader2, LandPlot, ArrowRight, Sparkles, Clock3 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { deleteSearchAction } from '@/app/actions';
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import Image from 'next/image';
+import { useAuth } from '@/components/providers';
 
 interface BuyerDashboardClientProps {
   savedSearches: SavedSearch[];
@@ -34,8 +35,45 @@ export function BuyerDashboardClient({
   recentConversations,
 }: BuyerDashboardClientProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [savedSearches, setSavedSearches] = useState(initialSearches);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+
+  const recentActivity = useMemo(() => {
+    const items: { id: string; label: string; when: Date; href: string }[] = [];
+
+    savedSearches.slice(0, 2).forEach((search) => {
+      items.push({
+        id: `search-${search.id}`,
+        label: `Updated saved search: ${search.name}`,
+        when: search.createdAt.toDate(),
+        href: search.url,
+      });
+    });
+
+    recentConversations.slice(0, 3).forEach((conversation) => {
+      const ts = conversation.lastMessage?.timestamp?.toDate?.();
+      if (!ts) return;
+      items.push({
+        id: `conversation-${conversation.id}`,
+        label: `Messaged about ${conversation.listingTitle}`,
+        when: ts,
+        href: `/messages/${conversation.id}`,
+      });
+    });
+
+    favoriteListings.slice(0, 2).forEach((listing) => {
+      items.push({
+        id: `favorite-${listing.id}`,
+        label: `Saved listing: ${listing.title}`,
+        when: new Date(listing.createdAt),
+        href: `/listings/${listing.id}`,
+      });
+    });
+
+    return items.sort((a, b) => b.when.getTime() - a.when.getTime()).slice(0, 6);
+  }, [favoriteListings, recentConversations, savedSearches]);
 
   const handleDeleteSearch = async (searchId: string) => {
     setDeletingId(searchId);
@@ -58,7 +96,31 @@ export function BuyerDashboardClient({
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+    <div className="space-y-8">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Primary action
+            </p>
+            <h2 className="text-xl font-semibold">Continue your search</h2>
+            <p className="text-sm text-muted-foreground">
+              Jump back into discovery or check newly verified listings that match your goals.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/explore">Continue search</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/explore?badges=Gold">New verified listings</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
       {/* Saved Searches */}
       <Card className="xl:col-span-2">
         <CardHeader>
@@ -118,7 +180,7 @@ export function BuyerDashboardClient({
         </CardContent>
       </Card>
 
-      {/* Favorites & Messages */}
+      {/* Favorites, Messages, and Activity */}
       <div className="space-y-8">
         <Card>
           <CardHeader>
@@ -166,7 +228,7 @@ export function BuyerDashboardClient({
                                 <p className="text-xs text-muted-foreground truncate">
                                     {convo.lastMessage ? (
                                         <>
-                                            {convo.lastMessage.senderId !== user.uid ? 'Seller: ' : 'You: '}
+                                            {convo.lastMessage.senderId !== user?.uid ? 'Seller: ' : 'You: '}
                                             {convo.lastMessage.text}
                                         </>
                                     ): 'No messages yet'}
@@ -186,7 +248,32 @@ export function BuyerDashboardClient({
              )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Clock3 className="h-4 w-4" />Recent Activity</CardTitle>
+            <CardDescription>Track what you viewed, saved, and messaged recently.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentActivity.length > 0 ? (
+              <div className="space-y-3">
+                {recentActivity.map((item) => (
+                  <Link key={item.id} href={item.href} className="group flex items-start justify-between gap-3 rounded-md border p-3 hover:bg-muted/40">
+                    <div>
+                      <p className="text-sm font-medium group-hover:underline">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{formatDistanceToNow(item.when, { addSuffix: true })}</p>
+                    </div>
+                    <ArrowRight className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
+    </div>
     </div>
   );
 }
