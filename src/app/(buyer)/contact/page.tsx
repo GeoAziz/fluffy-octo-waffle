@@ -5,15 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { CheckCircle2 } from 'lucide-react';
+
+type Topic = 'general' | 'technical' | 'listing' | 'verification';
 
 export default function ContactUsPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
+    topic: 'general' as Topic,
     message: '',
   });
 
@@ -43,9 +49,10 @@ export default function ContactUsPage() {
 
       toast({
         title: 'Message sent',
-        description: 'Thanks for reaching out. We will follow up shortly and send a confirmation email.',
+        description: 'Thanks for reaching out. We usually respond within 24 hours.',
       });
-      setFormState({ name: '', email: '', message: '' });
+      setSubmitted(true);
+      setFormState({ name: '', email: '', topic: 'general', message: '' });
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -58,15 +65,29 @@ export default function ContactUsPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl py-10">
+    <div className="container mx-auto max-w-2xl py-10 px-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">Contact Us</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
-            Have a question or need to get in touch? Fill out the form below and we'll get back to you as soon as possible.
+            Have a question or need help? Fill out the form and our team will get back to you.
+            <span className="font-medium text-foreground"> Typical response time: within 24 hours.</span>
           </p>
+
+          {submitted && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900 flex items-start gap-2">
+              <CheckCircle2 className="h-5 w-5 mt-0.5" />
+              <div>
+                <p className="font-semibold">Message received</p>
+                <p>
+                  We have your request and sent a confirmation email. If urgent, include your listing ID and contact phone in a follow-up message.
+                </p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Your Name</Label>
@@ -86,6 +107,23 @@ export default function ContactUsPage() {
                 value={formState.email}
                 onChange={(event) => setFormState((prev) => ({ ...prev, email: event.target.value }))}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic</Label>
+              <Select
+                value={formState.topic}
+                onValueChange={(value: Topic) => setFormState((prev) => ({ ...prev, topic: value }))}
+              >
+                <SelectTrigger id="topic">
+                  <SelectValue placeholder="Select a topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General question</SelectItem>
+                  <SelectItem value="technical">Technical issue</SelectItem>
+                  <SelectItem value="listing">Listing issue</SelectItem>
+                  <SelectItem value="verification">Trust & verification question</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="message">Message</Label>

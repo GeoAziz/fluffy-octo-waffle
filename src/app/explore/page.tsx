@@ -28,10 +28,13 @@ export default function ExplorePage() {
         {/* Page Header */}
         <div className="mb-12">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Explore Verified Land
+            Advanced Property Search
           </h1>
           <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
-            Browse thousands of verified land listings across Kenya. Use filters to find properties that match your criteria.
+            This page is focused on discovery with full filters. For a guided overview and marketplace introduction, use the home page.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Tip: start broad, then narrow by land type, price, and badge confidence.
           </p>
         </div>
 

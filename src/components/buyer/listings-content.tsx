@@ -394,6 +394,30 @@ export function ListingsContent() {
         </div>
       </div>
 
+      {activeFilters.length > 0 && (
+        <div className="md:hidden sticky top-16 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-y">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium">Active filters ({activeFilters.length})</p>
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              Clear all
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {activeFilters.slice(0, 3).map((filter, idx) => (
+              <Badge key={idx} variant="secondary" className="gap-1.5 text-xs">
+                {filter.label}
+                <button onClick={() => removeFilter(filter.type, filter.value)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            {activeFilters.length > 3 && (
+              <Badge variant="outline" className="text-xs">+{activeFilters.length - 3} more</Badge>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Listings Grid */}
       {loading ? (
@@ -482,6 +506,14 @@ export function ListingsContent() {
           <p className="text-sm text-muted-foreground mt-2">
             Try adjusting your filters or search terms to explore more options.
           </p>
+          <div className="mx-auto mt-4 max-w-xl rounded-md bg-muted/60 px-4 py-3 text-left text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-2">Try these quick adjustments:</p>
+            <ul className="list-disc ml-5 space-y-1">
+              <li>Increase the max price by 10–20%.</li>
+              <li>Widen area range by at least 5 acres.</li>
+              <li>Remove one trust badge filter.</li>
+            </ul>
+          </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
             <Button asChild>

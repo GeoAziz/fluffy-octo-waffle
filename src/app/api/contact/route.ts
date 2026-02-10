@@ -2,17 +2,23 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
+type ContactTopic = 'general' | 'technical' | 'listing' | 'verification';
+
 export async function POST(request: Request) {
   try {
-    const { name, email, message } = await request.json();
+    const { name, email, message, topic } = await request.json();
 
     if (!name || !email || !message) {
       return NextResponse.json({ message: 'Name, email, and message are required.' }, { status: 400 });
     }
 
+    const normalizedTopic: ContactTopic =
+      topic === 'technical' || topic === 'listing' || topic === 'verification' ? topic : 'general';
+
     const messageRef = await adminDb.collection('contactMessages').add({
       name,
       email,
+      topic: normalizedTopic,
       message,
       createdAt: FieldValue.serverTimestamp(),
       status: 'new',
