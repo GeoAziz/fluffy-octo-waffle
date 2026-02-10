@@ -53,6 +53,7 @@ import { SaveSearchButton } from './save-search-button';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
+type SortOption = "newest" | "priceLow" | "priceHigh" | "areaHigh";
 
 /**
  * ListingsContent - Reusable component for browsing and filtering listings
@@ -76,6 +77,7 @@ export function ListingsContent() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
   const [badges, setBadges] = useState<BadgeValue[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const activeFilters = useMemo(() => {
     const filters = [];
@@ -98,6 +100,14 @@ export function ListingsContent() {
   }), [query, landType, priceRange, areaRange, badges]);
 
   const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
+
+  const sortedListings = useMemo(() => {
+    const next = [...listings];
+    if (sortBy === 'priceLow') return next.sort((a, b) => a.price - b.price);
+    if (sortBy === 'priceHigh') return next.sort((a, b) => b.price - a.price);
+    if (sortBy === 'areaHigh') return next.sort((a, b) => b.area - a.area);
+    return next;
+  }, [listings, sortBy]);
 
   const updateUrlParams = useDebouncedCallback(() => {
     const params = new URLSearchParams(window.location.search);
@@ -395,6 +405,26 @@ export function ListingsContent() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card p-3">
+        <p className="text-sm text-muted-foreground">
+          Listings found: <span className="font-semibold text-foreground">{listingCountLabel}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="sort-listings" className="text-sm whitespace-nowrap">Sort by</Label>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+            <SelectTrigger id="sort-listings" className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="priceLow">Price: Low to High</SelectItem>
+              <SelectItem value="priceHigh">Price: High to Low</SelectItem>
+              <SelectItem value="areaHigh">Area: Largest First</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {activeFilters.length > 0 && (
         <div className="md:hidden sticky top-16 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-y">
           <div className="flex items-center justify-between gap-2 mb-2">
@@ -427,10 +457,10 @@ export function ListingsContent() {
             <ListingCardSkeleton key={i} />
           ))}
         </div>
-      ) : listings.length > 0 ? (
+      ) : sortedListings.length > 0 ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listings-section">
-            {listings.map((listing) => (
+            {sortedListings.map((listing) => (
               <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                 <div className="relative h-48 overflow-hidden bg-muted">
                   {listing.images && listing.images.length > 0 ? (
