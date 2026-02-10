@@ -94,6 +94,8 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: { email: '', password: '', rememberMe: true },
   });
   
@@ -269,6 +271,7 @@ export default function LoginPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
+                        <p className="text-xs text-muted-foreground">Use at least 6 characters.</p>
                         <FormMessage />
                       </FormItem>
                     )}
