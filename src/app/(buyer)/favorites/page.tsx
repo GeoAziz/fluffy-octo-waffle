@@ -110,10 +110,13 @@ export default function FavoritesPage() {
               <Link href="/explore">Explore properties</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/?landType=Residential">View Residential</Link>
+              <Link href="/explore?landType=Residential">View Residential</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/?landType=Agricultural">View Agricultural</Link>
+              <Link href="/explore?landType=Agricultural">View Agricultural</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/explore?badges=Gold">Gold badge listings</Link>
             </Button>
           </div>
         </div>

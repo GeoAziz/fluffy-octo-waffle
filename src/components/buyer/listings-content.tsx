@@ -377,7 +377,8 @@ export function ListingsContent() {
               {activeFilters.map((filter, idx) => (
                 <Badge key={idx} variant="secondary" className="gap-2">
                   {filter.label}
-                  <button 
+                  <button
+                    aria-label={`Remove ${filter.label} filter`}
                     onClick={() => removeFilter(filter.type, filter.value)}
                     className="ml-1 hover:text-foreground"
                   >
@@ -406,7 +407,7 @@ export function ListingsContent() {
             {activeFilters.slice(0, 3).map((filter, idx) => (
               <Badge key={idx} variant="secondary" className="gap-1.5 text-xs">
                 {filter.label}
-                <button onClick={() => removeFilter(filter.type, filter.value)}>
+                <button aria-label={`Remove ${filter.label} filter`} onClick={() => removeFilter(filter.type, filter.value)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
