@@ -17,6 +17,8 @@ import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AdminListingsPage() {
+  const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
@@ -70,7 +73,11 @@ export default function AdminListingsPage() {
       setHasMore(Boolean(res.lastVisibleId));
     } catch (e) {
       console.error('Error fetching listings:', e);
-      alert(`Error fetching listings: ${e instanceof Error ? e.message : String(e)}`);
+      toast({
+        variant: 'destructive',
+        title: 'Unable to load listings',
+        description: e instanceof Error ? e.message : String(e),
+      });
     } finally {
       setLoading(false);
     }
@@ -106,13 +113,22 @@ export default function AdminListingsPage() {
     if (selectedIds.length === 0) return;
     try {
       await bulkUpdateListingStatus(selectedIds, status as any);
+      toast({
+        variant: 'success',
+        title: 'Bulk update complete',
+        description: `${selectedIds.length} listing(s) moved to ${status}.`,
+      });
       // Refresh list
       setSelected({});
       setLastVisibleId(null);
       await fetchListings({ append: false });
     } catch (e) {
       console.error('Error in bulk update:', e);
-      alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk action failed',
+        description: e instanceof Error ? e.message : String(e),
+      });
     }
   };
 
@@ -202,17 +218,23 @@ export default function AdminListingsPage() {
                 {selectedIds.length > 0 && (
                   <Badge variant="secondary">{selectedIds.length} selected</Badge>
                 )}
-                <Button size="sm" onClick={() => handleBulk("approved")} disabled={selectedIds.length === 0}>
-                  Approve Selected
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleBulk("rejected")}
-                  disabled={selectedIds.length === 0}
+                <ConfirmActionDialog
+                  title="Approve selected listings"
+                  description="These listings will be set to approved and become visible to buyers."
+                  confirmLabel="Approve"
+                  onConfirm={() => handleBulk("approved")}
                 >
-                  Reject Selected
-                </Button>
+                  <Button size="sm" disabled={selectedIds.length === 0}>Approve Selected</Button>
+                </ConfirmActionDialog>
+                <ConfirmActionDialog
+                  title="Reject selected listings"
+                  description="This will mark selected listings as rejected. Sellers must revise and resubmit."
+                  confirmLabel="Reject"
+                  onConfirm={() => handleBulk("rejected")}
+                  variant="destructive"
+                >
+                  <Button size="sm" variant="destructive" disabled={selectedIds.length === 0}>Reject Selected</Button>
+                </ConfirmActionDialog>
               </div>
               <div className="flex items-center gap-2 sm:hidden">
                 <DropdownMenu>
