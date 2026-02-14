@@ -7,17 +7,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getAdminAnalyticsSummaryAction } from '@/app/actions';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { cn } from '@/lib/utils';
 
 type Range = '7' | '30' | '90' | 'custom';
 
 type AnalyticsSummary = {
+  moderationTotals: { approved: number; pending: number; rejected: number };
+  trendDeltas: { approved: number; pending: number; rejected: number };
   countyDistribution: { county: string; count: number }[];
   badgeDistribution: { badge: 'Gold' | 'Silver' | 'Bronze' | 'None'; count: number }[];
-  moderationTimeline: { date: string; approved: number; pending: number; rejected: number }[];
+  moderationTimeline: { date: string; approved: number; rejected: number }[];
   pendingAgeBuckets: { bucket: string; count: number }[];
   window: { startDate: string; endDate: string };
 };
@@ -27,6 +30,19 @@ const BADGE_COLORS: Record<string, string> = {
   Silver: '#64748b',
   Bronze: '#a16207',
   None: '#94a3b8',
+};
+
+const Delta = ({ value }: { value: number }) => {
+  if (value === 0) {
+    return <span className="text-muted-foreground text-xs font-normal">(no change)</span>;
+  }
+  const isPositive = value > 0;
+  return (
+    <span className={cn('text-xs font-semibold flex items-center', isPositive ? 'text-green-600' : 'text-red-600')}>
+      {isPositive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+      {Math.abs(value)}%
+    </span>
+  );
 };
 
 export default function AnalyticsPage() {
@@ -55,18 +71,8 @@ export default function AnalyticsPage() {
     fetchData();
   }, [range]);
 
-  const moderationTotals = useMemo(() => {
-    if (!summary) return { approved: 0, pending: 0, rejected: 0 };
-    return summary.moderationTimeline.reduce(
-      (acc, day) => {
-        acc.approved += day.approved;
-        acc.pending += day.pending;
-        acc.rejected += day.rejected;
-        return acc;
-      },
-      { approved: 0, pending: 0, rejected: 0 },
-    );
-  }, [summary]);
+  const moderationTotals = summary?.moderationTotals ?? { approved: 0, pending: 0, rejected: 0 };
+  const trendDeltas = summary?.trendDeltas ?? { approved: 0, pending: 0, rejected: 0 };
 
   const exportCsv = () => {
     if (!summary) return;
@@ -77,7 +83,6 @@ export default function AnalyticsPage() {
       ...summary.pendingAgeBuckets.map((x) => `pending_age,${x.bucket},${x.count}`),
       ...summary.moderationTimeline.flatMap((x) => [
         `moderation_timeline:${x.date},approved,${x.approved}`,
-        `moderation_timeline:${x.date},pending,${x.pending}`,
         `moderation_timeline:${x.date},rejected,${x.rejected}`,
       ]),
     ];
@@ -148,15 +153,24 @@ export default function AnalyticsPage() {
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Approved in window</CardTitle></CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm">Approved</CardTitle>
+            {summary && <Delta value={trendDeltas.approved} />}
+          </CardHeader>
           <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.approved}</p>}</CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Pending events in window</CardTitle></CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm">New Pending</CardTitle>
+            {summary && <Delta value={trendDeltas.pending} />}
+          </CardHeader>
           <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.pending}</p>}</CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Rejected in window</CardTitle></CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm">Rejected</CardTitle>
+            {summary && <Delta value={trendDeltas.rejected} />}
+          </CardHeader>
           <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.rejected}</p>}</CardContent>
         </Card>
       </div>
@@ -165,7 +179,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Moderation trend (line)</CardTitle>
-            <CardDescription>Approvals, pending updates, and rejections over time.</CardDescription>
+            <CardDescription>Approvals and rejections over time.</CardDescription>
           </CardHeader>
           <CardContent className="h-[320px]">
             {loading || !summary ? (
@@ -179,7 +193,6 @@ export default function AnalyticsPage() {
                   <Tooltip />
                   <Legend />
                   <Line type="monotone" dataKey="approved" stroke="#16a34a" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="pending" stroke="#f59e0b" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="rejected" stroke="#ef4444" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -190,7 +203,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Listings by county (bar)</CardTitle>
-            <CardDescription>Top counties by listing volume.</CardDescription>
+            <CardDescription>Top counties by listing volume in this period.</CardDescription>
           </CardHeader>
           <CardContent className="h-[320px]">
             {loading || !summary ? (
@@ -212,7 +225,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Badge distribution (pie)</CardTitle>
-            <CardDescription>Trust levels across all listings.</CardDescription>
+            <CardDescription>Trust levels across approved listings created in this period.</CardDescription>
           </CardHeader>
           <CardContent className="h-[320px]">
             {loading || !summary ? (
@@ -222,7 +235,7 @@ export default function AnalyticsPage() {
                 <PieChart>
                   <Pie data={summary.badgeDistribution} dataKey="count" nameKey="badge" outerRadius={110} label>
                     {summary.badgeDistribution.map((entry) => (
-                      <Cell key={entry.badge} fill={BADGE_COLORS[entry.badge]} />
+                      <Cell key={`cell-${entry.badge}`} fill={BADGE_COLORS[entry.badge] || '#cccccc'} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -235,7 +248,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Pending queue aging</CardTitle>
-            <CardDescription>How long pending listings have been waiting.</CardDescription>
+            <CardDescription>How long all current pending listings have been waiting.</CardDescription>
           </CardHeader>
           <CardContent className="h-[320px]">
             {loading || !summary ? (

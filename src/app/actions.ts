@@ -101,74 +101,116 @@ export async function getAdminAnalyticsSummaryAction(options?: {
   const endDate = options?.endDate ? new Date(options.endDate) : new Date();
   const startDate = options?.startDate
     ? new Date(options.startDate)
-    : new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+    : new Date(new Date().setDate(endDate.getDate() - days));
 
-  const snapshot = await adminDb.collection('listings').get();
+  endDate.setHours(23, 59, 59, 999);
+
+  const getStatsForPeriod = async (start: Date, end: Date) => {
+    const approvedSnapshot = await adminDb.collection('listings')
+      .where('status', '==', 'approved')
+      .where('adminReviewedAt', '>=', start)
+      .where('adminReviewedAt', '<=', end)
+      .get();
+    
+    const rejectedSnapshot = await adminDb.collection('listings')
+      .where('status', '==', 'rejected')
+      .where('adminReviewedAt', '>=', start)
+      .where('adminReviewedAt', '<=', end)
+      .get();
+    
+    const pendingSnapshot = await adminDb.collection('listings')
+      .where('status', '==', 'pending')
+      .where('createdAt', '>=', start)
+      .where('createdAt', '<=', end)
+      .get();
+      
+    return { 
+      approved: approvedSnapshot.size, 
+      rejected: rejectedSnapshot.size, 
+      pending: pendingSnapshot.size 
+    };
+  };
+
+  const periodDuration = endDate.getTime() - startDate.getTime();
+  const previousEndDate = new Date(startDate.getTime() - 1);
+  const previousStartDate = new Date(previousEndDate.getTime() - periodDuration);
+
+  const [currentPeriodTotals, previousPeriodTotals] = await Promise.all([
+    getStatsForPeriod(startDate, endDate),
+    getStatsForPeriod(previousStartDate, previousEndDate),
+  ]);
+
+  const calculateDelta = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+  
+  const trendDeltas = {
+    approved: calculateDelta(currentPeriodTotals.approved, previousPeriodTotals.approved),
+    pending: calculateDelta(currentPeriodTotals.pending, previousPeriodTotals.pending),
+    rejected: calculateDelta(currentPeriodTotals.rejected, previousPeriodTotals.rejected),
+  };
+
+  const listingsInPeriodSnapshot = await adminDb.collection('listings')
+    .where('createdAt', '>=', startDate)
+    .where('createdAt', '<=', endDate)
+    .get();
+
   const countyMap: Record<string, number> = {};
-  const badgeMap: Record<'Gold' | 'Silver' | 'Bronze' | 'None', number> = {
-    Gold: 0,
-    Silver: 0,
-    Bronze: 0,
-    None: 0,
-  };
-
-  const timelineMap: Record<string, { approved: number; pending: number; rejected: number }> = {};
-  const pendingAgeBuckets = {
-    '0-3 days': 0,
-    '4-7 days': 0,
-    '8-14 days': 0,
-    '15+ days': 0,
-  };
-
-  snapshot.forEach((doc) => {
+  const badgeMap: Record<string, number> = {};
+  
+  listingsInPeriodSnapshot.forEach((doc) => {
     const data = doc.data();
     const county = (data.county as string | undefined) || 'Unknown';
     countyMap[county] = (countyMap[county] || 0) + 1;
-
-    const badge = (data.badge as 'Gold' | 'Silver' | 'Bronze' | null) ?? 'None';
-    badgeMap[badge] = (badgeMap[badge] || 0) + 1;
-
-    const status = data.status as ListingStatus;
-    const createdAt = data.createdAt?.toDate?.() as Date | undefined;
-    const reviewedAt = data.adminReviewedAt?.toDate?.() as Date | undefined;
-    const refDate = reviewedAt || createdAt;
-
-    if (refDate && refDate >= startDate && refDate <= endDate) {
-      const dateKey = refDate.toISOString().split('T')[0];
-      if (!timelineMap[dateKey]) {
-        timelineMap[dateKey] = { approved: 0, pending: 0, rejected: 0 };
-      }
-      if (status === 'approved') timelineMap[dateKey].approved += 1;
-      if (status === 'pending') timelineMap[dateKey].pending += 1;
-      if (status === 'rejected') timelineMap[dateKey].rejected += 1;
-    }
-
-    if (status === 'pending' && createdAt) {
-      const ageDays = Math.floor((Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000));
-      if (ageDays <= 3) pendingAgeBuckets['0-3 days'] += 1;
-      else if (ageDays <= 7) pendingAgeBuckets['4-7 days'] += 1;
-      else if (ageDays <= 14) pendingAgeBuckets['8-14 days'] += 1;
-      else pendingAgeBuckets['15+ days'] += 1;
+    if (data.status === 'approved' && data.badge) {
+      badgeMap[data.badge] = (badgeMap[data.badge] || 0) + 1;
     }
   });
 
-  const countyDistribution = Object.entries(countyMap)
-    .map(([county, count]) => ({ county, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+  const timelineMap: Record<string, { approved: number; rejected: number }> = {};
+  const timelineSnapshot = await adminDb.collection('listings')
+    .where('adminReviewedAt', '>=', startDate)
+    .where('adminReviewedAt', '<=', endDate)
+    .orderBy('adminReviewedAt', 'asc')
+    .get();
 
-  const timeline = Object.entries(timelineMap)
-    .map(([date, value]) => ({ date, ...value }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  timelineSnapshot.forEach(doc => {
+    const data = doc.data();
+    const status = data.status as ListingStatus;
+    const refDate = data.adminReviewedAt?.toDate?.();
+    if (refDate) {
+      const dateKey = refDate.toISOString().split('T')[0];
+      if (!timelineMap[dateKey]) {
+        timelineMap[dateKey] = { approved: 0, rejected: 0 };
+      }
+      if (status === 'approved') timelineMap[dateKey].approved++;
+      if (status === 'rejected') timelineMap[dateKey].rejected++;
+    }
+  });
+
+  const pendingAgeBuckets = { '0-3 days': 0, '4-7 days': 0, '8-14 days': 0, '15+ days': 0 };
+  const allPendingSnapshot = await adminDb.collection('listings').where('status', '==', 'pending').get();
+  allPendingSnapshot.forEach(doc => {
+    const createdAt = doc.data().createdAt?.toDate?.();
+    if (createdAt) {
+      const ageDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      if (ageDays <= 3) pendingAgeBuckets['0-3 days']++;
+      else if (ageDays <= 7) pendingAgeBuckets['4-7 days']++;
+      else if (ageDays <= 14) pendingAgeBuckets['8-14 days']++;
+      else pendingAgeBuckets['15+ days']++;
+    }
+  });
+
+  const countyDistribution = Object.entries(countyMap).map(([county, count]) => ({ county, count })).sort((a, b) => b.count - a.count).slice(0, 10);
+  const badgeDistribution = (['Gold', 'Silver', 'Bronze', 'None'] as const).map(badge => ({ badge, count: badgeMap[badge] || 0 }));
+  const timeline = Object.entries(timelineMap).map(([date, value]) => ({ date, ...value })).sort((a, b) => a.date.localeCompare(b.date));
 
   return {
+    moderationTotals: currentPeriodTotals,
+    trendDeltas,
     countyDistribution,
-    badgeDistribution: [
-      { badge: 'Gold', count: badgeMap.Gold },
-      { badge: 'Silver', count: badgeMap.Silver },
-      { badge: 'Bronze', count: badgeMap.Bronze },
-      { badge: 'None', count: badgeMap.None },
-    ],
+    badgeDistribution,
     moderationTimeline: timeline,
     pendingAgeBuckets: Object.entries(pendingAgeBuckets).map(([bucket, count]) => ({ bucket, count })),
     window: {
