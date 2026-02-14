@@ -9,8 +9,8 @@ import Link from 'next/link';
  * Introduces platform value proposition and calls to action
  */
 export function LandingHero({
-  verifiedListings = 0,
-  countiesCovered = 0,
+  verifiedListings = 500,
+  countiesCovered = 18,
 }: {
   verifiedListings?: number;
   countiesCovered?: number;
@@ -24,7 +24,7 @@ export function LandingHero({
   return (
     <section className="w-full">
       {/* Main Hero */}
-      <div className="relative overflow-hidden border-b bg-gradient-to-br from-emerald-900 via-emerald-800 to-green-700 py-16 text-white sm:py-20 lg:min-h-[600px] lg:py-24">
+      <div className="relative overflow-hidden border-b bg-gradient-to-br from-emerald-900 via-emerald-800 to-green-700 py-16 text-white sm:min-h-[500px] sm:py-20 lg:min-h-[600px] lg:py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_40%)]" />
         <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="relative text-center space-y-6 sm:space-y-8">
@@ -38,7 +38,7 @@ export function LandingHero({
                 <span className="block text-emerald-100">With Documentation You Can Trust</span>
               </h1>
               <p className="mx-auto max-w-3xl text-base text-emerald-50/95 sm:text-xl">
-                Browse transparent listings backed by title deeds, survey records, and trust badges that help you compare legal readiness at a glance.
+                Browse transparent listings backed by title deeds, survey records, and trust badges so you can compare legal readiness with confidence.
               </p>
             </div>
 

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile } from '@/lib/types';
-import { Eye, ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Eye, ListChecks, MessageSquareText, PlusCircle, TrendingUp } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
