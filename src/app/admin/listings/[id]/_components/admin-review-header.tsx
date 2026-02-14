@@ -113,7 +113,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
         value={currentStatus}
         onValueChange={(v: ListingStatus) => setCurrentStatus(v)}
       >
-        <SelectTrigger className="w-full sm:w-[120px]">
+        <SelectTrigger className="w-full sm:w-[120px]" aria-label="Set listing status">
           <SelectValue placeholder="Set status" />
         </SelectTrigger>
         <SelectContent>
@@ -129,7 +129,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
         value={currentBadge || ''}
         onValueChange={(v: BadgeValue) => setCurrentBadge(v)}
       >
-        <SelectTrigger className="w-full sm:w-[120px]">
+        <SelectTrigger className="w-full sm:w-[120px]" aria-label="Set trust badge">
           <SelectValue placeholder="Set badge" />
         </SelectTrigger>
         <SelectContent>

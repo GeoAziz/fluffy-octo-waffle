@@ -144,7 +144,7 @@ export default function ContactUsPage() {
                 <Input
                   id="name"
                   required
-                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-invalid={!!fieldErrors.name}
                   placeholder="John Doe"
                   value={formState.name}
                   onChange={(event) => {
@@ -162,7 +162,7 @@ export default function ContactUsPage() {
                   id="email"
                   type="email"
                   required
-                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-invalid={!!fieldErrors.email}
                   placeholder="you@example.com"
                   value={formState.email}
                   onChange={(event) => {
@@ -201,7 +201,7 @@ export default function ContactUsPage() {
                 <Textarea
                   id="message"
                   required
-                  aria-invalid={Boolean(fieldErrors.message)}
+                  aria-invalid={!!fieldErrors.message}
                   placeholder="Tell us what you need help with..."
                   className="min-h-[120px]"
                   value={formState.message}

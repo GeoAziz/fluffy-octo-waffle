@@ -165,7 +165,7 @@ export function BuyerHeader() {
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
 
-              <div className="flex max-h-[calc(100dvh-76px)] flex-col overflow-y-auto px-4 py-4">
+              <div className="flex max-h-[calc(100dvh-57px)] flex-col overflow-y-auto px-4 py-4">
                 {user && userProfile && (
                   <div className="mb-6">
                     <div className="mb-4 flex items-center gap-3 px-3 py-2">

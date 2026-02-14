@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { LandPlot, Mail, Phone, Facebook, Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,13 +22,11 @@ import type { PlatformSettings } from '@/lib/types';
 interface NavLink {
   href: string;
   label: string;
-  isProtected?: boolean; // true if requires authentication
   description?: string;
 }
 
 export function BuyerFooter() {
   const { toast } = useToast();
-  const router = useRouter();
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -55,12 +52,6 @@ export function BuyerFooter() {
 
     fetchSettings();
   }, []);
-
-  // Handle navigation with scroll to top
-  const handleNavigation = (href: string) => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    router.push(href);
-  };
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,15 +117,26 @@ export function BuyerFooter() {
     {
       href: '/explore',
       label: 'All Listings',
-      isProtected: false,
       description: 'Browse all verified land listings across Kenya',
     },
     {
       href: '/favorites',
       label: 'Saved Properties',
-      isProtected: false,
       description: 'Your saved favorite listings',
     },
+  ];
+  
+  const learnLinks: NavLink[] = [
+      { href: '/trust', label: 'How We Verify' },
+      { href: '/messages', label: 'Conversations' },
+      { href: '/contact', label: 'Ask Questions' },
+  ];
+  
+  const supportLinks: NavLink[] = [
+      { href: '/report', label: 'Report Listing' },
+      { href: '/contact', label: 'Contact Support' },
+      { href: '/terms', label: 'Terms of Service' },
+      { href: '/privacy', label: 'Privacy Policy' },
   ];
 
   return (
@@ -162,13 +164,14 @@ export function BuyerFooter() {
           
           {/* Brand & Newsletter Section */}
           <div className="md:col-span-2">
-            <button
-              onClick={() => handleNavigation('/')}
+            <Link
+              href="/"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="flex items-center space-x-2 mb-4 hover:opacity-80 transition-opacity"
             >
               <LandPlot className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg">{platformName}</span>
-            </button>
+            </Link>
             <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
               Your trusted marketplace for verified land transactions in Kenya. We connect buyers and sellers with transparency and confidence.
             </p>
@@ -224,12 +227,13 @@ export function BuyerFooter() {
               </form>
 
               <p className="text-xs text-muted-foreground">
-                We respect your privacy. <button 
-                  onClick={() => handleNavigation('/privacy')}
+                We respect your privacy. <Link 
+                  href="/privacy"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                   className="text-primary hover:underline"
                 >
                   Unsubscribe anytime
-                </button>
+                </Link>
               </p>
             </div>
           </div>
@@ -240,14 +244,15 @@ export function BuyerFooter() {
             <ul className="space-y-2.5 text-sm">
               {browseLinks.map((link) => (
                 <li key={link.href}>
-                  <button
-                    onClick={() => handleNavigation(link.href)}
-                    className="text-muted-foreground hover:text-primary transition-colors text-left w-full hover:underline"
+                  <Link
+                    href={link.href}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="text-muted-foreground hover:text-primary transition-colors hover:underline"
                     title={link.description}
                     aria-label={`${link.label} - ${link.description}`}
                   >
                     {link.label}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -257,32 +262,18 @@ export function BuyerFooter() {
           <div>
             <h3 className="font-semibold mb-4 text-foreground text-sm uppercase tracking-wide">Learn</h3>
             <ul className="space-y-2.5 text-sm">
-              <li>
-                <button
-                  onClick={() => handleNavigation('/trust')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                >
-                  How We Verify
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNavigation('/messages')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                  title="View your conversations"
-                >
-                  Conversations
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNavigation('/contact')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                  title="Ask us a question"
-                >
-                  Ask Questions
-                </button>
-              </li>
+              {learnLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="text-muted-foreground hover:text-primary transition-colors hover:underline"
+                      title={link.description}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+              ))}
             </ul>
           </div>
 
@@ -290,38 +281,18 @@ export function BuyerFooter() {
           <div>
             <h3 className="font-semibold mb-4 text-foreground text-sm uppercase tracking-wide">Support</h3>
             <ul className="space-y-2.5 text-sm">
-              <li>
-                <button
-                  onClick={() => handleNavigation('/report')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                >
-                  Report Listing
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNavigation('/contact')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                >
-                  Contact Support
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNavigation('/terms')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                >
-                  Terms of Service
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNavigation('/privacy')}
-                  className="text-muted-foreground hover:text-primary transition-colors hover:underline text-left"
-                >
-                  Privacy Policy
-                </button>
-              </li>
+              {supportLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="text-muted-foreground hover:text-primary transition-colors hover:underline"
+                      title={link.description}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -382,6 +353,3 @@ export function BuyerFooter() {
     </footer>
   );
 }
-
-
-
