@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { EmptyState } from '@/components/empty-state';
 
 const statusStyles: Record<ReturnType<typeof getConversationStatus>, string> = {
   new: 'bg-warning/15 text-warning',
@@ -250,12 +251,12 @@ export default async function SellerDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {recentListings.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">You haven't created any listings yet.</p>
-                <Button asChild className="mt-4">
-                  <Link href="/listings/new">Create Your First Listing</Link>
-                </Button>
-              </div>
+              <EmptyState
+                icon={ListChecks}
+                title="You haven't created any listings yet"
+                description="Create your first listing to begin the trust badge review process."
+                actions={[{ label: 'Create Your First Listing', href: '/listings/new' }]}
+              />
             ) : (
               <div className="overflow-x-auto">
                 <Table>

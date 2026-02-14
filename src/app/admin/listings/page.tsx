@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, ChevronRight, Eye, Check, X } from "lucide-react";
+import { Search, ChevronRight, Eye, Check, X, LandPlot } from "lucide-react";
 import { searchListingsAction, bulkUpdateListingStatus } from "@/app/actions";
 import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,17 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
+import { EmptyState } from "@/components/empty-state";
+import Image from "next/image";
+import { TrustBadge } from "@/components/trust-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,6 +119,15 @@ export default function AdminListingsPage() {
   const clearSelection = () => setSelected({});
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
+
+  const resetFilters = () => {
+    setQuery("");
+    setStatusFilter("all");
+    setBadgeFilter("all");
+    setDateRange("all");
+  };
+
+  const getViewEstimate = (listing: Listing) => Math.max(5, Math.round(listing.price / 1000000));
 
   const handleBulk = async (status: "approved" | "rejected" | "pending") => {
     if (selectedIds.length === 0) return;
@@ -272,9 +292,13 @@ export default function AdminListingsPage() {
               ))}
             </div>
           ) : listings.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">No listings match the current filters.</p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title="No listings match the current filters"
+              description="Try widening your search, adjusting date ranges, or clearing a badge filter."
+              actions={[{ label: 'Clear filters', variant: 'outline', onClick: resetFilters }]}
+              className="bg-muted/20"
+            />
           ) : viewMode === 'kanban' ? (
             <div className="grid gap-4 lg:grid-cols-3">
               {(['pending', 'approved', 'rejected'] as const).map((status) => {
@@ -307,91 +331,125 @@ export default function AdminListingsPage() {
                               <Button asChild variant="ghost" size="sm" className="h-7 px-2">
                                 <Link href={`/admin/listings/${l.id}`}>Open</Link>
                               </Button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {listings.map((l) => {
-                const statusColor = {
-                  pending: 'bg-yellow-50 text-yellow-900 border-yellow-200',
-                  approved: 'bg-green-50 text-green-900 border-green-200',
-                  rejected: 'bg-red-50 text-red-900 border-red-200',
-                };
-                const statusIcon = {
-                  pending: null,
-                  approved: <Check className="h-4 w-4" />,
-                  rejected: <X className="h-4 w-4" />,
-                };
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[36px]"></TableHead>
+                                    <TableHead>Listing</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Badge</TableHead>
+                                    <TableHead>Views</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {listings.map((listing) => {
+                                    const statusIcon = {
+                                      pending: null,
+                                      approved: <Check className="h-4 w-4" />,
+                                      rejected: <X className="h-4 w-4" />,
+                                    };
 
-                return (
-                  <div key={l.id} className={`flex items-center gap-3 rounded-lg border p-3 transition-all hover:shadow-md ${statusColor[l.status as keyof typeof statusColor]}`}>
-                    <Checkbox
-                      checked={!!selected[l.id]}
-                      onCheckedChange={() => toggleSelect(l.id)}
-                      aria-label={`Select listing ${l.title}`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/admin/listings/${l.id}`} className="font-medium hover:underline">
-                          {l.title}
-                        </Link>
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
-                          {l.landType}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">{l.location} • Ksh {l.price.toLocaleString()}</div>
-                    </div>
-                    
-                    {/* Status Badge */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Badge variant="secondary" className="capitalize flex items-center gap-1">
-                        {statusIcon[l.status as keyof typeof statusIcon] && (
-                          <>
-                            {statusIcon[l.status as keyof typeof statusIcon]}
-                          </>
-                        )}
-                        {l.status}
-                      </Badge>
-                    </div>
-
-                    {/* Quick Actions - Desktop */}
-                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-                      <Link href={`/admin/listings/${l.id}`}>
-                        <Button size="sm" variant="ghost" title="View details">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      {l.status === 'pending' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            onClick={() => handleBulk('approved')}
-                            title="Approve listing"
-                            disabled={!selected[l.id]}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleBulk('rejected')}
-                            title="Reject listing"
-                            disabled={!selected[l.id]}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
+                                    return (
+                                      <TableRow key={listing.id}>
+                                        <TableCell>
+                                          <Checkbox
+                                            checked={!!selected[listing.id]}
+                                            onCheckedChange={() => toggleSelect(listing.id)}
+                                            aria-label={`Select listing ${listing.title}`}
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-3 min-w-[260px]">
+                                            <div className="relative h-12 w-16 overflow-hidden rounded-md bg-muted">
+                                              {listing.images?.[0]?.url ? (
+                                                <Image
+                                                  src={listing.images[0].url}
+                                                  alt={listing.title}
+                                                  fill
+                                                  sizes="64px"
+                                                  className="object-cover"
+                                                />
+                                              ) : (
+                                                <div className="flex h-full w-full items-center justify-center">
+                                                  <LandPlot className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <Link
+                                                href={`/admin/listings/${listing.id}`}
+                                                className="line-clamp-1 font-medium hover:underline"
+                                              >
+                                                {listing.title}
+                                              </Link>
+                                              <p className="line-clamp-1 text-xs text-muted-foreground">
+                                                {listing.location} • Ksh {listing.price.toLocaleString()}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant="secondary" className="capitalize flex items-center gap-1">
+                                            {statusIcon[listing.status as keyof typeof statusIcon] && (
+                                              <>{statusIcon[listing.status as keyof typeof statusIcon]}</>
+                                            )}
+                                            {listing.status}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                          {listing.badge && listing.badge !== 'None' ? (
+                                            <TrustBadge badge={listing.badge} showTooltip={false} />
+                                          ) : (
+                                            <span className="text-xs text-muted-foreground">None</span>
+                                          )}
+                                        </TableCell>
+                                        <TableCell>{getViewEstimate(listing)}</TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex items-center justify-end gap-2">
+                                            <Button asChild size="sm" variant="ghost" title="View details">
+                                              <Link href={`/admin/listings/${listing.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                              </Link>
+                                            </Button>
+                                            {listing.status === 'pending' && (
+                                              <>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                  onClick={() => handleBulk('approved')}
+                                                  title="Approve listing"
+                                                  disabled={!selected[listing.id]}
+                                                >
+                                                  <Check className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                  onClick={() => handleBulk('rejected')}
+                                                  title="Reject listing"
+                                                  disabled={!selected[listing.id]}
+                                                >
+                                                  <X className="h-4 w-4" />
+                                                </Button>
+                                              </>
+                                            )}
+                                            <Button asChild size="sm" variant="ghost">
+                                              <Link href={`/admin/listings/${listing.id}`}>
+                                                <ChevronRight className="h-4 w-4" />
+                                              </Link>
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            )}
                       <Button size="sm" variant="ghost">
                         <ChevronRight className="h-4 w-4" />
                       </Button>

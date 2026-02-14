@@ -15,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { formatRelative } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { ListingStatus, UserProfile } from '@/lib/types';
-import { Edit, PlusCircle } from 'lucide-react';
+import { Edit, ListChecks, PlusCircle } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getAuthenticatedUser } from '../_lib/auth';
+import { EmptyState } from '@/components/empty-state';
 
 export default async function SellerListingsPage({
   searchParams,
@@ -161,12 +162,12 @@ export default async function SellerListingsPage({
               </div>
             </>
           ) : (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">{activeStatus === 'all' ? "You haven't created any listings yet." : `No ${activeStatus} listings yet.`}</p>
-              <Button asChild className="mt-4">
-                <Link href="/listings/new">Create Your First Listing</Link>
-              </Button>
-            </div>
+            <EmptyState
+              icon={ListChecks}
+              title={activeStatus === 'all' ? "You haven't created any listings yet" : `No ${activeStatus} listings yet`}
+              description="Create a listing to start receiving buyer inquiries and trust badge reviews."
+              actions={[{ label: 'Create Your First Listing', href: '/listings/new' }]}
+            />
           )}
         </CardContent>
       </Card>

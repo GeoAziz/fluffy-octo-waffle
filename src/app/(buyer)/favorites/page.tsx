@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFavorites } from '@/hooks/use-favorites';
 import { getListingsByIds } from '@/app/actions';
 import type { Listing } from '@/lib/types';
-import { ArrowUpDown, LandPlot, Scale } from 'lucide-react';
+import { ArrowUpDown, Heart, LandPlot, Scale } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -14,6 +14,7 @@ import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EmptyState } from '@/components/empty-state';
 
 export default function FavoritesPage() {
   const { favoriteIds, loading: favoritesLoading } = useFavorites();
@@ -111,6 +112,7 @@ export default function FavoritesPage() {
                     alt={listing.title}
                     width={600}
                     height={400}
+                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="aspect-[3/2] w-full object-cover"
                     data-ai-hint={listing.images[0]?.hint || 'landscape'}
                   />
@@ -158,26 +160,17 @@ export default function FavoritesPage() {
         </div>
         </>
       ) : (
-        <div className="text-center py-20 rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground text-lg font-medium">You have no favorite listings yet.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Save listings to compare them later and return faster to the best options.
-          </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link href="/explore">Explore properties</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/explore?landType=Residential">View Residential</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/explore?landType=Agricultural">View Agricultural</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/explore?badges=Gold">Gold badge listings</Link>
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="You have no favorite listings yet"
+          description="Save listings to compare them later and return faster to the best options."
+          actions={[
+            { label: 'Explore properties', href: '/explore' },
+            { label: 'View Residential', href: '/explore?landType=Residential', variant: 'outline' },
+            { label: 'View Agricultural', href: '/explore?landType=Agricultural', variant: 'outline' },
+            { label: 'Gold badge listings', href: '/explore?badges=Gold', variant: 'outline' },
+          ]}
+        />
       )}
     </div>
   );

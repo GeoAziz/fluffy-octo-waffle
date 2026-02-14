@@ -46,6 +46,7 @@ import {
 import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
+import { EmptyState } from '@/components/empty-state';
 import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
@@ -549,6 +550,7 @@ export function ListingsContent() {
                       src={listing.images[0].url}
                       alt={listing.images[0].hint || listing.title}
                       fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                       className="object-cover"
                     />
                   ) : (
@@ -556,10 +558,10 @@ export function ListingsContent() {
                       <LandPlot className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 left-2">
                     <FavoriteButton listingId={listing.id} />
                   </div>
-                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 left-2" />}
+                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 right-2" />}
                 </div>
 
                 <CardHeader className="flex-1">
@@ -613,26 +615,24 @@ export function ListingsContent() {
           )}
         </>
       ) : (
-        <div className="text-center py-20 rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground text-lg font-medium">No listings found.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Try adjusting your filters or search terms to explore more options.
-          </p>
-          <div className="mx-auto mt-4 max-w-xl rounded-md bg-muted/60 px-4 py-3 text-left text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-2">Try these quick adjustments:</p>
-            <ul className="list-disc ml-5 space-y-1">
-              <li>Increase the max price by 10–20%.</li>
+        <EmptyState
+          icon={Search}
+          title="No listings found"
+          description="Try adjusting your filters or search terms to explore more options."
+          actions={[
+            { label: 'Clear filters', variant: 'outline', onClick: resetFilters },
+            { label: 'Get help', href: '/contact' },
+          ]}
+        >
+          <div className="mx-auto max-w-xl rounded-md bg-muted/60 px-4 py-3 text-left">
+            <p className="mb-2 font-medium text-foreground">Try these quick adjustments:</p>
+            <ul className="ml-5 list-disc space-y-1">
+              <li>Increase the max price by 10-20%.</li>
               <li>Widen area range by at least 5 acres.</li>
               <li>Remove one trust badge filter.</li>
             </ul>
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
-            <Button asChild>
-              <Link href="/contact">Get help</Link>
-            </Button>
-          </div>
-        </div>
+        </EmptyState>
       )}
     </div>
   );

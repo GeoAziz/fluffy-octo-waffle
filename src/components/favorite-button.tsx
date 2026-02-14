@@ -37,8 +37,17 @@ export function FavoriteButton({ listingId, className }: FavoriteButtonProps) {
 
         if (isFav) {
             removeFavorite(listingId);
+            toast({
+                title: 'Removed from favorites',
+                description: 'This listing has been removed from your favorites.',
+            });
         } else {
             addFavorite(listingId);
+            toast({
+                variant: 'success',
+                title: 'Added to favorites',
+                description: 'You can find it anytime in your favorites list.',
+            });
         }
     };
 
