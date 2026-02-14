@@ -74,6 +74,8 @@ export default function ConversationPage({ params }: { params: { id: string } })
     const [sending, setSending] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [status, setStatus] = useState<ConversationStatus>('new');
+    const [composerState, setComposerState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+    const [failedDraft, setFailedDraft] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -131,37 +133,26 @@ export default function ConversationPage({ params }: { params: { id: string } })
         };
     }, [params.id, user]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !user || !conversation) return;
 
+        const text = newMessage.trim();
         setSending(true);
-        const text = newMessage;
+        setComposerState('sending');
         setNewMessage('');
-        
+
         const messagesColRef = collection(db, 'conversations', params.id, 'messages');
         const messageData = {
             senderId: user.uid,
-            text: text,
+            text,
             timestamp: serverTimestamp(),
         };
-
-        // Use a non-blocking write with a .catch handler for errors.
-        addDoc(messagesColRef, messageData).catch(async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: messagesColRef.path,
-                operation: 'create',
-                requestResourceData: messageData,
-            }, error);
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not send message. Permission denied.' });
-            setNewMessage(text); // Restore the message text
-        });
 
         const convoRef = doc(db, 'conversations', params.id);
         const convoData = {
             lastMessage: {
-                text: text,
+                text,
                 senderId: user.uid,
                 timestamp: serverTimestamp(),
             },
@@ -169,20 +160,27 @@ export default function ConversationPage({ params }: { params: { id: string } })
             status: 'responded',
         };
 
-        // Also handle errors for updating the conversation document
-        updateDoc(convoRef, convoData).catch(async (error) => {
+        try {
+            await addDoc(messagesColRef, messageData);
+            await updateDoc(convoRef, convoData);
+            setStatus('responded');
+            setComposerState('sent');
+            setFailedDraft('');
+        } catch (error) {
+            const normalizedError = error instanceof Error ? error : new Error('Unknown messaging error');
             const permissionError = new FirestorePermissionError({
-                path: convoRef.path,
-                operation: 'update',
-                requestResourceData: convoData,
-            }, error);
+                path: messagesColRef.path,
+                operation: 'create',
+                requestResourceData: messageData,
+            }, normalizedError);
             errorEmitter.emit('permission-error', permissionError);
-            // Don't show a second toast, one is enough.
-        });
-        
-        // UI updates immediately, don't wait for the write to complete.
-        setStatus('responded');
-        setSending(false);
+            setFailedDraft(text);
+            setNewMessage(text);
+            setComposerState('failed');
+            toast({ variant: 'destructive', title: 'Send failed', description: 'Message could not be sent. Retry when ready.' });
+        } finally {
+            setSending(false);
+        }
     };
 
     const handleStatusChange = (nextStatus: ConversationStatus) => {
@@ -276,18 +274,36 @@ export default function ConversationPage({ params }: { params: { id: string } })
                     <div ref={messagesEndRef} />
                 </CardContent>
                 <CardFooter className="border-t p-4">
-                    <form onSubmit={handleSendMessage} className="w-full flex items-center gap-2">
-                        <Input 
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type a message..."
-                            disabled={sending}
-                            autoComplete="off"
-                        />
-                        <Button type="submit" size="icon" aria-label="Send message" disabled={sending || !newMessage.trim()}>
-                            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        </Button>
-                    </form>
+                    <div className="w-full space-y-2">
+                        <form onSubmit={handleSendMessage} className="w-full flex items-center gap-2">
+                            <Input 
+                                value={newMessage}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    if (composerState !== 'sending') setComposerState('idle');
+                                }}
+                                placeholder="Type a message..."
+                                disabled={sending}
+                                autoComplete="off"
+                            />
+                            <Button type="submit" size="icon" aria-label="Send message" disabled={sending || !newMessage.trim()}>
+                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            </Button>
+                        </form>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                            <span>
+                                {composerState === 'sending' && 'Status: sending...'}
+                                {composerState === 'sent' && 'Status: sent'}
+                                {composerState === 'failed' && 'Status: failed to send'}
+                                {composerState === 'idle' && 'Status: ready'}
+                            </span>
+                            {composerState === 'failed' && failedDraft && (
+                                <Button size="sm" variant="outline" onClick={() => setNewMessage(failedDraft)}>
+                                    Retry draft
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 </CardFooter>
             </Card>
 
@@ -308,6 +324,14 @@ export default function ConversationPage({ params }: { params: { id: string } })
                     <div>
                         <p className="text-xs text-muted-foreground uppercase">Buyer</p>
                         <p className="text-sm font-medium">{otherParticipant?.displayName || 'Unknown'}</p>
+                    </div>
+                    <div className="rounded-md border bg-muted/40 p-3">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Seller response expectation</p>
+                        <p className="mt-1 text-sm">Most sellers reply within 24 hours. If no reply after 48 hours, follow up or explore similar verified listings.</p>
+                    </div>
+                    <div className="rounded-md border bg-muted/40 p-3">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Trust reminder</p>
+                        <p className="mt-1 text-sm">Share only listing-related details in first contact. Avoid sending deposits before independent verification.</p>
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground uppercase mb-2">Status</p>

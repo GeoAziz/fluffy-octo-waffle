@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
   Sheet,
@@ -46,13 +47,14 @@ import {
 import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
+type SortOption = "newest" | "priceLow" | "priceHigh" | "areaHigh";
 
 /**
  * ListingsContent - Reusable component for browsing and filtering listings
@@ -62,6 +64,7 @@ export function ListingsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const isExplorePage = pathname === '/explore';
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [lastVisibleId, setLastVisibleId] = useState<string | null>(null);
@@ -76,6 +79,8 @@ export function ListingsContent() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
   const [badges, setBadges] = useState<BadgeValue[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const activeFilters = useMemo(() => {
     const filters = [];
@@ -98,6 +103,14 @@ export function ListingsContent() {
   }), [query, landType, priceRange, areaRange, badges]);
 
   const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
+
+  const sortedListings = useMemo(() => {
+    const next = [...listings];
+    if (sortBy === 'priceLow') return next.sort((a, b) => a.price - b.price);
+    if (sortBy === 'priceHigh') return next.sort((a, b) => b.price - a.price);
+    if (sortBy === 'areaHigh') return next.sort((a, b) => b.area - a.area);
+    return next;
+  }, [listings, sortBy]);
 
   const updateUrlParams = useDebouncedCallback(() => {
     const params = new URLSearchParams(window.location.search);
@@ -177,94 +190,128 @@ export function ListingsContent() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <p className="text-sm font-medium text-foreground">
+          {isExplorePage ? 'Advanced Search mode' : 'Quick Browse mode'}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {isExplorePage ? (
+            'Use the complete filter set below to narrow down listings precisely.'
+          ) : (
+            <>
+              Start with keyword and land type, then switch to{' '}
+              <Link href="/explore" className="underline underline-offset-4 hover:text-foreground">
+                Advanced Search
+              </Link>{' '}
+              for deeper filtering.
+            </>
+          )}
+        </p>
+      </div>
+
       {/* Filter Section */}
       <div className="space-y-4">
         {/* Desktop Filters */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end p-6 rounded-lg border bg-card">
-          <div className="space-y-2 lg:col-span-3">
-            <Label htmlFor="search-query">Search by Keyword</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                id="search-query"
-                placeholder="e.g., Kajiado, Kitengela, farm..."
-                value={query}
-                onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
-                className="pl-10"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="land-type">Land Type</Label>
-            <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
-              <SelectTrigger id="land-type">
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {LAND_TYPES.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Trust Badge</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <span>{badges.length > 0 ? `${badges.length} selected` : 'Any Badge'}</span>
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {BADGE_OPTIONS.map(badge => (
-                  <DropdownMenuCheckboxItem
-                    key={badge}
-                    checked={badges.includes(badge)}
-                    onCheckedChange={(checked) => {
-                      const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
-                      setBadges(newBadges);
-                    }}
-                  >
-                    {badge}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <div className="space-y-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Price Range (Ksh)</Label>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{priceRange[0].toLocaleString()}</span>
-                <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
+        <div className="hidden md:block p-6 rounded-lg border bg-card space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="search-query">Search by Keyword</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="search-query"
+                  placeholder="e.g., Kajiado, Kitengela, farm..."
+                  value={query}
+                  onChange={(e) => {setQuery(e.target.value); updateUrlParams()}}
+                  className="pl-10"
+                />
               </div>
-              <Slider
-                value={priceRange}
-                onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                max={50000000}
-                min={0}
-                step={100000}
-              />
             </div>
             <div className="space-y-2">
-              <Label>Area (Acres)</Label>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{areaRange[0]}</span>
-                <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
-              </div>
-              <Slider
-                value={areaRange}
-                onValueChange={(value) => setAreaRange([value[0], value[1]])}
-                max={100}
-                min={0}
-                step={1}
-              />
+              <Label htmlFor="land-type">Land Type</Label>
+              <Select value={landType} onValueChange={(value) => { setLandType(value === 'all' ? '' : value); }}>
+                <SelectTrigger id="land-type">
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {LAND_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" className="gap-2" onClick={() => setShowAdvancedFilters((prev) => !prev)}>
+                Advanced filters
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+              </Button>
             </div>
           </div>
+
+          <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+            <CollapsibleContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
+                <div className="space-y-2">
+                  <Label>Trust Badge</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        <span>{badges.length > 0 ? `${badges.length} selected` : 'Any Badge'}</span>
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                      <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {BADGE_OPTIONS.map(badge => (
+                        <DropdownMenuCheckboxItem
+                          key={badge}
+                          checked={badges.includes(badge)}
+                          onCheckedChange={(checked) => {
+                            const newBadges = checked ? [...badges, badge] : badges.filter(b => b !== badge);
+                            setBadges(newBadges);
+                          }}
+                        >
+                          {badge}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Price Range (Ksh)</Label>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{priceRange[0].toLocaleString()}</span>
+                      <span>{priceRange[1].toLocaleString()}{priceRange[1] === 50000000 ? '+' : ''}</span>
+                    </div>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                      max={50000000}
+                      min={0}
+                      step={100000}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Area (Acres)</Label>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{areaRange[0]}</span>
+                      <span>{areaRange[1]}{areaRange[1] === 100 ? '+' : ''}</span>
+                    </div>
+                    <Slider
+                      value={areaRange}
+                      onValueChange={(value) => setAreaRange([value[0], value[1]])}
+                      max={100}
+                      min={0}
+                      step={1}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* Mobile Filter Sheet */}
@@ -377,7 +424,8 @@ export function ListingsContent() {
               {activeFilters.map((filter, idx) => (
                 <Badge key={idx} variant="secondary" className="gap-2">
                   {filter.label}
-                  <button 
+                  <button
+                    aria-label={`Remove ${filter.label} filter`}
                     onClick={() => removeFilter(filter.type, filter.value)}
                     className="ml-1 hover:text-foreground"
                   >
@@ -394,6 +442,50 @@ export function ListingsContent() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card p-3">
+        <p className="text-sm text-muted-foreground">
+          Listings found: <span className="font-semibold text-foreground">{listingCountLabel}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="sort-listings" className="text-sm whitespace-nowrap">Sort by</Label>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+            <SelectTrigger id="sort-listings" className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="priceLow">Price: Low to High</SelectItem>
+              <SelectItem value="priceHigh">Price: High to Low</SelectItem>
+              <SelectItem value="areaHigh">Area: Largest First</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {activeFilters.length > 0 && (
+        <div className="md:hidden sticky top-16 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-y">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium">Active filters ({activeFilters.length})</p>
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              Clear all
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {activeFilters.slice(0, 3).map((filter, idx) => (
+              <Badge key={idx} variant="secondary" className="gap-1.5 text-xs">
+                {filter.label}
+                <button aria-label={`Remove ${filter.label} filter`} onClick={() => removeFilter(filter.type, filter.value)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            {activeFilters.length > 3 && (
+              <Badge variant="outline" className="text-xs">+{activeFilters.length - 3} more</Badge>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Listings Grid */}
       {loading ? (
@@ -402,10 +494,10 @@ export function ListingsContent() {
             <ListingCardSkeleton key={i} />
           ))}
         </div>
-      ) : listings.length > 0 ? (
+      ) : sortedListings.length > 0 ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listings-section">
-            {listings.map((listing) => (
+            {sortedListings.map((listing) => (
               <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                 <div className="relative h-48 overflow-hidden bg-muted">
                   {listing.images && listing.images.length > 0 ? (
@@ -482,6 +574,14 @@ export function ListingsContent() {
           <p className="text-sm text-muted-foreground mt-2">
             Try adjusting your filters or search terms to explore more options.
           </p>
+          <div className="mx-auto mt-4 max-w-xl rounded-md bg-muted/60 px-4 py-3 text-left text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-2">Try these quick adjustments:</p>
+            <ul className="list-disc ml-5 space-y-1">
+              <li>Increase the max price by 10–20%.</li>
+              <li>Widen area range by at least 5 acres.</li>
+              <li>Remove one trust badge filter.</li>
+            </ul>
+          </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button variant="outline" onClick={resetFilters}>Clear filters</Button>
             <Button asChild>

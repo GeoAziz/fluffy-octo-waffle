@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, LandPlot } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4">
@@ -59,6 +60,7 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
 
 
 export default function SignupPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -87,6 +89,8 @@ export default function SignupPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: { displayName: '', email: '', password: '' },
   });
 
@@ -271,6 +275,7 @@ export default function SignupPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
+                        <p className="text-xs text-muted-foreground">Use at least 6 characters. Include a number and symbol for a stronger password.</p>
                         <FormMessage />
                       </FormItem>
                     )}

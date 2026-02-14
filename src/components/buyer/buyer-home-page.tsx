@@ -1,21 +1,9 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/status-badge';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { LandingHero } from '@/components/buyer/landing-hero';
 import { BadgeLegend } from '@/components/buyer/badge-legend';
-import { TestimonialsSection } from '@/components/buyer/testimonials-section';
-import { FeaturedListings } from '@/components/buyer/featured-listings';
 import { HowToFind } from '@/components/buyer/how-to-find';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { useEffect, useState, useTransition, useMemo, Suspense } from 'react';
@@ -539,7 +527,6 @@ function ListingsContent() {
         </div>
       </div>
 
-      {/* ===== SECTION 7: Testimonials ===== */}
       <TestimonialsSection />
     </>
   );
