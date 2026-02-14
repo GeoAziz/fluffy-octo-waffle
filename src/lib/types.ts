@@ -72,6 +72,8 @@ export type Listing = {
   createdAt: any; // Firestore timestamp
   updatedAt: any; // Firestore timestamp
   adminReviewedAt?: any; // Firestore timestamp, optional
+  rejectionReason?: string; // Reason provided by admin for rejection
+  adminNotes?: string; // Internal notes for admins
   imageAnalysis?: ImageAnalysis;
   badgeSuggestion?: BadgeSuggestion;
   badge: BadgeValue | null;

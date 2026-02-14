@@ -542,7 +542,7 @@ export async function editListingAction(listingId: string, formData: FormData): 
 
 
 // Action to update a listing's status and/or badge
-export async function updateListing(listingId: string, data: { status?: ListingStatus; badge?: BadgeValue }) {
+export async function updateListing(listingId: string, data: { status?: ListingStatus; badge?: BadgeValue; rejectionReason?: string | null; adminNotes?: string | null; }) {
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') {
     throw new Error('Authorization required: Only admins can update status.');
@@ -559,12 +559,17 @@ export async function updateListing(listingId: string, data: { status?: ListingS
   if (data.status) {
     updateData.adminReviewedAt = FieldValue.serverTimestamp();
   }
+  
+  if (data.status !== 'rejected') {
+    updateData.rejectionReason = FieldValue.delete();
+  }
 
   await listingRef.update(updateData);
 
   revalidatePath('/admin');
   revalidatePath(`/admin/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidatePath('/dashboard');
   revalidatePath('/');
 }
 

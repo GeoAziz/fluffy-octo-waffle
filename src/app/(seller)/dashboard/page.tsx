@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const statusStyles: Record<ReturnType<typeof getConversationStatus>, string> = {
   new: 'bg-warning/15 text-warning',
@@ -86,22 +87,7 @@ export default async function SellerDashboard() {
     ...doc.data(),
   })) as Conversation[];
 
-  const needsAttentionItems = [
-    {
-      id: 'rejected',
-      count: statusCounts.rejected,
-      label: 'Rejected listings need fixes before they can go live.',
-      actionHref: '/dashboard/listings?status=rejected',
-      actionLabel: 'Review rejected listings',
-    },
-    {
-      id: 'pending',
-      count: statusCounts.pending,
-      label: 'Pending listings are waiting for admin review. Double-check details in case edits are needed.',
-      actionHref: '/dashboard/listings?status=pending',
-      actionLabel: 'View pending listings',
-    },
-  ].filter((item) => item.count > 0);
+  const needsAttentionItems = listings.filter(l => l.status === 'rejected');
 
   return (
     <SellerPage
@@ -125,20 +111,21 @@ export default async function SellerDashboard() {
               Needs attention
             </CardTitle>
             <CardDescription className="text-warning/90">
-              Prioritize these items to keep your listings moving through review.
+              Your rejected listings need changes before they can be approved.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {needsAttentionItems.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/30 bg-background/80 p-3">
-                <div>
-                  <p className="font-medium">{item.count} listing(s)</p>
-                  <p className="text-sm text-muted-foreground">{item.label}</p>
-                </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={item.actionHref}>{item.actionLabel}</Link>
-                </Button>
-              </div>
+              <Alert key={item.id} variant="default" className="bg-background/80 border-warning/50">
+                <AlertTriangle className="h-4 w-4 !text-warning" />
+                <AlertTitle>Listing Rejected: {item.title}</AlertTitle>
+                <AlertDescription>
+                  <p className="mb-2 font-semibold">Admin Feedback: <span className="font-normal">{item.rejectionReason || 'No reason provided.'}</span></p>
+                  <Button asChild size="sm">
+                    <Link href={`/listings/${item.id}/edit`}>Edit and Resubmit</Link>
+                  </Button>
+                </AlertDescription>
+              </Alert>
             ))}
           </CardContent>
         </Card>

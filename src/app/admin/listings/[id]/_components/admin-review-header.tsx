@@ -26,6 +26,7 @@ import { deleteListing, updateListing } from '@/app/actions';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TrustBadge } from '@/components/trust-badge';
+import { Textarea } from '@/components/ui/textarea';
 
 const statusOptions: { value: ListingStatus; label: string }[] = [
   { value: 'approved', label: 'Approve' },
@@ -47,6 +48,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRejectConfirmOpen, setRejectConfirmOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState(listing.rejectionReason || '');
 
   const isChanged =
     currentStatus !== listing.status || currentBadge !== listing.badge;
@@ -57,6 +59,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
       await updateListing(listing.id, {
         status: currentStatus,
         badge: currentBadge || 'None',
+        rejectionReason: currentStatus === 'rejected' ? rejectionReason : null,
       });
       toast({
         title: 'Success',
@@ -181,21 +184,25 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Are you sure you want to reject this listing?
+              Confirm Rejection
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action will mark the listing as &apos;Rejected&apos; and it will
-              no longer be visible to the public. The seller will see this
-              status in their dashboard.
+              Provide a clear reason for rejection. This will be shown to the seller to help them improve their listing.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Textarea
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="e.g., The title deed is unclear. Please upload a higher quality scan."
+            className="min-h-[100px]"
+            />
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSave} disabled={isSaving}>
+            <AlertDialogCancel onClick={() => setRejectionReason('')}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave} disabled={isSaving || !rejectionReason.trim()}>
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                'Yes, Reject Listing'
+                'Confirm Rejection'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
