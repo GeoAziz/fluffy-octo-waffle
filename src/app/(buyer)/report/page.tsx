@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function ReportListingPage() {
   const { toast } = useToast();
@@ -44,6 +46,7 @@ export default function ReportListingPage() {
 
       setReportStatus('received');
       toast({
+        variant: 'success',
         title: 'Report submitted',
         description: 'Thanks for flagging this listing. If you are signed in, we will email a confirmation.',
       });
@@ -77,34 +80,42 @@ export default function ReportListingPage() {
               <li><strong>Under review:</strong> our trust team is validating evidence.</li>
               <li><strong>Resolved:</strong> action taken and report closed.</li>
             </ul>
-            {reportStatus !== 'idle' && (
-              <p className="mt-3 text-foreground">Current status: <span className="font-semibold">{reportStatus.replace('_', ' ')}</span></p>
-            )}
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="listingId">Listing ID or URL</Label>
-              <Input
-                id="listingId"
-                placeholder="e.g., fpx7qY2v..."
-                value={formState.listingId}
-                onChange={(event) => setFormState((prev) => ({ ...prev, listingId: event.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason for Report</Label>
-              <Textarea
-                id="reason"
-                placeholder="Describe why you are reporting this listing..."
-                className="min-h-[120px]"
-                value={formState.reason}
-                onChange={(event) => setFormState((prev) => ({ ...prev, reason: event.target.value }))}
-              />
-            </div>
-            <Button variant="destructive" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Submit Report'}
-            </Button>
-            <div className="flex flex-wrap gap-2">
+          {reportStatus === 'received' ? (
+              <Alert variant="success">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Report Received</AlertTitle>
+                <AlertDescription>
+                  Our team will review your submission shortly. Thank you for helping keep our community safe.
+                </AlertDescription>
+              </Alert>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="listingId">Listing ID or URL</Label>
+                <Input
+                  id="listingId"
+                  placeholder="e.g., fpx7qY2v..."
+                  value={formState.listingId}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, listingId: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Report</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="Describe why you are reporting this listing..."
+                  className="min-h-[120px]"
+                  value={formState.reason}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, reason: event.target.value }))}
+                />
+              </div>
+              <Button variant="destructive" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Report'}
+              </Button>
+            </form>
+          )}
+           <div className="flex flex-wrap gap-2 pt-4 border-t">
               <Button asChild variant="outline">
                 <Link href="/contact">Contact Support</Link>
               </Button>
@@ -112,7 +123,6 @@ export default function ReportListingPage() {
                 <Link href="/explore">Back to Listings</Link>
               </Button>
             </div>
-          </form>
         </CardContent>
       </Card>
     </div>
