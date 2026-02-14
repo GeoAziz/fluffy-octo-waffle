@@ -159,6 +159,7 @@ const getEvidenceForListing = async (listingId: string): Promise<Evidence[]> => 
 export const getListings = async (options: {
   status?: ListingStatus | 'all';
   query?: string;
+  county?: string;
   minPrice?: number;
   maxPrice?: number;
   minArea?: number;
@@ -172,6 +173,7 @@ export const getListings = async (options: {
   const {
     status = 'approved',
     query,
+    county,
     minPrice = 0,
     maxPrice = 50000000,
     minArea = 0,
@@ -189,6 +191,10 @@ export const getListings = async (options: {
     listingsQuery = listingsQuery.where('status', '==', status);
   }
   
+  if (county) {
+    listingsQuery = listingsQuery.where('county', '==', county);
+  }
+
   if (landType) {
     listingsQuery = listingsQuery.where('landType', '==', landType);
   }

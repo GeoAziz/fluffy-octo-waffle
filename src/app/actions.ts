@@ -54,6 +54,7 @@ export async function getAuthenticatedUser(): Promise<{uid: string, role: UserPr
 // Action to search/filter listings
 export async function searchListingsAction(options: {
     query?: string;
+    county?: string;
     minPrice?: number;
     maxPrice?: number;
     minArea?: number;
@@ -84,6 +85,97 @@ export async function getChartDataAction() {
     throw new Error('Authorization required.');
   }
   return getListingStatsByDay(30);
+}
+
+export async function getAdminAnalyticsSummaryAction(options?: {
+  days?: 7 | 30 | 90;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') {
+    throw new Error('Authorization required.');
+  }
+
+  const days = options?.days ?? 30;
+  const endDate = options?.endDate ? new Date(options.endDate) : new Date();
+  const startDate = options?.startDate
+    ? new Date(options.startDate)
+    : new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+  const snapshot = await adminDb.collection('listings').get();
+  const countyMap: Record<string, number> = {};
+  const badgeMap: Record<'Gold' | 'Silver' | 'Bronze' | 'None', number> = {
+    Gold: 0,
+    Silver: 0,
+    Bronze: 0,
+    None: 0,
+  };
+
+  const timelineMap: Record<string, { approved: number; pending: number; rejected: number }> = {};
+  const pendingAgeBuckets = {
+    '0-3 days': 0,
+    '4-7 days': 0,
+    '8-14 days': 0,
+    '15+ days': 0,
+  };
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const county = (data.county as string | undefined) || 'Unknown';
+    countyMap[county] = (countyMap[county] || 0) + 1;
+
+    const badge = (data.badge as 'Gold' | 'Silver' | 'Bronze' | null) ?? 'None';
+    badgeMap[badge] = (badgeMap[badge] || 0) + 1;
+
+    const status = data.status as ListingStatus;
+    const createdAt = data.createdAt?.toDate?.() as Date | undefined;
+    const reviewedAt = data.adminReviewedAt?.toDate?.() as Date | undefined;
+    const refDate = reviewedAt || createdAt;
+
+    if (refDate && refDate >= startDate && refDate <= endDate) {
+      const dateKey = refDate.toISOString().split('T')[0];
+      if (!timelineMap[dateKey]) {
+        timelineMap[dateKey] = { approved: 0, pending: 0, rejected: 0 };
+      }
+      if (status === 'approved') timelineMap[dateKey].approved += 1;
+      if (status === 'pending') timelineMap[dateKey].pending += 1;
+      if (status === 'rejected') timelineMap[dateKey].rejected += 1;
+    }
+
+    if (status === 'pending' && createdAt) {
+      const ageDays = Math.floor((Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000));
+      if (ageDays <= 3) pendingAgeBuckets['0-3 days'] += 1;
+      else if (ageDays <= 7) pendingAgeBuckets['4-7 days'] += 1;
+      else if (ageDays <= 14) pendingAgeBuckets['8-14 days'] += 1;
+      else pendingAgeBuckets['15+ days'] += 1;
+    }
+  });
+
+  const countyDistribution = Object.entries(countyMap)
+    .map(([county, count]) => ({ county, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const timeline = Object.entries(timelineMap)
+    .map(([date, value]) => ({ date, ...value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    countyDistribution,
+    badgeDistribution: [
+      { badge: 'Gold', count: badgeMap.Gold },
+      { badge: 'Silver', count: badgeMap.Silver },
+      { badge: 'Bronze', count: badgeMap.Bronze },
+      { badge: 'None', count: badgeMap.None },
+    ],
+    moderationTimeline: timeline,
+    pendingAgeBuckets: Object.entries(pendingAgeBuckets).map(([bucket, count]) => ({ bucket, count })),
+    window: {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    },
+  };
 }
 
 

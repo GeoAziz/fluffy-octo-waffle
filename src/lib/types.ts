@@ -38,6 +38,7 @@ export type SavedSearch = {
   createdAt: any; // Firestore timestamp
   filters: {
     query?: string;
+    county?: string;
     landType?: string;
     minPrice?: number;
     maxPrice?: number;

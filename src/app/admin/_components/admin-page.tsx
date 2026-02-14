@@ -34,9 +34,11 @@ export function AdminPage({ title, description, breadcrumbs, actions, children }
           </div>
         )}
       </header>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 w-full">
-        {description && <div className="text-muted-foreground mb-4">{description}</div>}
-        {children}
+      <div className="flex-1 w-full overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-7xl">
+          {description && <div className="mb-4 text-muted-foreground">{description}</div>}
+          {children}
+        </div>
       </div>
     </div>
   )

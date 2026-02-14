@@ -8,8 +8,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 5000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 10000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -72,6 +72,13 @@ const addToRemoveQueue = (toastId: string) => {
   }, TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
+}
+
+const getToastDuration = (toast: Partial<ToasterToast>) => {
+  if (typeof toast.duration === "number") return toast.duration
+  if (toast.variant === "destructive") return 10000
+  if (toast.variant === "info") return 0
+  return 5000
 }
 
 export const reducer = (state: State, action: Action): State => {
@@ -163,6 +170,11 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  const duration = getToastDuration(props)
+  if (duration > 0) {
+    setTimeout(() => dismiss(), duration)
+  }
 
   return {
     id: id,

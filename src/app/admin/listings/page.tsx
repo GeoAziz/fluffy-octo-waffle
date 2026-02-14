@@ -17,6 +17,8 @@ import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,9 +27,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AdminListingsPage() {
+  const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [badgeFilter, setBadgeFilter] = useState<"all" | "Gold" | "Silver" | "Bronze" | "None">('all');
+  const [dateRange, setDateRange] = useState<'all' | '7' | '30' | '90'>('all');
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -43,21 +48,36 @@ export default function AdminListingsPage() {
       const res = await searchListingsAction({
         query: debouncedQuery || undefined,
         status: statusFilter as any,
+        badges: badgeFilter === 'all' || badgeFilter === 'None' ? undefined : [badgeFilter],
         limit: pageSize,
         startAfter: opts.startAfter || undefined,
       });
 
+      const rangeDays = dateRange === 'all' ? null : Number(dateRange);
+      const filtered = rangeDays
+        ? res.listings.filter((listing) => {
+            const refDate = listing.adminReviewedAt?.toDate?.() ?? listing.updatedAt?.toDate?.() ?? listing.createdAt?.toDate?.();
+            if (!refDate) return false;
+            const ageDays = (Date.now() - refDate.getTime()) / (1000 * 60 * 60 * 24);
+            return ageDays <= rangeDays;
+          })
+        : res.listings;
+
       if (opts.append) {
-        setListings((s) => [...s, ...res.listings]);
+        setListings((s) => [...s, ...filtered]);
       } else {
-        setListings(res.listings);
+        setListings(filtered);
       }
 
       setLastVisibleId(res.lastVisibleId);
       setHasMore(Boolean(res.lastVisibleId));
     } catch (e) {
       console.error('Error fetching listings:', e);
-      alert(`Error fetching listings: ${e instanceof Error ? e.message : String(e)}`);
+      toast({
+        variant: 'destructive',
+        title: 'Unable to load listings',
+        description: e instanceof Error ? e.message : String(e),
+      });
     } finally {
       setLoading(false);
     }
@@ -73,7 +93,7 @@ export default function AdminListingsPage() {
     setSelected({});
     setLastVisibleId(null);
     fetchListings({ append: false });
-  }, [debouncedQuery, statusFilter]);
+  }, [debouncedQuery, statusFilter, badgeFilter, dateRange]);
 
   const toggleSelect = (id: string) => {
     setSelected((s) => ({ ...s, [id]: !s[id] }));
@@ -93,13 +113,22 @@ export default function AdminListingsPage() {
     if (selectedIds.length === 0) return;
     try {
       await bulkUpdateListingStatus(selectedIds, status as any);
+      toast({
+        variant: 'success',
+        title: 'Bulk update complete',
+        description: `${selectedIds.length} listing(s) moved to ${status}.`,
+      });
       // Refresh list
       setSelected({});
       setLastVisibleId(null);
       await fetchListings({ append: false });
     } catch (e) {
       console.error('Error in bulk update:', e);
-      alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk action failed',
+        description: e instanceof Error ? e.message : String(e),
+      });
     }
   };
 
@@ -109,8 +138,8 @@ export default function AdminListingsPage() {
       description="Manage all platform listings. Search, filter, and perform bulk actions."
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { href: "/admin/listings", label: "Listings" }]}
     >
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="col-span-2">
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="md:col-span-2">
           <div className="relative">
             <label htmlFor="listing-search" className="sr-only">
               Search listings
@@ -141,6 +170,35 @@ export default function AdminListingsPage() {
             <option value="rejected">Rejected</option>
           </select>
         </div>
+        <div>
+          <label htmlFor="badge-filter" className="sr-only">Filter listings by badge</label>
+          <select
+            id="badge-filter"
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            value={badgeFilter}
+            onChange={(e) => setBadgeFilter(e.target.value as any)}
+          >
+            <option value="all">All Badges</option>
+            <option value="Gold">Gold</option>
+            <option value="Silver">Silver</option>
+            <option value="Bronze">Bronze</option>
+            <option value="None">No badge</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="date-filter" className="sr-only">Filter listings by date range</label>
+          <select
+            id="date-filter"
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as any)}
+          >
+            <option value="all">Any time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
       </div>
 
       <Card>
@@ -157,17 +215,26 @@ export default function AdminListingsPage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => handleBulk("approved")} disabled={selectedIds.length === 0}>
-                  Approve Selected
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleBulk("rejected")}
-                  disabled={selectedIds.length === 0}
+                {selectedIds.length > 0 && (
+                  <Badge variant="secondary">{selectedIds.length} selected</Badge>
+                )}
+                <ConfirmActionDialog
+                  title="Approve selected listings"
+                  description="These listings will be set to approved and become visible to buyers."
+                  confirmLabel="Approve"
+                  onConfirm={() => handleBulk("approved")}
                 >
-                  Reject Selected
-                </Button>
+                  <Button size="sm" disabled={selectedIds.length === 0}>Approve Selected</Button>
+                </ConfirmActionDialog>
+                <ConfirmActionDialog
+                  title="Reject selected listings"
+                  description="This will mark selected listings as rejected. Sellers must revise and resubmit."
+                  confirmLabel="Reject"
+                  onConfirm={() => handleBulk("rejected")}
+                  variant="destructive"
+                >
+                  <Button size="sm" variant="destructive" disabled={selectedIds.length === 0}>Reject Selected</Button>
+                </ConfirmActionDialog>
               </div>
               <div className="flex items-center gap-2 sm:hidden">
                 <DropdownMenu>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition, useMemo } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -34,7 +34,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -53,6 +52,10 @@ import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
+const KENYA_COUNTIES = [
+  'Nairobi', 'Mombasa', 'Kiambu', 'Kajiado', 'Machakos', 'Nakuru', 'Uasin Gishu', 'Kisumu',
+  'Nyeri', 'Meru', 'Laikipia', 'Murang\'a', 'Kilifi', 'Kwale', 'Kakamega', 'Bungoma',
+];
 const BADGE_OPTIONS: BadgeValue[] = ["Gold", "Silver", "Bronze"];
 type SortOption = "newest" | "priceLow" | "priceHigh" | "areaHigh";
 
@@ -61,9 +64,8 @@ type SortOption = "newest" | "priceLow" | "priceHigh" | "areaHigh";
  * Used by both home page and dedicated explore page
  */
 export function ListingsContent() {
-  const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const isExplorePage = pathname === '/explore';
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -75,6 +77,7 @@ export function ListingsContent() {
 
   // Filter states
   const [query, setQuery] = useState('');
+  const [county, setCounty] = useState('');
   const [landType, setLandType] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 100]);
@@ -85,22 +88,24 @@ export function ListingsContent() {
   const activeFilters = useMemo(() => {
     const filters = [];
     if (query) filters.push({type: 'query', value: query, label: `Query: ${query}`});
+    if (county) filters.push({type: 'county', value: county, label: `County: ${county}`});
     if (landType) filters.push({type: 'landType', value: landType, label: `Type: ${landType}`});
     if (priceRange[0] > 0 || priceRange[1] < 50000000) filters.push({type: 'price', value: priceRange, label: `Price: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}`});
     if (areaRange[0] > 0 || areaRange[1] < 100) filters.push({type: 'area', value: areaRange, label: `Area: ${areaRange[0]} - ${areaRange[1]} acres`});
     badges.forEach(b => filters.push({type: 'badge', value: b, label: `${b} Badge`}));
     return filters;
-  }, [query, landType, priceRange, areaRange, badges]);
+  }, [query, county, landType, priceRange, areaRange, badges]);
   
   const currentFilters = useMemo(() => ({
     query: query || undefined,
+    county: county || undefined,
     landType: landType || undefined,
     minPrice: priceRange[0],
     maxPrice: priceRange[1],
     minArea: areaRange[0],
     maxArea: areaRange[1],
     badges: badges.length > 0 ? badges : undefined,
-  }), [query, landType, priceRange, areaRange, badges]);
+  }), [query, county, landType, priceRange, areaRange, badges]);
 
   const listingCountLabel = loading ? 'Loading...' : `${listings.length}${hasMore ? '+' : ''}`;
 
@@ -115,6 +120,7 @@ export function ListingsContent() {
   const updateUrlParams = useDebouncedCallback(() => {
     const params = new URLSearchParams(window.location.search);
     if (query) params.set('query', query); else params.delete('query');
+    if (county) params.set('county', county); else params.delete('county');
     if (landType) params.set('landType', landType); else params.delete('landType');
     params.set('minPrice', String(priceRange[0]));
     params.set('maxPrice', String(priceRange[1]));
@@ -131,6 +137,7 @@ export function ListingsContent() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setQuery(params.get('query') || '');
+    setCounty(params.get('county') || '');
     setLandType(params.get('landType') || '');
     setPriceRange([Number(params.get('minPrice') || 0), Number(params.get('maxPrice') || 50000000)]);
     setAreaRange([Number(params.get('minArea') || 0), Number(params.get('maxArea') || 100)]);
@@ -141,7 +148,7 @@ export function ListingsContent() {
     setLoading(true);
     const params = {
       ...currentFilters,
-      limit: 12,
+      limit: 10,
     };
     
     searchListingsAction(params).then(result => {
@@ -159,7 +166,7 @@ export function ListingsContent() {
 
     const params = {
       ...currentFilters,
-      limit: 12,
+      limit: 10,
       startAfter: lastVisibleId,
     };
     
@@ -172,6 +179,7 @@ export function ListingsContent() {
   
   const resetFilters = () => {
     setQuery('');
+    setCounty('');
     setLandType('');
     setPriceRange([0, 50000000]);
     setAreaRange([0, 100]);
@@ -181,6 +189,7 @@ export function ListingsContent() {
 
   const removeFilter = (type: string, value: any) => {
     if (type === 'query') setQuery('');
+    if (type === 'county') setCounty('');
     if (type === 'landType') setLandType('');
     if (type === 'price') setPriceRange([0, 50000000]);
     if (type === 'area') setAreaRange([0, 100]);
@@ -213,8 +222,8 @@ export function ListingsContent() {
       <div className="space-y-4">
         {/* Desktop Filters */}
         <div className="hidden md:block p-6 rounded-lg border bg-card space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            <div className="space-y-2 md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+            <div className="space-y-2 lg:col-span-3">
               <Label htmlFor="search-query">Search by Keyword</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -226,6 +235,20 @@ export function ListingsContent() {
                   className="pl-10"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="county">County</Label>
+              <Select value={county} onValueChange={(value) => { setCounty(value === 'all' ? '' : value); }}>
+                <SelectTrigger id="county">
+                  <SelectValue placeholder="All counties" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Counties</SelectItem>
+                  {KENYA_COUNTIES.map((countyName) => (
+                    <SelectItem key={countyName} value={countyName}>{countyName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="land-type">Land Type</Label>
@@ -241,7 +264,7 @@ export function ListingsContent() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end lg:justify-start">
               <Button variant="outline" className="gap-2" onClick={() => setShowAdvancedFilters((prev) => !prev)}>
                 Advanced filters
                 <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
@@ -357,6 +380,20 @@ export function ListingsContent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label>County</Label>
+                  <Select value={county} onValueChange={(value) => { setCounty(value === 'all' ? '' : value); }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All counties" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Counties</SelectItem>
+                      {KENYA_COUNTIES.map((countyName) => (
+                        <SelectItem key={countyName} value={countyName}>{countyName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>Price Range</Label>
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                     <span>{priceRange[0].toLocaleString()}</span>
@@ -404,11 +441,18 @@ export function ListingsContent() {
                     ))}
                   </div>
                 </div>
-                {activeFilters.length > 0 && (
-                  <Button variant="outline" className="w-full" onClick={resetFilters}>
-                    Clear All Filters
-                  </Button>
-                )}
+                <div className="sticky bottom-0 -mx-2 border-t bg-background px-2 py-4">
+                  <div className="flex gap-2">
+                    {activeFilters.length > 0 && (
+                      <Button variant="outline" className="flex-1" onClick={resetFilters}>
+                        Clear Filters
+                      </Button>
+                    )}
+                    <Button className="flex-1" onClick={() => setIsFilterSheetOpen(false)}>
+                      Apply Filters
+                    </Button>
+                  </div>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
