@@ -542,28 +542,32 @@ export function ListingsContent() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listings-section">
             {sortedListings.map((listing) => (
-              <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
-                <div className="relative h-48 overflow-hidden bg-muted">
-                  {listing.images && listing.images.length > 0 ? (
-                    <Image
-                      src={listing.images[0].url}
-                      alt={listing.images[0].hint || listing.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <LandPlot className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2">
+              <Card key={listing.id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
+                <Link href={`/listings/${listing.id}`} className="block relative">
+                  <div className="relative h-48 overflow-hidden bg-muted">
+                    {listing.images && listing.images.length > 0 ? (
+                      <Image
+                        src={listing.images[0].url}
+                        alt={listing.images[0].hint || listing.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <LandPlot className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute top-2 right-2 z-10">
                     <FavoriteButton listingId={listing.id} />
                   </div>
-                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 left-2" />}
-                </div>
+                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 left-2 z-10" />}
+                </Link>
 
                 <CardHeader className="flex-1">
-                  <CardTitle className="line-clamp-2">{listing.title}</CardTitle>
+                  <Link href={`/listings/${listing.id}`}>
+                    <CardTitle className="line-clamp-2 transition-colors group-hover:text-primary">{listing.title}</CardTitle>
+                  </Link>
                   <CardDescription className="line-clamp-2">{listing.location}</CardDescription>
                 </CardHeader>
 
