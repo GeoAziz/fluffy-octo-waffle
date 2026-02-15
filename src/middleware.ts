@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // All pages that require a user to be logged in just to access
-  const generalProtectedPages = ['/messages', '/profile', '/favorites', '/onboarding'];
+  const generalProtectedPages = ['/messages', '/profile', '/favorites', '/onboarding', '/buyer/dashboard'];
 
   // All pages that require a SELLER or ADMIN role
   const sellerPages = ['/dashboard', '/listings/new', '/settings'];
