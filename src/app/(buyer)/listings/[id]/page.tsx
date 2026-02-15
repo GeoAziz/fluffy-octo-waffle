@@ -190,6 +190,12 @@ export default async function ListingDetailPage({
             <CardContent className="p-6">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                 <div>
+
+                {canContact && (
+                  <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 p-4 backdrop-blur md:hidden">
+                    <ContactSellerButton listingId={id} />
+                  </div>
+                )}
                   <h1 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">
                     {title}
                   </h1>

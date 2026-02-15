@@ -41,12 +41,13 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
                   alt={listing.title}
                   width={600}
                   height={400}
+                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                   className="aspect-[3/2] w-full object-cover hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 left-3">
                   <FavoriteButton listingId={listing.id} />
                 </div>
-                <div className="absolute top-3 left-3 flex gap-2 items-center">
+                <div className="absolute top-3 right-3 flex gap-2 items-center">
                   {listing.badge && <TrustBadge badge={listing.badge} />}
                   <StatusBadge status={listing.status} />
                 </div>

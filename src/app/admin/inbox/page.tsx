@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { getInboxItemsAction } from '@/app/actions';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/empty-state';
 
 type InboxItemStatus = 'new' | 'handled' | 'all';
 
@@ -93,9 +94,11 @@ export default function AdminInboxPage() {
     if (isLoading) return <InboxSkeleton />;
     if (contactMessages.length === 0) {
         return (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">No contact messages match the current filter.</p>
-            </div>
+            <EmptyState
+              icon={Mail}
+              title="No contact messages match the current filter"
+              description="Try switching to All or Handled to review past messages."
+            />
         );
     }
     return (
@@ -139,9 +142,11 @@ export default function AdminInboxPage() {
       if (isLoading) return <InboxSkeleton />;
       if (listingReports.length === 0) {
         return (
-            <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">No listing reports match the current filter.</p>
-            </div>
+                        <EmptyState
+                            icon={AlertTriangle}
+                            title="No listing reports match the current filter"
+                            description="Switch to All to review previously handled reports."
+                        />
         );
       }
       return (
