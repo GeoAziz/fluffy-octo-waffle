@@ -543,7 +543,6 @@ export function ListingsContent() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listings-section">
             {sortedListings.map((listing) => (
-<<<<<<< HEAD
               <Card key={listing.id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
                 <Link href={`/listings/${listing.id}`} className="block relative">
                   <div className="relative h-48 overflow-hidden bg-muted">
@@ -552,6 +551,7 @@ export function ListingsContent() {
                         src={listing.images[0].url}
                         alt={listing.images[0].hint || listing.title}
                         fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -565,28 +565,6 @@ export function ListingsContent() {
                   </div>
                   {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 left-2 z-10" />}
                 </Link>
-=======
-              <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
-                <div className="relative h-48 overflow-hidden bg-muted">
-                  {listing.images && listing.images.length > 0 ? (
-                    <Image
-                      src={listing.images[0].url}
-                      alt={listing.images[0].hint || listing.title}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <LandPlot className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2">
-                    <FavoriteButton listingId={listing.id} />
-                  </div>
-                  {listing.badge && <TrustBadge badge={listing.badge} className="absolute top-2 right-2" />}
-                </div>
->>>>>>> 0fa19842774dae1705361578057e385c586901a6
 
                 <CardHeader className="flex-1">
                   <Link href={`/listings/${listing.id}`}>
