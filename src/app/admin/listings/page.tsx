@@ -450,9 +450,6 @@ export default function AdminListingsPage() {
                                 </TableBody>
                               </Table>
                             )}
-                      <Button size="sm" variant="ghost">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 );
