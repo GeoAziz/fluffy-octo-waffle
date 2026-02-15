@@ -20,6 +20,10 @@ import {
   Coins,
   ShieldCheck,
   CircleAlert,
+  Edit,
+  Copy,
+  Archive,
+  Share2,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
