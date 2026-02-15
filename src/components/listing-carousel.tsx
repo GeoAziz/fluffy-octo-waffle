@@ -9,7 +9,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ListingImage } from '@/lib/types';
@@ -76,6 +82,12 @@ export function ListingCarousel({ images, title, className }: ListingCarouselPro
 
             <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
               <DialogContent className="max-w-6xl border-none bg-black/95 p-3 text-white sm:p-6">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>Image lightbox for {title}</DialogTitle>
+                  <DialogDescription>
+                    Enlarged view of property images. Use arrow buttons to navigate between images.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="relative">
                   <Button
                     type="button"
