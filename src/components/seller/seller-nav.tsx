@@ -11,8 +11,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCircle, LogOut } from 'lucide-react';
+import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCircle, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/firebase';
@@ -46,18 +45,28 @@ export function SellerNav() {
 
   return (
     <>
-      <SidebarHeader className="border-b">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <LandPlot className="size-6 text-primary" />
-          <h2 className="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">
-            KLT
-          </h2>
+      <SidebarHeader className="border-b border-sidebar-border/70 bg-sidebar/80">
+        <Link href="/" className="flex items-center gap-3 rounded-md p-1 transition-opacity hover:opacity-80">
+          <div className="rounded-md bg-primary/10 p-1.5 text-primary">
+            <LandPlot className="size-5" />
+          </div>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <h2 className="text-base font-bold tracking-tight">KLT Seller</h2>
+            <p className="text-xs text-muted-foreground">Control center</p>
+          </div>
         </Link>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-6">
-        {/* Workspace Section */}
+      <SidebarContent className="flex flex-col gap-5 px-1 py-2">
+        <div className="mx-2 rounded-lg border border-sidebar-border/70 bg-sidebar-accent/30 p-3 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+          <div className="mb-1.5 flex items-center gap-1.5 font-medium text-foreground">
+            <Sparkles className="size-3.5 text-primary" />
+            Seller tip
+          </div>
+          Complete listing details and images to improve approval speed and buyer trust.
+        </div>
+
         <div className="px-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 group-data-[collapsible=icon]:hidden">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
             Workspace
           </p>
           <SidebarMenu>
@@ -71,7 +80,7 @@ export function SellerNav() {
                         : pathname === item.href || pathname.startsWith(`${item.href}/`)
                     }
                     tooltip={item.label}
-                    className="min-h-10"
+                    className="min-h-11 rounded-lg"
                   >
                     <item.icon className="size-5" />
                     <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
@@ -85,9 +94,8 @@ export function SellerNav() {
           </SidebarMenu>
         </div>
 
-        {/* Account Section */}
-        <div className="px-2 border-t pt-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 group-data-[collapsible=icon]:hidden">
+        <div className="border-t border-sidebar-border/70 px-2 pt-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
             Account
           </p>
           <SidebarMenu>
@@ -97,7 +105,7 @@ export function SellerNav() {
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
-                    className="min-h-10"
+                    className="min-h-10 rounded-lg"
                   >
                     <item.icon className="size-5" />
                     <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
@@ -111,12 +119,11 @@ export function SellerNav() {
           </SidebarMenu>
         </div>
 
-        {/* Help Section */}
-        <div className="px-2 border-t pt-4">
+        <div className="border-t border-sidebar-border/70 px-2 pt-4">
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/contact" passHref>
-                <SidebarMenuButton tooltip="Get Help" className="min-h-10">
+                <SidebarMenuButton tooltip="Get Help" className="min-h-10 rounded-lg">
                   <HelpCircle className="size-5" />
                   <span className="group-data-[collapsible=icon]:hidden">Get Help</span>
                 </SidebarMenuButton>
@@ -125,17 +132,17 @@ export function SellerNav() {
           </SidebarMenu>
         </div>
       </SidebarContent>
-      <SidebarFooter className="border-t">
+      <SidebarFooter className="border-t border-sidebar-border/70">
         {userProfile && (
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
+            <div className="flex items-center gap-3 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/40 p-2.5 transition-colors hover:bg-sidebar-accent/70">
               <Avatar className="h-10 w-10 flex-shrink-0">
                 <AvatarImage src={userProfile.photoURL ?? undefined} alt={userProfile.displayName ?? ''} />
                 <AvatarFallback className="text-sm font-semibold">{userProfile.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden min-w-0">
-                <span className="text-sm font-semibold truncate">{userProfile.displayName}</span>
-                <span className="text-xs text-muted-foreground truncate">{userProfile.email}</span>
+              <div className="min-w-0 flex flex-col truncate group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-semibold">{userProfile.displayName}</span>
+                <span className="truncate text-xs text-muted-foreground">{userProfile.email}</span>
               </div>
             </div>
             <Button
@@ -144,7 +151,7 @@ export function SellerNav() {
               size="sm"
               className="w-full justify-start group-data-[collapsible=icon]:p-2"
             >
-              <LogOut className="size-4 mr-2" />
+              <LogOut className="mr-2 size-4" />
               <span className="group-data-[collapsible=icon]:hidden">Logout</span>
             </Button>
           </div>

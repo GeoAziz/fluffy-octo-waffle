@@ -13,14 +13,12 @@ import { SellerNav } from '@/components/seller/seller-nav';
  */
 export default function SellerLayout({ children }: PropsWithChildren) {
   return (
-    <SidebarProvider className="w-full h-screen">
+    <SidebarProvider className="h-screen w-full bg-muted/20">
       <Sidebar>
         <SellerNav />
       </Sidebar>
-      <SidebarInset className="flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+      <SidebarInset className="flex flex-col overflow-hidden border-l border-border/60 bg-background">
+        <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

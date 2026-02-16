@@ -94,6 +94,7 @@ export default async function SellerDashboard() {
     <SellerPage
       title="Dashboard"
       description={`Welcome back${userProfile.displayName ? `, ${userProfile.displayName}` : ''}.`}
+      eyebrow="Seller performance"
       actions={(
         <Button asChild>
           <Link href="/listings/new">
@@ -103,6 +104,43 @@ export default async function SellerDashboard() {
         </Button>
       )}
     >
+      <div className="mb-8 grid gap-4 lg:grid-cols-3">
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background">
+          <CardHeader>
+            <CardTitle className="text-base">Portfolio Health</CardTitle>
+            <CardDescription>Quick pulse on your current inventory.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p><span className="font-semibold text-foreground">{statusCounts.total}</span> active listings in your workspace.</p>
+            <p><span className="font-semibold text-foreground">{statusCounts.pending}</span> awaiting moderation review.</p>
+            <p><span className="font-semibold text-foreground">{statusCounts.rejected}</span> requiring edits before approval.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Buyer Conversations</CardTitle>
+            <CardDescription>Stay responsive and convert interest faster.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>{recentConversations.length > 0 ? `${recentConversations.length} recent conversation threads to follow up.` : 'No recent conversations yet.'}</p>
+            <Button asChild variant="outline" size="sm" className="mt-2">
+              <Link href="/messages">Open inbox</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Publishing Momentum</CardTitle>
+            <CardDescription>Keep your listing cadence high for visibility.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>{recentListings.length > 0 ? `${recentListings.length} latest listings are highlighted below.` : 'Start by creating your first listing.'}</p>
+            <Button asChild variant="outline" size="sm" className="mt-2">
+              <Link href="/listings/new">Create listing</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {needsAttentionItems.length > 0 ? (
         <Card className="mb-8 border-warning/40 bg-warning/10">

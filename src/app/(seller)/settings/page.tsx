@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { BadgeCheck, Bell, Building2, MessagesSquare } from 'lucide-react';
 
 export default function SellerSettingsPage() {
   const { toast } = useToast();
@@ -32,121 +33,154 @@ export default function SellerSettingsPage() {
   };
 
   return (
-    <SellerPage title="Settings" description="Manage account, communication, and listing preferences.">
-      <div className="max-w-4xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile & Business</CardTitle>
-            <CardDescription>Basic seller account details used across your listings.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="businessName">Business / Display Name</Label>
-                <Input
-                  id="businessName"
-                  value={settings.businessName}
-                  onChange={(event) => setSettings((prev) => ({ ...prev, businessName: event.target.value }))}
-                  placeholder="e.g., Acme Land Ventures"
+    <SellerPage
+      title="Settings"
+      eyebrow="Workspace preferences"
+      description="Manage account, communication, and listing preferences."
+    >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile & Business</CardTitle>
+              <CardDescription>Basic seller account details used across your listings.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="businessName">Business / Display Name</Label>
+                  <Input
+                    id="businessName"
+                    value={settings.businessName}
+                    onChange={(event) => setSettings((prev) => ({ ...prev, businessName: event.target.value }))}
+                    placeholder="e.g., Acme Land Ventures"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supportPhone">Support Phone</Label>
+                  <Input
+                    id="supportPhone"
+                    value={settings.supportPhone}
+                    onChange={(event) => setSettings((prev) => ({ ...prev, supportPhone: event.target.value }))}
+                    placeholder="+254 7XX XXX XXX"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Listing Notifications</CardTitle>
+              <CardDescription>Choose when we should notify you about listing lifecycle changes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Listing approval updates (email)</p>
+                  <p className="text-sm text-muted-foreground">Get notified when a listing is approved, rejected, or requires edits.</p>
+                </div>
+                <Switch
+                  checked={settings.listingApprovalEmail}
+                  onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, listingApprovalEmail: checked }))}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="supportPhone">Support Phone</Label>
-                <Input
-                  id="supportPhone"
-                  value={settings.supportPhone}
-                  onChange={(event) => setSettings((prev) => ({ ...prev, supportPhone: event.target.value }))}
-                  placeholder="+254 7XX XXX XXX"
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Listing approval updates (SMS)</p>
+                  <p className="text-sm text-muted-foreground">Receive urgent review outcomes via SMS.</p>
+                </div>
+                <Switch
+                  checked={settings.listingApprovalSms}
+                  onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, listingApprovalSms: checked }))}
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Listing Notifications</CardTitle>
-            <CardDescription>Choose when we should notify you about listing lifecycle changes.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Listing approval updates (email)</p>
-                <p className="text-sm text-muted-foreground">Get notified when a listing is approved, rejected, or requires edits.</p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Communication Preferences</CardTitle>
+              <CardDescription>Control message and digest granularity for buyer conversations.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Buyer message alerts (email)</p>
+                  <p className="text-sm text-muted-foreground">Send an email when a new buyer message arrives.</p>
+                </div>
+                <Switch
+                  checked={settings.messageEmail}
+                  onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, messageEmail: checked }))}
+                />
               </div>
-              <Switch
-                checked={settings.listingApprovalEmail}
-                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, listingApprovalEmail: checked }))}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Listing approval updates (SMS)</p>
-                <p className="text-sm text-muted-foreground">Receive urgent review outcomes via SMS.</p>
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Buyer message alerts (in-app)</p>
+                  <p className="text-sm text-muted-foreground">Show real-time notifications while you are active in the dashboard.</p>
+                </div>
+                <Switch
+                  checked={settings.messagePush}
+                  onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, messagePush: checked }))}
+                />
               </div>
-              <Switch
-                checked={settings.listingApprovalSms}
-                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, listingApprovalSms: checked }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              <div className="space-y-2 rounded-md border p-3">
+                <Label htmlFor="digestFrequency">Digest frequency</Label>
+                <Input
+                  id="digestFrequency"
+                  value={settings.digestFrequency}
+                  onChange={(event) => setSettings((prev) => ({ ...prev, digestFrequency: event.target.value }))}
+                  placeholder="daily / weekly / off"
+                />
+                <p className="text-xs text-muted-foreground">Set how often you want summary updates for listing and inquiry activity.</p>
+              </div>
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Product announcements</p>
+                  <p className="text-sm text-muted-foreground">Receive updates about new seller tools and policy changes.</p>
+                </div>
+                <Switch
+                  checked={settings.marketingUpdates}
+                  onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, marketingUpdates: checked }))}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Communication Preferences</CardTitle>
-            <CardDescription>Control message and digest granularity for buyer conversations.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Buyer message alerts (email)</p>
-                <p className="text-sm text-muted-foreground">Send an email when a new buyer message arrives.</p>
-              </div>
-              <Switch
-                checked={settings.messageEmail}
-                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, messageEmail: checked }))}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Buyer message alerts (in-app)</p>
-                <p className="text-sm text-muted-foreground">Show real-time notifications while you are active in the dashboard.</p>
-              </div>
-              <Switch
-                checked={settings.messagePush}
-                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, messagePush: checked }))}
-              />
-            </div>
-            <div className="space-y-2 rounded-md border p-3">
-              <Label htmlFor="digestFrequency">Digest frequency</Label>
-              <Input
-                id="digestFrequency"
-                value={settings.digestFrequency}
-                onChange={(event) => setSettings((prev) => ({ ...prev, digestFrequency: event.target.value }))}
-                placeholder="daily / weekly / off"
-              />
-              <p className="text-xs text-muted-foreground">Set how often you want summary updates for listing and inquiry activity.</p>
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Product announcements</p>
-                <p className="text-sm text-muted-foreground">Receive updates about new seller tools and policy changes.</p>
-              </div>
-              <Switch
-                checked={settings.marketingUpdates}
-                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, marketingUpdates: checked }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <Separator />
 
-        <Separator />
+          <div className="flex justify-end">
+            <Button onClick={onSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Settings'}
+            </Button>
+          </div>
+        </div>
 
-        <div className="flex justify-end">
-          <Button onClick={onSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Settings'}
-          </Button>
+        <div className="space-y-4">
+          <Card className="bg-gradient-to-b from-primary/10 to-background">
+            <CardHeader>
+              <CardTitle className="text-base">Configuration checklist</CardTitle>
+              <CardDescription>Recommended baseline for active sellers.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Building2 className="mt-0.5 size-4 text-primary" />
+                <p>Add a business name and support line for buyer trust.</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Bell className="mt-0.5 size-4 text-primary" />
+                <p>Enable approval email alerts so listing changes are never missed.</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <MessagesSquare className="mt-0.5 size-4 text-primary" />
+                <p>Keep in-app message notifications turned on for quicker replies.</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <BadgeCheck className="mt-0.5 size-4 text-primary" />
+                <p>Review settings monthly as your listing volume grows.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </SellerPage>
