@@ -62,6 +62,7 @@ export default async function SellerListingsPage({
     <SellerPage
       title="Listings"
       description={`Manage your listings, ${userProfile.displayName || 'Seller'}.`}
+      eyebrow="Listing management"
       actions={(
         <Button asChild>
           <Link href="/listings/new">
@@ -71,6 +72,22 @@ export default async function SellerListingsPage({
         </Button>
       )}
     >
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'All listings', key: 'all' },
+          { label: 'Pending review', key: 'pending' },
+          { label: 'Approved', key: 'approved' },
+          { label: 'Needs edits', key: 'rejected' },
+        ].map((item) => (
+          <Card key={item.key} className="border-border/70">
+            <CardContent className="pt-6">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
+              <p className="mt-2 text-3xl font-bold">{listingCounts[item.key as keyof typeof listingCounts]}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Your Listings</CardTitle>
