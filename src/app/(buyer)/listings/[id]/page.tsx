@@ -30,6 +30,8 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { UserProfile } from '@/lib/types';
 import { TrustBadge } from '@/components/trust-badge';
 import { ContactSellerButton } from './_components/contact-seller-button';
+import { ListingActions } from './_components/listing-actions';
+import { InquiryForm } from './_components/inquiry-form';
 import { BuyerTip } from '@/components/buyer-tip';
 import { DynamicLocationMap } from '@/components/dynamic-location-map';
 import { DynamicListingCarousel } from '@/components/dynamic-listing-carousel';
@@ -109,6 +111,7 @@ export default async function ListingDetailPage({
     size,
     landType,
     badge,
+    amenities,
     latitude,
     longitude,
     isApproximateLocation
@@ -121,6 +124,14 @@ export default async function ListingDetailPage({
     { icon: Square, label: "Dimensions", value: size },
     { icon: LandPlot, label: "Land Type", value: landType },
   ];
+
+  const amenityLabels: Record<string, string> = {
+    water: 'Water access',
+    electricity: 'Electricity',
+    road: 'Road access',
+    perimeter: 'Perimeter wall',
+    security: 'Security',
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12 pb-24 md:pb-12">
@@ -189,17 +200,18 @@ export default async function ListingDetailPage({
             </CardHeader>
             <CardContent className="p-6">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-                <div>
-
-                {canContact && (
-                  <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 p-4 backdrop-blur md:hidden">
-                    <ContactSellerButton listingId={id} />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  {canContact && (
+                    <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 p-4 backdrop-blur md:hidden">
+                      <ContactSellerButton listingId={id} />
+                    </div>
+                  )}
                   <h1 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">
                     {title}
                   </h1>
+                  <p className="text-sm text-muted-foreground">{location}, {county}</p>
                 </div>
+                <ListingActions listingId={id} />
               </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2 my-6 text-sm text-foreground/90">
@@ -214,6 +226,19 @@ export default async function ListingDetailPage({
                 ))}
               </div>
 
+              {amenities && amenities.length > 0 && (
+                <div className="rounded-md border bg-muted/30 p-4 text-sm">
+                  <p className="font-semibold">Amenities</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {amenities.map((amenity) => (
+                      <span key={amenity} className="rounded-full border px-3 py-1 text-xs">
+                        {amenityLabels[amenity] ?? amenity}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Separator className="my-6" />
 
               <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -222,6 +247,29 @@ export default async function ListingDetailPage({
               <div className="prose prose-stone max-w-none text-foreground/90">
                 <p>{description}</p>
               </div>
+
+              <Separator className="my-6" />
+
+              <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                Documentation
+              </h2>
+              {evidence.length > 0 ? (
+                <ul className="space-y-3">
+                  {evidence.map((doc, index) => (
+                    <li key={doc.id} className="flex items-center gap-3 rounded-md border p-3">
+                      <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
+                      <span
+                        className="text-sm font-medium text-foreground/90 truncate"
+                        title={canViewEvidenceNames ? doc.name : 'Seller-provided document'}
+                      >
+                        {canViewEvidenceNames ? doc.name : `Document ${index + 1}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
+              )}
 
               <Separator className="my-6" />
 
@@ -241,7 +289,7 @@ export default async function ListingDetailPage({
               </div>
             </CardContent>
           </Card>
-           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Location on Map</CardTitle>
               {isApproximateLocation && (
@@ -274,6 +322,18 @@ export default async function ListingDetailPage({
               </p>
             </CardContent>
           </Card>
+
+          {canContact && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Inquiry Form</CardTitle>
+                <CardDescription>Send a quick note to the seller</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <InquiryForm listingId={id} />
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

@@ -21,18 +21,26 @@ interface FeaturedListingsProps {
 export function FeaturedListings({ listings }: FeaturedListingsProps) {
   if (listings.length === 0) return null;
 
+  const amenityLabels: Record<string, string> = {
+    water: 'Water access',
+    electricity: 'Electricity',
+    road: 'Road access',
+    perimeter: 'Perimeter wall',
+    security: 'Security',
+  };
+
   return (
     <section className="py-12 border-b bg-muted/20">
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Featured Properties</h2>
           <p className="text-muted-foreground mt-2">
-            Handpicked Gold-badge listings with the most complete documentation
+            Handpicked listings with standout documentation and buyer-ready details
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {listings.slice(0, 3).map((listing, index) => (
+          {listings.slice(0, 6).map((listing, index) => (
             <Card key={listing.id} className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow animate-soft-fade-scale" style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}>
               {/* Image Section */}
               <Link href={`/listings/${listing.id}`} className="block relative overflow-hidden bg-muted">
@@ -70,10 +78,24 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
                     {listing.area} Acres
                   </p>
                 </div>
-                
-                {/* Document Indicator */}
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <div>
+                    <p className="font-semibold text-foreground">Land Type</p>
+                    <p>{listing.landType}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Utilities</p>
+                    <p>
+                      {listing.amenities && listing.amenities.length > 0
+                        ? amenityLabels[listing.amenities[0]] ?? 'Listed'
+                        : 'Confirm with seller'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">Verified Documents:</p>
+                  <p className="text-xs text-muted-foreground mb-2">Documentation highlights</p>
                   <div className="flex gap-1 flex-wrap">
                     <div className="text-xs bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 px-2 py-1 rounded">
                       Title Deed
@@ -106,7 +128,7 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
         {/* View All Button */}
         <div className="mt-8 text-center">
           <Button variant="outline" size="lg" asChild>
-            <Link href="/#listings">
+            <Link href="/listings">
               View All Listings
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

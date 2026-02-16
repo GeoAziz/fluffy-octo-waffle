@@ -13,36 +13,36 @@ export function BadgeLegend({
 }: {
   distribution?: Partial<Record<'Gold' | 'Silver' | 'Bronze', number>>;
 }) {
-  const total = (distribution?.Gold || 0) + (distribution?.Silver || 0) + (distribution?.Bronze || 0);
-  const pct = (value: number) => (total > 0 ? `${Math.round((value / total) * 100)}% of listings` : 'No data yet');
-
   const badges = [
     {
       name: 'Gold',
       icon: Trophy,
       color: 'text-amber-600',
       bg: 'bg-amber-100',
-      percentage: pct(distribution?.Gold || 0),
-      requirements: ['Title deed uploaded', 'Land survey uploaded', 'Rate clearance uploaded', 'Seller ID verified', '3+ photos uploaded'],
-      description: 'Highest trust level with complete and verified legal documentation.',
+      requirements: [
+        'Original title deed',
+        'Approved survey map',
+        'Land rates clearance certificate',
+        'Physical inspection report',
+        'Verified by admin',
+      ],
+      description: 'Complete documentation verified for the highest trust level.',
     },
     {
       name: 'Silver',
       icon: Gem,
       color: 'text-slate-600',
       bg: 'bg-slate-100',
-      percentage: pct(distribution?.Silver || 0),
-      requirements: ['Title deed or survey uploaded', 'Seller ID verified', '2+ photos uploaded'],
-      description: 'Strong documentation coverage with key records verified.',
+      requirements: ['3 out of 4 key documents', 'Pending final verification'],
+      description: 'Strong documentation coverage with one final check pending.',
     },
     {
       name: 'Bronze',
       icon: Award,
       color: 'text-orange-600',
       bg: 'bg-orange-100',
-      percentage: pct(distribution?.Bronze || 0),
-      requirements: ['At least one document uploaded', 'Basic listing information complete'],
-      description: 'Starter trust level with basic documentation submitted.',
+      requirements: ['2 out of 4 key documents', 'Listing under review'],
+      description: 'Basic documentation submitted while verification is in progress.',
     },
   ];
 
@@ -67,7 +67,11 @@ export function BadgeLegend({
                     </div>
                     <span className="font-semibold">{badge.name} Badge</span>
                   </div>
-                  <Badge variant="outline">{badge.percentage}</Badge>
+                  {distribution && (
+                    <Badge variant="outline">
+                      {distribution[badge.name as 'Gold' | 'Silver' | 'Bronze'] ?? 0} listings
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">{badge.description}</p>
                 <ul className="space-y-1.5 text-xs text-foreground/80">

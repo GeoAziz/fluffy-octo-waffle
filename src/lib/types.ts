@@ -45,6 +45,7 @@ export type SavedSearch = {
     minArea?: number;
     maxArea?: number;
     badges?: BadgeValue[];
+    amenities?: string[];
   };
 };
 
@@ -77,6 +78,7 @@ export type Listing = {
   imageAnalysis?: ImageAnalysis;
   badgeSuggestion?: BadgeSuggestion;
   badge: BadgeValue | null;
+  amenities?: string[];
   // Kept for backward compatibility during data transformation in `toListing`
   image?: string; 
   imageHint?: string;

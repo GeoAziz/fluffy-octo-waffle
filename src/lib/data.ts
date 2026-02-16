@@ -166,6 +166,7 @@ export const getListings = async (options: {
   maxArea?: number;
   landType?: string;
   badges?: BadgeValue[];
+    amenities?: string[];
   sortBy?: string; // e.g. 'createdAt:desc'
   limit?: number;
   startAfter?: string; // a document ID
@@ -180,11 +181,11 @@ export const getListings = async (options: {
     maxArea = 100,
     landType,
     badges,
+    amenities,
     sortBy = 'createdAt:desc',
     limit: queryLimit = 12,
     startAfter: startAfterId
   } = options;
-
   let listingsQuery: FirebaseFirestore.Query = adminDb.collection('listings');
 
   if (status !== 'all') {
@@ -202,10 +203,15 @@ export const getListings = async (options: {
   if (badges && badges.length > 0) {
     listingsQuery = listingsQuery.where('badge', 'in', badges);
   }
+
+    const hasAmenitiesFilter = amenities && amenities.length > 0;
+    if (hasAmenitiesFilter) {
+        listingsQuery = listingsQuery.where('amenities', 'array-contains-any', amenities);
+    }
   
   const hasPriceFilter = minPrice > 0 || maxPrice < 50000000;
   
-  // Note: Firestore requires an index for this query. If not present, this will fail.
+    // Note: Firestore requires an index for this query. If not present, this will fail.
   if (hasPriceFilter) {
     listingsQuery = listingsQuery.where('price', '>=', minPrice).where('price', '<=', maxPrice);
   }
@@ -252,21 +258,24 @@ export const getListings = async (options: {
   let listings = snapshot.docs.map(doc => toListing(doc, []));
   
   // In-memory filtering
-  if (query || hasAreaFilter || sortAndFilterOnPrice) {
-      listings = listings.filter(l => {
-          const isAreaMatch = hasAreaFilter ? l.area >= minArea && l.area <= maxArea : true;
-          const isPriceMatch = sortAndFilterOnPrice ? l.price >= minPrice && l.price <= maxPrice : true;
-          
-          const isQueryMatch = query ? 
-              l.county.toLowerCase().includes(query.toLowerCase()) || 
-              l.location.toLowerCase().includes(query.toLowerCase()) ||
-              l.title.toLowerCase().includes(query.toLowerCase()) ||
-              l.seller.name.toLowerCase().includes(query.toLowerCase())
-              : true;
-              
-          return isAreaMatch && isQueryMatch && isPriceMatch;
-      });
-  }
+    if (query || hasAreaFilter || sortAndFilterOnPrice || hasAmenitiesFilter) {
+        listings = listings.filter(l => {
+            const isAreaMatch = hasAreaFilter ? l.area >= minArea && l.area <= maxArea : true;
+            const isPriceMatch = sortAndFilterOnPrice ? l.price >= minPrice && l.price <= maxPrice : true;
+            const isAmenitiesMatch = hasAmenitiesFilter
+                ? amenities!.every((amenity) => l.amenities?.includes(amenity))
+                : true;
+
+            const isQueryMatch = query ? 
+                    l.county.toLowerCase().includes(query.toLowerCase()) || 
+                    l.location.toLowerCase().includes(query.toLowerCase()) ||
+                    l.title.toLowerCase().includes(query.toLowerCase()) ||
+                    l.seller.name.toLowerCase().includes(query.toLowerCase())
+                    : true;
+      
+            return isAreaMatch && isQueryMatch && isPriceMatch && isAmenitiesMatch;
+        });
+    }
 
   const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
   const hasMoreListings = snapshot.docs.length === queryLimit;

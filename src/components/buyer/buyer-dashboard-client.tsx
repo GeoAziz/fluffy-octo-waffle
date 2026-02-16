@@ -111,10 +111,10 @@ export function BuyerDashboardClient({
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild>
-              <Link href="/explore">Continue search</Link>
+              <Link href="/listings">Continue search</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/explore?badges=Gold">New verified listings</Link>
+              <Link href="/listings?badges=Gold">New verified listings</Link>
             </Button>
           </div>
         </CardContent>

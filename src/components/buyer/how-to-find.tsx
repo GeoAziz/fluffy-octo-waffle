@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, FileCheck, MessageSquare } from 'lucide-react';
+import { Search, FileCheck, MessageSquare, MapPin } from 'lucide-react';
 
 /**
  * HowToFind - Simple 3-step guide for first-time users
@@ -12,20 +12,26 @@ export function HowToFind() {
     {
       icon: Search,
       number: '1',
-      title: 'Browse & Filter',
-      description: 'Explore verified listings or use filters to narrow by location, price, size, and trust badge.',
+      title: 'Search & Filter',
+      description: 'Pick a county, set your budget, and filter by documentation level to shortlist verified listings.',
     },
     {
       icon: FileCheck,
       number: '2',
-      title: 'Check Documentation',
-      description: 'Review verified documents, survey maps, and trust badges to assess property quality.',
+      title: 'Review Documents',
+      description: 'Confirm title deeds, survey maps, and clearance certificates before you proceed.',
+    },
+    {
+      icon: MapPin,
+      number: '3',
+      title: 'Inspect the Site',
+      description: 'Arrange a visit to verify boundaries, access, and neighborhood context.',
     },
     {
       icon: MessageSquare,
-      number: '3',
-      title: 'Connect with Seller',
-      description: 'Message the seller directly to ask questions, negotiate, and arrange a site visit.',
+      number: '4',
+      title: 'Connect & Close',
+      description: 'Contact the seller to negotiate and complete your due diligence with confidence.',
     },
   ];
 
@@ -34,14 +40,14 @@ export function HowToFind() {
       <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            How to Find Your Property
+            How It Works
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Three simple steps to your next land investment
+            A clear, four-step path from search to confident ownership
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (

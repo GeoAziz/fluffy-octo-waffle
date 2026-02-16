@@ -72,6 +72,7 @@ export function SellerNav() {
           <SidebarMenu>
             {workspaceItems.map((item) => (
               <SidebarMenuItem key={item.label}>
+<<<<<<< HEAD
                 <Link href={item.href} passHref>
                   <SidebarMenuButton
                     isActive={
@@ -82,13 +83,26 @@ export function SellerNav() {
                     tooltip={item.label}
                     className="min-h-11 rounded-lg"
                   >
+=======
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    item.href === '/dashboard/listings'
+                      ? isListingsActive
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                  }
+                  tooltip={item.label}
+                  className="min-h-10"
+                >
+                  <Link href={item.href}>
+>>>>>>> 6bf1af7 (Add comprehensive tests for toast notifications, data fetching, utility functions, and e2e scenarios)
                     <item.icon className="size-5" />
                     <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
                       <span className="text-sm font-medium">{item.label}</span>
                       <span className="text-xs text-muted-foreground">{item.description}</span>
                     </div>
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -101,19 +115,29 @@ export function SellerNav() {
           <SidebarMenu>
             {accountItems.map((item) => (
               <SidebarMenuItem key={item.label}>
+<<<<<<< HEAD
                 <Link href={item.href} passHref>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
                     className="min-h-10 rounded-lg"
                   >
+=======
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                  className="min-h-10"
+                >
+                  <Link href={item.href}>
+>>>>>>> 6bf1af7 (Add comprehensive tests for toast notifications, data fetching, utility functions, and e2e scenarios)
                     <item.icon className="size-5" />
                     <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
                       <span className="text-sm font-medium">{item.label}</span>
                       <span className="text-xs text-muted-foreground">{item.description}</span>
                     </div>
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -122,12 +146,17 @@ export function SellerNav() {
         <div className="border-t border-sidebar-border/70 px-2 pt-4">
           <SidebarMenu>
             <SidebarMenuItem>
+<<<<<<< HEAD
               <Link href="/contact" passHref>
                 <SidebarMenuButton tooltip="Get Help" className="min-h-10 rounded-lg">
+=======
+              <SidebarMenuButton asChild tooltip="Get Help" className="min-h-10">
+                <Link href="/contact">
+>>>>>>> 6bf1af7 (Add comprehensive tests for toast notifications, data fetching, utility functions, and e2e scenarios)
                   <HelpCircle className="size-5" />
                   <span className="group-data-[collapsible=icon]:hidden">Get Help</span>
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </div>

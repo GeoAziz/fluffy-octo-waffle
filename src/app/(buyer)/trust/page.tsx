@@ -268,7 +268,7 @@ export default function TrustVerificationPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/explore">Browse Verified Listings</Link>
+                <Link href="/listings">Browse Verified Listings</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link href="/contact">Contact Support</Link>

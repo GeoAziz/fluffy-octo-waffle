@@ -17,6 +17,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EmptyState } from '@/components/empty-state';
 
 export default function FavoritesPage() {
+  const amenityLabels: Record<string, string> = {
+    water: 'Water access',
+    electricity: 'Electricity',
+    road: 'Road access',
+    perimeter: 'Perimeter wall',
+    security: 'Security',
+  };
   const { favoriteIds, loading: favoritesLoading } = useFavorites();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +103,7 @@ export default function FavoritesPage() {
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => setCompareIds([])}>Clear</Button>
                 <Button size="sm" asChild disabled={compareIds.length < 2}>
-                  <Link href={`/explore?ids=${compareIds.join(',')}`}>Compare selected</Link>
+                  <Link href={`/listings?ids=${compareIds.join(',')}`}>Compare selected</Link>
                 </Button>
               </div>
             </div>
@@ -146,6 +153,20 @@ export default function FavoritesPage() {
                   <LandPlot className="h-4 w-4 text-accent" />
                   {listing.area} Acres
                 </p>
+                {listing.amenities && listing.amenities.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {listing.amenities.slice(0, 3).map((amenity) => (
+                      <span key={amenity} className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {amenityLabels[amenity] ?? amenity}
+                      </span>
+                    ))}
+                    {listing.amenities.length > 3 && (
+                      <span className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        +{listing.amenities.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="p-4 pt-0 flex justify-between items-center">
                 <p className="text-xl font-bold text-primary">
@@ -165,10 +186,10 @@ export default function FavoritesPage() {
           title="You have no favorite listings yet"
           description="Save listings to compare them later and return faster to the best options."
           actions={[
-            { label: 'Explore properties', href: '/explore' },
-            { label: 'View Residential', href: '/explore?landType=Residential', variant: 'outline' },
-            { label: 'View Agricultural', href: '/explore?landType=Agricultural', variant: 'outline' },
-            { label: 'Gold badge listings', href: '/explore?badges=Gold', variant: 'outline' },
+            { label: 'Explore properties', href: '/listings' },
+            { label: 'View Residential', href: '/listings?landType=Residential', variant: 'outline' },
+            { label: 'View Agricultural', href: '/listings?landType=Agricultural', variant: 'outline' },
+            { label: 'Gold badge listings', href: '/listings?badges=Gold', variant: 'outline' },
           ]}
         />
       )}

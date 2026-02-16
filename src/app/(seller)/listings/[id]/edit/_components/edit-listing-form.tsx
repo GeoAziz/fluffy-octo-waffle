@@ -36,12 +36,21 @@ const formSchema = z.object({
   area: z.coerce.number().min(0.01, 'Area must be a positive number.'),
   size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
   landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
+  amenities: z.array(z.string()).optional(),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   images: z.custom<FileList>().optional(),
   evidence: z.custom<FileList>().optional(),
   latitude: z.coerce.number(),
   longitude: z.coerce.number(),
 });
+
+const AMENITY_OPTIONS = [
+  { value: 'water', label: 'Water access' },
+  { value: 'electricity', label: 'Electricity' },
+  { value: 'road', label: 'Road access' },
+  { value: 'perimeter', label: 'Perimeter wall' },
+  { value: 'security', label: 'Security' },
+];
 
 export function EditListingForm({ listing }: { listing: Listing }) {
   const router = useRouter();
@@ -63,6 +72,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       area: listing.area,
       size: listing.size,
       landType: listing.landType,
+      amenities: listing.amenities ?? [],
       description: listing.description,
       latitude: listing.latitude,
       longitude: listing.longitude,
@@ -111,6 +121,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         area: values.area,
         size: values.size,
         landType: values.landType,
+        amenities: values.amenities ?? [],
         description: values.description,
         latitude: values.latitude,
         longitude: values.longitude,
@@ -175,6 +186,8 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       Object.entries(values).forEach(([key, value]) => {
           if (value instanceof FileList) {
               Array.from(value).forEach(file => formData.append(key, file));
+          } else if (Array.isArray(value)) {
+            value.forEach((item) => formData.append(key, String(item)));
           } else if (value !== undefined && value !== null) {
               formData.append(key, String(value));
           }
@@ -303,6 +316,38 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="amenities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amenities</FormLabel>
+                    <div className="grid gap-2 rounded-md border p-3 text-sm">
+                      {AMENITY_OPTIONS.map((option) => {
+                        const checked = field.value?.includes(option.value);
+                        return (
+                          <label key={option.value} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300"
+                              checked={checked}
+                              onChange={(event) => {
+                                const next = event.target.checked
+                                  ? [...(field.value ?? []), option.value]
+                                  : (field.value ?? []).filter((item: string) => item !== option.value);
+                                field.onChange(next);
+                              }}
+                            />
+                            {option.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <Separator />
 

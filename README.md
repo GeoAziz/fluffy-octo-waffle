@@ -78,8 +78,11 @@ npm run build
 
 ```bash
 npm run lint
-npm test
+npm run test:ci
+npm run test:e2e
 ```
+
+For comprehensive testing guidelines, see [TESTING.md](TESTING.md).
 
 If you'd like me to add docs pages (like a guided 'How Trust Badges Work' walkthrough, tests, or CI instructions), tell me which one to prioritize next.
 

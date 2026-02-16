@@ -14,6 +14,7 @@ const SEED_PASSWORD = 'password123';
 const LISTING_COUNT = 12;
 
 const COUNTIES = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kajiado", "Machakos", "Kiambu", "Uasin Gishu"];
+const AMENITIES = ['water', 'electricity', 'road', 'perimeter', 'security'];
 const LOCATIONS_BY_COUNTY: Record<string, string[]> = {
     "Nairobi": ["Karen", "Runda", "Lavington", "Westlands"],
     "Mombasa": ["Nyali", "Bamburi", "Shanzu", "Diani"],
@@ -125,6 +126,7 @@ async function main() {
             area: faker.number.int({ min: 1, max: 20 }),
             size: "100x100 ft",
             landType: randomPick(["Agricultural", "Residential", "Commercial"]),
+            amenities: faker.helpers.arrayElements(AMENITIES, { min: 1, max: 3 }),
             description: faker.lorem.paragraphs(3),
             status: status,
             images: images,

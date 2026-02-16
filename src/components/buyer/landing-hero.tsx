@@ -15,12 +15,6 @@ export function LandingHero({
   verifiedListings?: number;
   countiesCovered?: number;
 }) {
-  const handleExplore = () => {
-    const listingsSection = document.getElementById('listings-section');
-    if (listingsSection) {
-      listingsSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
   return (
     <section className="w-full">
       {/* Main Hero */}
@@ -34,11 +28,11 @@ export function LandingHero({
             </div>
             <div className="space-y-3 sm:space-y-4">
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                Find Verified Land in Kenya
-                <span className="block text-emerald-100">With Documentation You Can Trust</span>
+                Buy Land in Kenya with Confidence
+                <span className="block text-emerald-100">Verified Listings. Complete Documentation.</span>
               </h1>
               <p className="mx-auto max-w-3xl text-base text-emerald-50/95 sm:text-xl">
-                Browse transparent listings backed by title deeds, survey records, and trust badges so you can compare legal readiness with confidence.
+                Compare listings with verified title deeds, survey maps, and admin-reviewed evidence so you can move forward with clarity.
               </p>
             </div>
 
@@ -60,11 +54,11 @@ export function LandingHero({
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center pt-4">
-              <Button size="lg" onClick={handleExplore} className="w-full bg-white text-emerald-900 hover:bg-emerald-50 sm:w-auto">
-                Browse Listings
+              <Button size="lg" asChild className="w-full bg-white text-emerald-900 hover:bg-emerald-50 sm:w-auto">
+                <Link href="/listings">Browse Verified Listings</Link>
               </Button>
               <Button size="lg" variant="ghost" asChild className="w-full border border-white/40 text-white hover:bg-white/10 hover:text-white sm:w-auto">
-                <Link href="/trust">How It Works</Link>
+                <Link href="/signup">List Your Property</Link>
               </Button>
             </div>
           </div>

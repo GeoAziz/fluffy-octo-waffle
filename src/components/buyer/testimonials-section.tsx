@@ -16,6 +16,7 @@ export function TestimonialsSection() {
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah',
       quote: 'I was skeptical about buying land online, but the detailed documentation and trust badges gave me confidence. Closed the deal in 3 weeks!',
       rating: 5,
+      verified: true,
     },
     {
       name: 'James Mwangi',
@@ -23,6 +24,7 @@ export function TestimonialsSection() {
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=james',
       quote: 'The verified listings saved me so much time. No more dealing with fake properties. Kenya Land Trust is transparent and trustworthy.',
       rating: 5,
+      verified: true,
     },
     {
       name: 'Amina Hassan',
@@ -30,6 +32,7 @@ export function TestimonialsSection() {
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amina',
       quote: 'As a first-time land buyer, I was nervous. The badge system helped me understand property documentation instantly. Love the platform!',
       rating: 5,
+      verified: true,
     },
   ];
 
@@ -76,6 +79,9 @@ export function TestimonialsSection() {
                       <p className="text-xs text-muted-foreground">
                         {testimonial.title}
                       </p>
+                      {testimonial.verified && (
+                        <p className="text-xs text-emerald-600 font-medium">Verified Purchase</p>
+                      )}
                     </div>
                   </div>
                 </div>

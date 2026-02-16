@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import type { ListingStatus } from '@/lib/types';
 import {

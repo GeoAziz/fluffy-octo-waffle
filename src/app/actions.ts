@@ -61,6 +61,7 @@ export async function searchListingsAction(options: {
     maxArea?: number;
     landType?: string;
     badges?: BadgeValue[];
+  amenities?: string[];
     status?: ListingStatus | 'all';
     sortBy?: string;
     limit?: number;
@@ -355,6 +356,7 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
     area: Number(formData.get('area')),
     size: formData.get('size') as string,
     landType: formData.get('landType') as string,
+    amenities: formData.getAll('amenities') as string[],
     latitude: Number(formData.get('latitude')),
     longitude: Number(formData.get('longitude')),
     description: formData.get('description') as string,
@@ -409,6 +411,7 @@ export async function editListingAction(listingId: string, formData: FormData): 
         area: Number(formData.get('area')),
         size: formData.get('size') as string,
         landType: formData.get('landType') as string,
+      amenities: formData.getAll('amenities') as string[],
         description: formData.get('description') as string,
         latitude: Number(formData.get('latitude')),
         longitude: Number(formData.get('longitude')),

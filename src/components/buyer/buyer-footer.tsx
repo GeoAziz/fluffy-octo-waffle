@@ -115,7 +115,7 @@ export function BuyerFooter() {
   // Browse section navigation links with routing info
   const browseLinks: NavLink[] = [
     {
-      href: '/explore',
+      href: '/listings',
       label: 'All Listings',
       description: 'Browse all verified land listings across Kenya',
     },

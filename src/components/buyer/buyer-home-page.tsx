@@ -1,39 +1,32 @@
-'use client';
-
-import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
+import type { Listing } from '@/lib/types';
 import { LandingHero } from '@/components/buyer/landing-hero';
 import { BadgeLegend } from '@/components/buyer/badge-legend';
+import { LandingSearchBar } from '@/components/buyer/landing-search-bar';
+import { FeaturedListings } from '@/components/buyer/featured-listings';
 import { HowToFind } from '@/components/buyer/how-to-find';
-import { ListingsContent } from '@/components/buyer/listings-content';
 import { TestimonialsSection } from '@/components/buyer/testimonials-section';
+import { CtaSection } from '@/components/buyer/cta-section';
 
-export function BuyerHomePage() {
+export function BuyerHomePage({ featuredListings }: { featuredListings: Listing[] }) {
   return (
     <>
       <LandingHero />
-      <HowToFind />
 
       <section className="container max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <BadgeLegend />
       </section>
 
-      <Suspense fallback={<LoadingFallback />}>
-        <ListingsContent />
-      </Suspense>
+      <section className="container max-w-7xl px-4 pb-10 sm:px-6 sm:pb-14 lg:px-8">
+        <LandingSearchBar />
+      </section>
+
+      <FeaturedListings listings={featuredListings} />
+
+      <HowToFind />
 
       <TestimonialsSection />
-    </>
-  );
-}
 
-function LoadingFallback() {
-  return (
-    <div className="flex w-full items-center justify-center py-20">
-      <div className="space-y-4 text-center">
-        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Loading properties...</p>
-      </div>
-    </div>
+      <CtaSection />
+    </>
   );
 }

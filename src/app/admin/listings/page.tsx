@@ -38,6 +38,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AdminListingsPage() {
+  const amenityLabels: Record<string, string> = {
+    water: 'Water access',
+    electricity: 'Electricity',
+    road: 'Road access',
+    perimeter: 'Perimeter wall',
+    security: 'Security',
+  };
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -326,135 +333,156 @@ export default function AdminListingsPage() {
                               />
                             </div>
                             <p className="text-xs text-muted-foreground">{l.location} • Ksh {l.price.toLocaleString()}</p>
+                            {l.amenities && l.amenities.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {l.amenities.slice(0, 3).map((amenity) => (
+                                  <span key={amenity} className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+                                    {amenityLabels[amenity] ?? amenity}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             <div className="mt-2 flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">{l.landType}</Badge>
                               <Button asChild variant="ghost" size="sm" className="h-7 px-2">
                                 <Link href={`/admin/listings/${l.id}`}>Open</Link>
                               </Button>
-                            ) : (
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-[36px]"></TableHead>
-                                    <TableHead>Listing</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Badge</TableHead>
-                                    <TableHead>Views</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {listings.map((listing) => {
-                                    const statusIcon = {
-                                      pending: null,
-                                      approved: <Check className="h-4 w-4" />,
-                                      rejected: <X className="h-4 w-4" />,
-                                    };
-
-                                    return (
-                                      <TableRow key={listing.id}>
-                                        <TableCell>
-                                          <Checkbox
-                                            checked={!!selected[listing.id]}
-                                            onCheckedChange={() => toggleSelect(listing.id)}
-                                            aria-label={`Select listing ${listing.title}`}
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-3 min-w-[260px]">
-                                            <div className="relative h-12 w-16 overflow-hidden rounded-md bg-muted">
-                                              {listing.images?.[0]?.url ? (
-                                                <Image
-                                                  src={listing.images[0].url}
-                                                  alt={listing.title}
-                                                  fill
-                                                  sizes="64px"
-                                                  className="object-cover"
-                                                />
-                                              ) : (
-                                                <div className="flex h-full w-full items-center justify-center">
-                                                  <LandPlot className="h-5 w-5 text-muted-foreground" />
-                                                </div>
-                                              )}
-                                            </div>
-                                            <div className="min-w-0">
-                                              <Link
-                                                href={`/admin/listings/${listing.id}`}
-                                                className="line-clamp-1 font-medium hover:underline"
-                                              >
-                                                {listing.title}
-                                              </Link>
-                                              <p className="line-clamp-1 text-xs text-muted-foreground">
-                                                {listing.location} • Ksh {listing.price.toLocaleString()}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge variant="secondary" className="capitalize flex items-center gap-1">
-                                            {statusIcon[listing.status as keyof typeof statusIcon] && (
-                                              <>{statusIcon[listing.status as keyof typeof statusIcon]}</>
-                                            )}
-                                            {listing.status}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          {listing.badge && listing.badge !== 'None' ? (
-                                            <TrustBadge badge={listing.badge} showTooltip={false} />
-                                          ) : (
-                                            <span className="text-xs text-muted-foreground">None</span>
-                                          )}
-                                        </TableCell>
-                                        <TableCell>{getViewEstimate(listing)}</TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex items-center justify-end gap-2">
-                                            <Button asChild size="sm" variant="ghost" title="View details">
-                                              <Link href={`/admin/listings/${listing.id}`}>
-                                                <Eye className="h-4 w-4" />
-                                              </Link>
-                                            </Button>
-                                            {listing.status === 'pending' && (
-                                              <>
-                                                <Button
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                  onClick={() => handleBulk('approved')}
-                                                  title="Approve listing"
-                                                  disabled={!selected[listing.id]}
-                                                >
-                                                  <Check className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                  onClick={() => handleBulk('rejected')}
-                                                  title="Reject listing"
-                                                  disabled={!selected[listing.id]}
-                                                >
-                                                  <X className="h-4 w-4" />
-                                                </Button>
-                                              </>
-                                            )}
-                                            <Button asChild size="sm" variant="ghost">
-                                              <Link href={`/admin/listings/${listing.id}`}>
-                                                <ChevronRight className="h-4 w-4" />
-                                              </Link>
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
-                            )}
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[36px]"></TableHead>
+                  <TableHead>Listing</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Badge</TableHead>
+                  <TableHead>Views</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {listings.map((listing) => {
+                  const statusIcon = {
+                    pending: null,
+                    approved: <Check className="h-4 w-4" />,
+                    rejected: <X className="h-4 w-4" />,
+                  };
+
+                  return (
+                    <TableRow key={listing.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={!!selected[listing.id]}
+                          onCheckedChange={() => toggleSelect(listing.id)}
+                          aria-label={`Select listing ${listing.title}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3 min-w-[260px]">
+                          <div className="relative h-12 w-16 overflow-hidden rounded-md bg-muted">
+                            {listing.images?.[0]?.url ? (
+                              <Image
+                                src={listing.images[0].url}
+                                alt={listing.title}
+                                fill
+                                sizes="64px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <LandPlot className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/listings/${listing.id}`}
+                              className="line-clamp-1 font-medium hover:underline"
+                            >
+                              {listing.title}
+                            </Link>
+                            <p className="line-clamp-1 text-xs text-muted-foreground">
+                              {listing.location} • Ksh {listing.price.toLocaleString()}
+                            </p>
+                            {listing.amenities && listing.amenities.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {listing.amenities.slice(0, 3).map((amenity) => (
+                                  <span key={amenity} className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
+                                    {amenityLabels[amenity] ?? amenity}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize flex items-center gap-1">
+                          {statusIcon[listing.status as keyof typeof statusIcon] && (
+                            <>{statusIcon[listing.status as keyof typeof statusIcon]}</>
+                          )}
+                          {listing.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {listing.badge && listing.badge !== 'None' ? (
+                          <TrustBadge badge={listing.badge} showTooltip={false} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">None</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{getViewEstimate(listing)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button asChild size="sm" variant="ghost" title="View details">
+                            <Link href={`/admin/listings/${listing.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          {listing.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => handleBulk('approved')}
+                                title="Approve listing"
+                                disabled={!selected[listing.id]}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleBulk('rejected')}
+                                title="Reject listing"
+                                disabled={!selected[listing.id]}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button asChild size="sm" variant="ghost">
+                            <Link href={`/admin/listings/${listing.id}`}>
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
 
           <div className="mt-4 flex justify-center">

@@ -5,20 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function ReportListingPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reportStatus, setReportStatus] = useState<'idle' | 'received' | 'under_review' | 'resolved'>('idle');
   const [formState, setFormState] = useState({
     listingId: '',
     reason: '',
   });
+
+  useEffect(() => {
+    const listingId = searchParams.get('listingId');
+    if (listingId) {
+      setFormState((prev) => ({ ...prev, listingId }));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -120,7 +129,7 @@ export default function ReportListingPage() {
                 <Link href="/contact">Contact Support</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/explore">Back to Listings</Link>
+                <Link href="/listings">Back to Listings</Link>
               </Button>
             </div>
         </CardContent>

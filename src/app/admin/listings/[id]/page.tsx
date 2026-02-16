@@ -20,6 +20,13 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
   }
 
   const isImageSuspicious = listing.imageAnalysis?.isSuspicious === true;
+    const amenityLabels: Record<string, string> = {
+        water: 'Water access',
+        electricity: 'Electricity',
+        road: 'Road access',
+        perimeter: 'Perimeter wall',
+        security: 'Security',
+    };
 
   return (
     <AdminPage
@@ -55,6 +62,15 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
                 <CardContent>
                     <p className="font-semibold text-2xl text-primary mb-4">Ksh {listing.price.toLocaleString()}</p>
                     <p className="text-sm">{listing.description}</p>
+                                        {listing.amenities && listing.amenities.length > 0 && (
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {listing.amenities.map((amenity) => (
+                                                    <span key={amenity} className="rounded-full border px-3 py-1 text-xs">
+                                                        {amenityLabels[amenity] ?? amenity}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                     <Separator className="my-4" />
                     <h3 className="font-semibold mb-2">Seller: {listing.seller.name}</h3>
                 </CardContent>

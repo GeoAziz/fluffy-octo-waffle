@@ -33,6 +33,7 @@ const formSchema = z.object({
   area: z.coerce.number().min(0.01, 'Area must be a positive number.'),
   size: z.string().min(2, 'Size must be at least 2 characters (e.g., "50x100").'),
   landType: z.string().min(3, 'Land type must be at least 3 characters (e.g., "Residential").'),
+  amenities: z.array(z.string()).optional(),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   images: z.custom<FileList>().refine(files => files && files.length > 0, 'At least one property image is required.'),
   evidence: z.custom<FileList>().optional(),
@@ -43,12 +44,19 @@ const formSchema = z.object({
 type FormSchemaType = z.infer<typeof formSchema>;
 const stepFields: (keyof FormSchemaType)[][] = [
   ['title', 'location', 'county'],
-  ['area', 'size', 'landType', 'price', 'description'],
+  ['area', 'size', 'landType', 'amenities', 'price', 'description'],
   ['latitude', 'longitude'],
   ['images', 'evidence']
 ];
 
 const NEW_LISTING_DRAFT_KEY = 'seller:new-listing:draft:v1';
+const AMENITY_OPTIONS = [
+  { value: 'water', label: 'Water access' },
+  { value: 'electricity', label: 'Electricity' },
+  { value: 'road', label: 'Road access' },
+  { value: 'perimeter', label: 'Perimeter wall' },
+  { value: 'security', label: 'Security' },
+];
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -70,6 +78,7 @@ export default function NewListingPage() {
       area: 0,
       size: '',
       landType: '',
+      amenities: [],
       description: '',
       latitude: 0.0236, // Default to central Kenya
       longitude: 37.9062,
@@ -84,6 +93,8 @@ export default function NewListingPage() {
     allFields.forEach(field => {
       const value = watchedValues[field];
       if (value instanceof FileList) {
+        if (value.length > 0) completedFields++;
+      } else if (Array.isArray(value)) {
         if (value.length > 0) completedFields++;
       } else if (typeof value === 'string') {
         if (value.trim()) completedFields++;
@@ -154,6 +165,8 @@ export default function NewListingPage() {
       Object.entries(values).forEach(([key, value]) => {
         if (value instanceof FileList) {
           Array.from(value).forEach(file => formData.append(key, file));
+        } else if (Array.isArray(value)) {
+          value.forEach((item) => formData.append(key, String(item)));
         } else if (value != null) {
           formData.append(key, String(value));
         }
@@ -216,6 +229,36 @@ export default function NewListingPage() {
                         <FormField name="landType" render={({ field }) => <FormItem><FormLabel>Land Type</FormLabel><Input placeholder="e.g., Residential, Agricultural" {...field} /><FormMessage /></FormItem>} />
                         <FormField name="price" render={({ field }) => <FormItem><FormLabel>Price (Ksh)</FormLabel><Input type="number" placeholder="e.g., 5500000" {...field} /><FormMessage /></FormItem>} />
                       </div>
+                      <FormField
+                        name="amenities"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Amenities</FormLabel>
+                            <div className="grid gap-2 rounded-md border p-3 text-sm">
+                              {AMENITY_OPTIONS.map((option) => {
+                                const checked = field.value?.includes(option.value);
+                                return (
+                                  <label key={option.value} className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      className="rounded border-gray-300"
+                                      checked={checked}
+                                      onChange={(event) => {
+                                        const next = event.target.checked
+                                          ? [...(field.value ?? []), option.value]
+                                          : (field.value ?? []).filter((item: string) => item !== option.value);
+                                        field.onChange(next);
+                                      }}
+                                    />
+                                    {option.label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <Separator />
                       <div className="space-y-4">
                         <Label>Generate Description with AI</Label>
