@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color Token System - Blueprint Specification */
+    --primary: 161 61% 15%;        /* Deep Green (#0F3D2E) */
+    --primary-mid: 161 40% 25%;
+    --primary-light: 161 30% 90%;
+    
+    --sand: 38 24% 94%;           /* Warm Sand (#F4F1EC) */
+    --sand-dark: 38 15% 88%;
+    
+    --accent: 203 52% 38%;        /* Muted Blue (#2F6F95) */
+    --accent-light: 203 40% 92%;
+    
+    --warning: 37 62% 48%;       /* Amber (#C58B2E) */
+    --warning-light: 37 50% 94%;
+    
+    --risk: 353 50% 37%;         /* Muted Red (#8C2F39) */
+    --risk-light: 353 40% 94%;
+
+    /* Semantic Mappings for Shadcn/UI */
+    --background: var(--sand);
+    --foreground: 161 58% 10%;
+    
+    --card: var(--sand);
+    --card-foreground: 161 58% 10%;
+    
+    --popover: var(--sand);
+    --popover-foreground: 161 58% 10%;
+    
+    --primary-foreground: 38 27% 98%;
+    
+    --secondary: var(--sand-dark);
+    --secondary-foreground: var(--primary);
+    
+    --muted: var(--sand-dark);
+    --muted-foreground: 161 20% 40%;
+    
+    --accent-foreground: 38 27% 98%;
+    
+    --destructive: var(--risk);
+    --destructive-foreground: 38 27% 98%;
+    
+    --success: 142 71% 45%;
+    --success-foreground: 38 27% 98%;
+    
+    --border: 161 10% 84%;
+    --input: 161 10% 88%;
+    --ring: var(--accent);
+    
+    /* Radius Spec: 12px based lg */
+    --radius: 0.75rem; 
+    
+    /* Fluid Typography Scale using clamp() */
+    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.8rem);
+    --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
+    --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 1.35rem + 0.7vw, 1.875rem);
+    --text-3xl: clamp(1.875rem, 1.7rem + 1vw, 2.25rem);
+    --text-4xl: clamp(2.25rem, 2rem + 1.5vw, 3rem);
+    --text-hero: clamp(3rem, 2.5rem + 2.5vw, 4.5rem);
+
+    /* Sidebar Mappings */
+    --sidebar-background: 38 20% 91%;
+    --sidebar-foreground: var(--primary);
+    --sidebar-border: 161 10% 84%;
+    --sidebar-ring: var(--accent);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: 38 27% 98%;
+  }
+
+  .dark {
+    --background: 161 30% 5%;
+    --foreground: 38 27% 94%;
+    --card: 161 30% 8%;
+    --card-foreground: 38 27% 94%;
+    --popover: 161 30% 5%;
+    --popover-foreground: 38 27% 94%;
+    --primary: 38 27% 94%;
+    --primary-foreground: 161 58% 15%;
+    --secondary: 161 30% 12%;
+    --secondary-foreground: 38 27% 94%;
+    --muted: 161 30% 12%;
+    --muted-foreground: 38 27% 70%;
+    --accent: 203 51% 48%;
+    --accent-foreground: 38 27% 98%;
+    --destructive: 353 50% 47%;
+    --destructive-foreground: 38 27% 98%;
+    --warning: 36 63% 58%;
+    --warning-foreground: 38 27% 98%;
+    --success: 142 71% 55%;
+    --success-foreground: 38 27% 98%;
+    --border: 161 30% 15%;
+    --input: 161 30% 12%;
+    --ring: 203 51% 48%;
+
+    --sidebar-background: 161 30% 10%;
+    --sidebar-foreground: 38 27% 94%;
+    --sidebar-border: 161 30% 15%;
+    --sidebar-ring: 203 51% 48%;
+    --sidebar-accent: 203 51% 48%;
+    --sidebar-accent-foreground: 38 27% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground selection:bg-accent/20;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    @apply border-destructive ring-destructive/20;
+  }
+}
+
+/* Base Spacing & Rhythm Utilities */
+@layer utilities {
+  .container-tight {
+    @apply mx-auto w-full max-w-4xl px-4;
+  }
+  .section-padding {
+    @apply py-12 md:py-20 lg:py-32;
+  }
+  .stack-sm {
+    @apply space-y-4;
+  }
+  .stack-md {
+    @apply space-y-8;
+  }
+}

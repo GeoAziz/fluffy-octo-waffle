@@ -1,0 +1,72 @@
+import { NextResponse, type NextRequest } from 'next/server';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+
+// This route is called to verify the session exists
+export async function GET(request: NextRequest) {
+  const sessionCookie = request.cookies.get('__session')?.value;
+  
+  if (!sessionCookie) {
+    return NextResponse.json({ status: 'error', authenticated: false }, { status: 401 });
+  }
+
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    let role: string | null = null;
+    try {
+      const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+      role = userDoc.exists ? userDoc.data()?.role ?? null : null;
+    } catch (roleError: any) {
+      console.warn('/api/auth/session GET: Unable to load user role:', roleError?.message ?? roleError);
+    }
+    return NextResponse.json({ status: 'success', authenticated: true, uid: decodedToken.uid, role });
+  } catch (error: any) {
+    console.error('/api/auth/session GET: Session verification failed:', error.message);
+    return NextResponse.json({ status: 'error', authenticated: false }, { status: 401 });
+  }
+}
+
+// This route is called on login/signup to create a session cookie
+export async function POST(request: NextRequest) {
+  const { idToken } = await request.json();
+
+  if (!idToken) {
+    return NextResponse.json({ status: 'error', message: 'idToken is required.' }, { status: 400 });
+  }
+
+  // 5 days
+  const expiresInMs = 60 * 60 * 24 * 5 * 1000;
+
+  try {
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
+
+    // Allow HTTP during local development; rely on request protocol or production env for HTTPS.
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const isSecureContext = process.env.NODE_ENV === 'production'
+      || forwardedProto === 'https'
+      || request.nextUrl.protocol === 'https:';
+    
+    const options = { 
+        name: '__session', 
+        value: sessionCookie, 
+        maxAge: expiresInMs / 1000,
+        httpOnly: true, 
+        secure: isSecureContext,
+        sameSite: 'lax' as const,
+        path: '/' 
+    };
+    
+    const response = NextResponse.json({ status: 'success' });
+    response.cookies.set(options);
+    return response;
+  } catch (error: any) {
+    console.error("/api/auth/session POST: Error creating session cookie:", error);
+    return NextResponse.json({ status: 'error', message: `Failed to create session cookie: ${error.message}` }, { status: 401 });
+  }
+}
+
+// This route is called on logout
+export async function DELETE() {
+  const response = NextResponse.json({ status: 'success' });
+  response.cookies.set('__session', '', { maxAge: 0 });
+  return response;
+}

@@ -1,0 +1,43 @@
+name: CI Suite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Run Lint
+        run: npm run lint
+        
+      - name: Run Unit Tests
+        run: npm run test:ci
+        
+      - name: Build Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          # Mock variables for build
+          FIREBASE_SERVICE_ACCOUNT_KEY_B64: "e30="
+          
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}

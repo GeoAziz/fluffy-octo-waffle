@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isListingApproved() {
+      return resource.data.status == 'approved';
+    }
+
+    // --- Collection Rules ---
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+
+      match /favorites/{listingId} {
+        allow read, write, delete: if isOwner(userId);
+      }
+      
+      match /savedSearches/{searchId} {
+        allow read, write, delete: if isOwner(userId);
+      }
+    }
+
+    match /listings/{listingId} {
+      allow get: if isListingApproved() || 
+                    (isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin()));
+      
+      allow list: if isAdmin() || 
+                    (request.query.limit <= 50 && (
+                      (isSignedIn() && request.query.get('status') == 'approved') || 
+                      request.query.get('status') == 'approved'
+                    ));
+
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          resource.data.ownerId == request.auth.uid && 
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'adminReviewedAt', 'badge', 'adminNotes', 'rejectionReason'])
+        )
+      );
+
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /evidence/{evidenceId} {
+      allow read: if isSignedIn() && (
+        get(/databases/$(database)/documents/listings/$(resource.data.listingId)).data.ownerId == request.auth.uid || 
+        isAdmin()
+      );
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow delete, update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+    
+    match /conversations/{conversationId} {
+      allow get, update, list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+        allow create: if isSignedIn() && 
+                      get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]) &&
+                      request.resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    match /contactMessages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    
+    match /listingReports/{reportId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /emailQueue/{msgId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false; // Queue items are processed or persistent
+    }
+
+    match /auditLogs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false; // Audit logs are immutable
+    }
+
+    match /adminConfig/{configDoc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /newsletterSubscribers/{subId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
