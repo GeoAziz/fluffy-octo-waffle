@@ -1,5 +1,7 @@
-// Neutralized to resolve route ambiguity.
-// Global 404 is handled by src/app/not-found.tsx.
-export default function NotFoundNeutralizer() {
+/**
+ * Redundant group handler neutralized.
+ * High-trust recovery experience centrally managed in src/app/not-found.tsx.
+ */
+export default function NeutralizedNotFound() {
   return null;
 }

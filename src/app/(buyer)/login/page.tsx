@@ -39,8 +39,8 @@ const GoogleIcon = () => (
   );
 
 const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
-  password: z.string().min(1, 'Password is required to access your vault.'),
+  email: z.string().email('Please enter a valid network email address.'),
+  password: z.string().min(1, 'Access token is required to unlock your vault.'),
   rememberMe: z.boolean().default(true),
 });
 
@@ -49,15 +49,15 @@ function getFirebaseAuthErrorMessage(errorCode: string): string {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
         case 'auth/invalid-credential':
-            return 'Incorrect email or password. Please verify your details.';
+            return 'Incorrect identity credentials. Please verify your email and token.';
         case 'auth/invalid-email':
-            return 'The email address format is not recognized.';
+            return 'The email address format is not recognized by the protocol.';
         case 'auth/user-disabled':
-            return 'This account has been suspended for security review.';
+            return 'This account node has been suspended for security review.';
         case 'auth/too-many-requests':
-            return 'Too many failed attempts. Access temporarily restricted.';
+            return 'Too many failed attempts. Access temporarily locked for protection.';
         default:
-            return `System error encountered. Please retry. (Code: ${errorCode})`;
+            return `System handshake error encountered. Code: ${errorCode}`;
     }
 }
 
@@ -68,27 +68,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    let isActive = true;
-    const checkExistingSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!isActive || !data?.authenticated) return;
-        const role = data.role ?? 'BUYER';
-        const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
-        router.replace(redirectTarget);
-      } catch (error) {
-        console.warn('[Login] Unable to check existing session:', error);
-      }
-    };
-    checkExistingSession();
-    return () => {
-      isActive = false;
-    };
-  }, [router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -107,37 +86,21 @@ export default function LoginPage() {
       });
       
       if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: 'Session negotiation failed.' }));
-          throw new Error(errorData.message || 'Failed to establish security session.');
+          throw new Error('Security session negotiation failed.');
       }
       
-      toast({ title: 'Welcome Back', description: "Security handshake complete." });
+      toast({ title: 'Welcome Back', description: "Security handshake complete. Redirecting..." });
       
       const requestedRedirect = searchParams.get('redirect');
-
       if (requestedRedirect) {
         window.location.assign(requestedRedirect);
         return;
       }
 
-      try {
-        const sessionResp = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-        if (sessionResp.ok) {
-          const data = await sessionResp.json();
-          const role = data.role ?? 'BUYER';
-          const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
-          window.location.assign(redirectTarget);
-          return;
-        }
-      } catch (err) {
-        console.warn('[Login] unable to fetch session after creating cookie, falling back to root', err);
-      }
-
       window.location.assign('/');
-
     } catch (err: any) {
-      console.error('[Login] handleLoginSuccess error:', err);
-      throw err;
+      console.error('[Login] Error:', err);
+      toast({ variant: 'destructive', title: 'Session Error', description: err.message });
     }
   }
 
@@ -183,12 +146,11 @@ export default function LoginPage() {
         }
         
         await handleLoginSuccess(user);
-
     } catch (error: any) {
         const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
-            title: 'SSO Handshake Failed',
+            title: 'SSO Protocol Failure',
             description: message,
         });
         setIsGoogleSubmitting(false);
@@ -235,7 +197,7 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Network Email</FormLabel>
-                        <FormControl><Input placeholder="agent@kenyalandtrust.com" {...field} className="h-11" /></FormControl>
+                        <FormControl><Input placeholder="agent@email.com" {...field} className="h-11" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

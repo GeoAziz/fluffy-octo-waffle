@@ -34,22 +34,22 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'rounded-lg border-2 border-dashed px-6 py-12 text-center sm:px-10 animate-in fade-in slide-in-from-bottom-4 duration-500',
+        'rounded-xl border-2 border-dashed px-6 py-12 text-center sm:px-10 animate-in fade-in slide-in-from-bottom-4 duration-500 bg-background/50',
         className
       )}
     >
       {Icon && (
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-muted transition-transform duration-500 hover:scale-110">
-          <Icon className="h-7 w-7 text-muted-foreground" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50 transition-transform duration-500 hover:scale-110 shadow-sm">
+          <Icon className="h-8 w-8 text-muted-foreground" />
         </div>
       )}
-      <h3 className="text-lg font-bold text-foreground tracking-tight">{title}</h3>
+      <h3 className="text-xl font-black uppercase tracking-tight text-foreground">{title}</h3>
       {description && (
-        <p className="mt-2 text-sm text-muted-foreground font-medium max-w-sm mx-auto">{description}</p>
+        <p className="mt-3 text-sm text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed">{description}</p>
       )}
       {children && <div className="mt-6 text-sm text-muted-foreground">{children}</div>}
       {actions.length > 0 && (
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           {actions.map((action) => {
             const ActionIcon = action.icon;
             const buttonContent = (
@@ -66,7 +66,7 @@ export function EmptyState({
                   asChild
                   variant={action.variant ?? 'default'}
                   size={action.size}
-                  className="font-bold uppercase text-[10px] tracking-widest h-11 px-6"
+                  className="font-black uppercase text-[10px] tracking-widest h-12 px-8 shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
                 >
                   <Link href={action.href}>{buttonContent}</Link>
                 </Button>
@@ -79,7 +79,7 @@ export function EmptyState({
                 onClick={action.onClick}
                 variant={action.variant ?? 'default'}
                 size={action.size}
-                className="font-bold uppercase text-[10px] tracking-widest h-11 px-6"
+                className="font-black uppercase text-[10px] tracking-widest h-12 px-8 shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
               >
                 {buttonContent}
               </Button>

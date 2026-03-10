@@ -124,10 +124,10 @@ export default {
         xl: 'var(--radius-xl)',
       },
       boxShadow: {
-        sm: 'var(--shadow-sm)',
-        md: 'var(--shadow-md)',
-        lg: 'var(--shadow-lg)',
-        xl: 'var(--shadow-xl)',
+        sm: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         glow: '0 0 15px 2px rgba(47, 111, 149, 0.15)',
       },
       keyframes: {
@@ -152,9 +152,6 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        shimmer: {
-          '100%': { transform: 'translateX(100%)' },
-        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -163,7 +160,6 @@ export default {
         'shake': 'shake 400ms ease-in-out',
         'fade-in-up': 'fade-in-up 500ms ease-out',
         'page-enter': 'soft-fade-scale 150ms ease-out',
-        shimmer: 'shimmer 2s infinite',
       },
     },
   },

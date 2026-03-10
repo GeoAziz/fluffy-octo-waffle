@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Brand-Specific Light Mode HSL Values */
+    /* Color Token System - Blueprint Specification */
     --primary: 161 61% 15%;        /* Deep Green (#0F3D2E) */
     --primary-mid: 161 40% 25%;
     --primary-light: 161 30% 90%;
@@ -21,7 +21,7 @@
     --risk: 353 50% 37%;         /* Muted Red (#8C2F39) */
     --risk-light: 353 40% 94%;
 
-    /* Standard Shadcn/UI Variables using Brand Colors */
+    /* Semantic Mappings for Shadcn/UI */
     --background: var(--sand);
     --foreground: 161 58% 10%;
     
@@ -32,12 +32,18 @@
     --popover-foreground: 161 58% 10%;
     
     --primary-foreground: 38 27% 98%;
+    
     --secondary: var(--sand-dark);
     --secondary-foreground: var(--primary);
+    
     --muted: var(--sand-dark);
     --muted-foreground: 161 20% 40%;
+    
+    --accent-foreground: 38 27% 98%;
+    
     --destructive: var(--risk);
     --destructive-foreground: 38 27% 98%;
+    
     --success: 142 71% 45%;
     --success-foreground: 38 27% 98%;
     
@@ -45,9 +51,10 @@
     --input: 161 10% 88%;
     --ring: var(--accent);
     
+    /* Radius Spec: 12px based lg */
     --radius: 0.75rem; 
-
-    /* Fluid Typography Scale */
+    
+    /* Fluid Typography Scale using clamp() */
     --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.8rem);
     --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
     --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
@@ -68,24 +75,23 @@
   }
 
   .dark {
-    /* Deep Forest Dark Theme Tokens */
-    --background: 161 40% 4%;
-    --foreground: 38 27% 92%;
+    --background: 161 30% 5%;
+    --foreground: 38 27% 94%;
     
-    --card: 161 40% 6%;
-    --card-foreground: 38 27% 92%;
+    --card: 161 30% 8%;
+    --card-foreground: 38 27% 94%;
     
-    --popover: 161 40% 4%;
-    --popover-foreground: 38 27% 92%;
+    --popover: 161 30% 5%;
+    --popover-foreground: 38 27% 94%;
     
-    --primary: 161 61% 45%;
-    --primary-foreground: 161 40% 4%;
+    --primary: 38 27% 94%;
+    --primary-foreground: 161 58% 15%;
     
-    --secondary: 161 30% 10%;
-    --secondary-foreground: 38 27% 92%;
+    --secondary: 161 30% 12%;
+    --secondary-foreground: 38 27% 94%;
     
-    --muted: 161 30% 10%;
-    --muted-foreground: 161 10% 65%;
+    --muted: 161 30% 12%;
+    --muted-foreground: 38 27% 70%;
     
     --accent: 203 51% 48%;
     --accent-foreground: 38 27% 98%;
@@ -103,7 +109,7 @@
     --input: 161 30% 12%;
     --ring: 203 51% 48%;
 
-    --sidebar-background: 161 40% 6%;
+    --sidebar-background: 161 30% 10%;
     --sidebar-foreground: 38 27% 94%;
     --sidebar-border: 161 30% 15%;
     --sidebar-ring: 203 51% 48%;
@@ -119,72 +125,57 @@
   body {
     @apply bg-background text-foreground selection:bg-accent/20;
     font-feature-settings: "rlig" 1, "calt" 1;
-    min-height: 100dvh;
   }
-
-  /* Accessibility: High-Contrast Focus Rings */
-  :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-
-  /* Accessibility: Respect Reduced Motion Preferences */
-  @media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-      animation-delay: -1ms !important;
-      animation-duration: 1ms !important;
-      animation-iteration-count: 1 !important;
-      background-attachment: initial !important;
-      scroll-behavior: auto !important;
-      transition-duration: 0s !important;
-      transition-delay: 0s !important;
-    }
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    @apply border-destructive ring-destructive/20;
   }
 }
 
+/* Accessibility Skip Link Support */
+.sr-only:focus {
+  @apply not-sr-only fixed left-4 top-4 z-[100] rounded-md bg-primary px-4 py-2 text-primary-foreground outline-none ring-2 ring-ring;
+}
+
+/* Reduced Motion Protocol */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fluid Animation Classes */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.shimmer-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* Base Spacing & Rhythm Utilities */
 @layer utilities {
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+  .container-tight {
+    @apply mx-auto w-full max-w-4xl px-4;
   }
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  .pl-safe {
-    padding-left: env(safe-area-inset-left);
-  }
-  .pr-safe {
-    padding-right: env(safe-area-inset-right);
-  }
-
-  .shimmer-wrapper {
-    @apply relative overflow-hidden;
-  }
-  
-  .shimmer-wrapper::after {
-    @apply absolute inset-0 -translate-x-full;
-    content: '';
-    background-image: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.1) 20%,
-      rgba(255, 255, 255, 0.3) 60%,
-      rgba(255, 255, 255, 0)
-    );
-    animation: shimmer 2s infinite;
-  }
-  
-  .dark .shimmer-wrapper::after {
-    background-image: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.05) 20%,
-      rgba(255, 255, 255, 0.1) 60%,
-      rgba(255, 255, 255, 0)
-    );
-  }
-
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+  .section-padding {
+    @apply py-12 md:py-20 lg:py-32;
   }
 }

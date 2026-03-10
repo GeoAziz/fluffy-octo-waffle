@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 /**
  * RootLayout - The foundational shell of the Kenya Land Trust platform.
- * Implements high-trust protocols for security, accessibility, and resilience.
+ * Implements high-trust protocols for security, accessibility, and performance monitoring.
  */
 export default function RootLayout({
   children,
@@ -25,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="scroll-smooth">
       <body className="w-full font-sans antialiased bg-background text-foreground">
+        {/* Real-user performance monitoring & Core Web Vitals */}
         <WebVitals />
         
         {/* Accessibility: Skip Link for Keyboard Navigation */}

@@ -20,6 +20,7 @@ import {
   Loader2,
   RefreshCw,
   CheckCircle2,
+  WifiOff,
 } from 'lucide-react';
 import { TrustBadge } from '@/components/trust-badge';
 import {
@@ -46,33 +47,41 @@ export function AiTools({ listing }: { listing: Listing }) {
     isSuspicious: boolean;
     reason?: string;
   } | null>(null);
+  const [serviceOffline, setServiceOffline] = useState(false);
   const { toast } = useToast();
 
   // Automatic background summarization for documents that don't have a summary
   useEffect(() => {
     const summarizeNext = async () => {
       const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
-      if (nextDoc && !isSummarizing) {
+      if (nextDoc && !isSummarizing && !serviceOffline) {
         handleSummarize(nextDoc.id, nextDoc.content, false);
       }
     };
     summarizeNext();
-  }, [listing.evidence, summaries, isSummarizing]);
+  }, [listing.evidence, summaries, isSummarizing, serviceOffline]);
 
   const handleSummarize = async (docId: string, docContent: string, isManual = false) => {
     setIsSummarizing(docId);
+    setServiceOffline(false);
     try {
       const result = await getAiSummary(docContent, docId);
-      setSummaries((prev) => ({ ...prev, [docId]: result.summary }));
-      if (isManual) {
-        toast({ title: 'AI Insight Refreshed', description: 'Updated summary is now active.' });
+      
+      if (result.summary.includes('offline')) {
+        setServiceOffline(true);
+      } else {
+        setSummaries((prev) => ({ ...prev, [docId]: result.summary }));
+        if (isManual) {
+          toast({ title: 'AI Insight Refreshed', description: 'Updated summary is now active.' });
+        }
       }
     } catch (error) {
+      setServiceOffline(true);
       if (isManual) {
         toast({
           variant: 'destructive',
           title: 'AI Insight Failed',
-          description: error instanceof Error ? error.message : 'Could not process document.',
+          description: 'The AI summarization service is temporarily offline.',
         });
       }
     } finally {
@@ -121,8 +130,13 @@ export function AiTools({ listing }: { listing: Listing }) {
             {isChecking || isSummarizing ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Thinking
+                Synthesizing
               </>
+            ) : serviceOffline ? (
+              <div className="flex items-center gap-1 text-risk">
+                <WifiOff className="h-3 w-3" />
+                Offline
+              </div>
             ) : (
               <>
                 <CheckCircle2 className="h-3 w-3" />
@@ -136,6 +150,13 @@ export function AiTools({ listing }: { listing: Listing }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {serviceOffline && (
+          <div className="p-3 rounded-lg bg-risk-light border border-risk/20 text-risk text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 animate-in fade-in duration-300">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            AI features temporarily unavailable.
+          </div>
+        )}
+
         <Accordion
           type="multiple"
           defaultValue={['insights']}
@@ -217,10 +238,10 @@ export function AiTools({ listing }: { listing: Listing }) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 hover:bg-accent/10"
+                          className="h-7 w-7 p-0 hover:bg-accent/10 active:scale-95 transition-transform"
                           onClick={() => handleSummarize(doc.id, doc.content, true)}
                           disabled={isSummarizing === doc.id}
-                          title="Regenerate summary"
+                          title="Regenerate Pulse"
                         >
                           <RefreshCw className={cn("h-3.5 w-3.5 text-accent", isSummarizing === doc.id && "animate-spin")} />
                         </Button>
@@ -240,7 +261,7 @@ export function AiTools({ listing }: { listing: Listing }) {
                       ) : (
                         <div className="ml-5 py-1 flex items-center gap-2 text-risk/60">
                           <AlertTriangle className="h-3 w-3" />
-                          <p className="text-[10px] italic font-medium">AI analysis currently unavailable.</p>
+                          <p className="text-[10px] italic font-medium">AI analysis pending or offline.</p>
                         </div>
                       )}
                     </div>
@@ -260,10 +281,10 @@ export function AiTools({ listing }: { listing: Listing }) {
             </AccordionTrigger>
             <AccordionContent className="pt-2">
               <p className="text-[10px] text-muted-foreground font-medium mb-4 leading-relaxed">
-                Scan all evidence simultaneously to identify hidden contradictions, PIN mismatches, or altered stamps across files.
+                Scan all evidence simultaneously to identify hidden contradictions or PIN mismatches across files.
               </p>
               <Button
-                className="w-full h-10 bg-accent text-white font-bold text-xs uppercase tracking-widest shadow-md hover:shadow-lg transition-all"
+                className="w-full h-10 bg-accent text-white font-bold text-xs uppercase tracking-widest shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.97] transition-all"
                 onClick={handleSuspicionCheck}
                 disabled={isChecking || listing.evidence.length === 0}
               >

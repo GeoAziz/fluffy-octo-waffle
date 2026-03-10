@@ -253,8 +253,8 @@ export default function AdminListingsPage() {
                   <div className="flex gap-1">
                     <ConfirmActionDialog
                       title="Bulk Approve"
-                      description="Mark selected listings as verified and approved."
-                      confirmLabel="Approve"
+                      description={`You are about to approve ${selectedIds.length} listings. This will make them publicly visible with their assigned trust signals.`}
+                      confirmLabel="Confirm Approval"
                       onConfirm={() => handleBulk("approved")}
                     >
                       <Button size="sm" className="h-8 bg-success text-white hover:bg-success/90">
@@ -263,8 +263,8 @@ export default function AdminListingsPage() {
                     </ConfirmActionDialog>
                     <ConfirmActionDialog
                       title="Bulk Reject"
-                      description="Sellers will be notified to correct documentation."
-                      confirmLabel="Reject"
+                      description={`You are about to reject ${selectedIds.length} listings. Sellers will be notified to correct their documentation.`}
+                      confirmLabel="Confirm Rejection"
                       onConfirm={() => handleBulk("rejected")}
                       variant="destructive"
                     >

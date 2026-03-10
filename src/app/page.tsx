@@ -1,15 +1,10 @@
-'use client';
-
-import { BuyerHomePage } from '@/components/buyer/buyer-home-page';
-
 /**
- * Root Landing Page.
- * This is the main entry point for the Kenya Land Trust platform.
- * NOTE: The layout (Header/Footer) is provided by the (buyer) route group 
- * if this file is moved there, but Next.js App Router root layout 
- * usually handles the very top level.
- * To resolve the 404, we ensure this file has a clear default export.
+ * Redundant root entry neutralized.
+ * Landing logic is definitively managed in src/app/(buyer)/page.tsx 
+ * to inherit group layouts and resolve route collisions.
  */
-export default function Page() {
-  return <BuyerHomePage />;
+import { redirect } from 'next/navigation';
+
+export default function RootPage() {
+  return null;
 }

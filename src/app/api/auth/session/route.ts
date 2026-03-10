@@ -4,7 +4,6 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 /**
  * Session Management Route
  * Handles verification, creation, and deletion of secure session cookies.
- * NOTE: Route Handlers are server-side by default.
  */
 
 export async function GET(request: NextRequest) {
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'error', message: 'idToken is required.' }, { status: 400 });
   }
 
-  // 5 days
+  // 5 days session
   const expiresInMs = 60 * 60 * 24 * 5 * 1000;
 
   try {

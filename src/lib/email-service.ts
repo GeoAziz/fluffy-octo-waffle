@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 /**
  * @fileOverview Branded Email Service for Kenya Land Trust.
- * Handles templating and delivery via Resend.
+ * Handles templating and delivery via Resend with professional branding and responsive layouts.
  */
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -19,11 +19,12 @@ const BRAND_COLORS = {
 };
 
 const FOOTER_HTML = (email: string) => `
-  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: ${BRAND_COLORS.muted}; font-size: 12px; text-align: center;">
+  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5E7EB; color: ${BRAND_COLORS.muted}; font-size: 12px; text-align: center; line-height: 1.5;">
     <p>© ${new Date().getFullYear()} Kenya Land Trust. All rights reserved.</p>
-    <p>Building transparency in the Kenyan land market.</p>
+    <p>High-Trust Ecosystem for Verified Land Transactions in Kenya.</p>
     <p style="margin-top: 10px;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${encodeURIComponent(email)}" style="color: ${BRAND_COLORS.primary}; text-decoration: underline;">Unsubscribe</a> from these updates.
+      This is an automated security pulse. <br/>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${encodeURIComponent(email)}" style="color: ${BRAND_COLORS.primary}; text-decoration: underline; font-weight: bold;">Unsubscribe from alerts</a>
     </p>
   </div>
 `;
@@ -35,18 +36,20 @@ const LAYOUT = (content: string, email: string) => `
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: 'Inter', system-ui, sans-serif; background-color: ${BRAND_COLORS.secondary}; margin: 0; padding: 20px; color: ${BRAND_COLORS.text}; }
-        .container { max-width: 600px; margin: 0 auto; background-color: ${BRAND_COLORS.white}; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .header { background-color: ${BRAND_COLORS.primary}; padding: 30px; text-align: center; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: ${BRAND_COLORS.secondary}; margin: 0; padding: 20px; color: ${BRAND_COLORS.text}; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 600px; margin: 0 auto; background-color: ${BRAND_COLORS.white}; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .header { background-color: ${BRAND_COLORS.primary}; padding: 40px 30px; text-align: center; }
         .content { padding: 40px; line-height: 1.6; }
-        .button { display: inline-block; padding: 12px 24px; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white} !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
-        .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .button { display: inline-block; padding: 14px 28px; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white} !important; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.1); }
+        h2 { color: ${BRAND_COLORS.primary}; font-weight: 900; font-size: 22px; margin-top: 0; letter-spacing: -0.02em; }
+        p { margin-bottom: 16px; font-size: 15px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="color: ${BRAND_COLORS.white}; margin: 0; font-size: 24px;">Kenya Land Trust</h1>
+          <h1 style="color: ${BRAND_COLORS.white}; margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.03em; text-transform: uppercase;">Kenya Land Trust</h1>
         </div>
         <div class="content">
           ${content}
@@ -72,17 +75,18 @@ export async function sendBrandedEmail(options: {
   payload: any;
 }) {
   const { to, type, subject, payload } = options;
-  let html = '';
+  let htmlContent = '';
 
   switch (type) {
     case 'listing_submitted':
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.primary};">Listing Received</h2>
+      htmlContent = `
+        <div class="badge" style="background-color: ${BRAND_COLORS.primary}10; color: ${BRAND_COLORS.primary};">Vault Transmission Successful</div>
+        <h2>Listing Received & Secured</h2>
         <p>Hello ${payload.name},</p>
-        <p>Your property listing <strong>"${payload.listingTitle}"</strong> has been successfully submitted to the property vault.</p>
-        <p>Our trust team will now begin reviewing your documentation. You will receive an update once a trust signal has been assigned.</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/listings" class="button">View My Vault</a>
-      `, to);
+        <p>Your property listing <strong>"${payload.listingTitle}"</strong> has been successfully committed to the property vault and assigned a unique registry ID.</p>
+        <p>Our trust team will now begin the document integrity review. You will receive an automated pulse once a trust signal has been assigned.</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/listings" class="button">Access My Registry</a>
+      `;
       break;
 
     case 'badge_assigned':
@@ -93,68 +97,76 @@ export async function sendBrandedEmail(options: {
         Suspicious: BRAND_COLORS.risk,
         None: BRAND_COLORS.muted
       };
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.primary};">Trust Signal Updated</h2>
+      const badgeColor = badgeColors[payload.badge as keyof typeof badgeColors] || BRAND_COLORS.muted;
+      htmlContent = `
+        <div class="badge" style="background-color: ${badgeColor}15; color: ${badgeColor}; border-color: ${badgeColor}30;">Signal Update</div>
+        <h2>Trust Signal Assigned</h2>
         <p>Hello ${payload.name},</p>
-        <p>A new trust signal has been assigned to your listing: <strong>"${payload.listingTitle}"</strong>.</p>
-        <div class="badge" style="background-color: ${badgeColors[payload.badge as keyof typeof badgeColors]}20; color: ${badgeColors[payload.badge as keyof typeof badgeColors]};">
-          ${payload.badge}
+        <p>A new trust signal has been assigned to your property vault: <strong>"${payload.listingTitle}"</strong>.</p>
+        <div style="padding: 20px; background-color: ${BRAND_COLORS.secondary}; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(0,0,0,0.05);">
+          <div style="font-weight: 900; color: ${badgeColor}; font-size: 18px; margin-bottom: 8px;">${payload.badge}</div>
+          <p style="font-style: italic; color: ${BRAND_COLORS.muted}; font-size: 13px; margin: 0;">"${payload.adminNotes || 'Documentation review complete. Visual assets verified.'}"</p>
         </div>
-        <p><strong>Admin Feedback:</strong></p>
-        <blockquote style="border-left: 4px solid #E5E7EB; padding-left: 15px; font-style: italic; color: ${BRAND_COLORS.muted};">
-          "${payload.adminNotes || 'No specific notes provided.'}"
-        </blockquote>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/listings/${payload.listingId}" class="button">View Live Listing</a>
-      `, to);
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/listings/${payload.listingId}" class="button">View Live Profile</a>
+      `;
       break;
 
     case 'evidence_vaulted':
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.primary};">Evidence Vaulted</h2>
+      htmlContent = `
+        <div class="badge" style="background-color: ${BRAND_COLORS.primary}10; color: ${BRAND_COLORS.primary};">Asset Sync Complete</div>
+        <h2>New Proof Vaulted</h2>
         <p>Hello ${payload.name},</p>
-        <p>New evidence documents have been successfully added to your listing: <strong>"${payload.listingTitle}"</strong>.</p>
-        <p>Documents added: ${payload.fileCount}</p>
-        <p>This evidence is now queued for administrative verification.</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Go to Dashboard</a>
-      `, to);
+        <p>New verification assets have been added to your listing: <strong>"${payload.listingTitle}"</strong>.</p>
+        <p>Total documents synced: <strong>${payload.fileCount}</strong></p>
+        <p>This update has been logged in the audit trail and is now pending administrative verification.</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Monitor Progress</a>
+      `;
       break;
 
     case 'suspicious_flag':
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.risk};">Security Alert: Suspicious Activity</h2>
+      htmlContent = `
+        <div class="badge" style="background-color: ${BRAND_COLORS.risk}15; color: ${BRAND_COLORS.risk};">Security Triage Alert</div>
+        <h2>Risk Pulse Detected</h2>
         <p>Admin Team,</p>
-        <p>A listing has been flagged as <strong>Suspicious</strong> by the AI Trust Engine.</p>
-        <p><strong>Listing:</strong> ${payload.listingTitle}</p>
-        <p><strong>Reason:</strong> ${payload.reason}</p>
+        <p>The AI Trust Engine has flagged a potential documentation mismatch.</p>
+        <div style="border-left: 4px solid ${BRAND_COLORS.risk}; padding-left: 20px; margin: 24px 0;">
+          <p style="margin: 0;"><strong>Listing:</strong> ${payload.listingTitle}</p>
+          <p style="margin: 4px 0 0 0; color: ${BRAND_COLORS.risk};"><strong>Risk Reason:</strong> ${payload.reason}</p>
+        </div>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/listings/${payload.listingId}" class="button" style="background-color: ${BRAND_COLORS.risk};">Review Immediately</a>
-      `, to);
+      `;
       break;
 
     case 'contact_confirmation':
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.primary};">We've Received Your Message</h2>
+      htmlContent = `
+        <div class="badge" style="background-color: ${BRAND_COLORS.accent}15; color: ${BRAND_COLORS.accent};">Transmission Received</div>
+        <h2>We Have Your Inquiry</h2>
         <p>Hello ${payload.name},</p>
-        <p>Thanks for contacting Kenya Land Trust. Our support team has received your request regarding <strong>"${payload.topic}"</strong>.</p>
-        <p>Typical response time is within 24 hours. Reference ID: ${payload.messageId}</p>
-      `, to);
+        <p>Thank you for contacting Kenya Land Trust. Our support team has received your request regarding <strong>"${payload.topic}"</strong>.</p>
+        <p>Our current moderation SLA ensures a response within 24 hours.</p>
+        <div style="font-size: 11px; font-weight: 800; color: ${BRAND_COLORS.muted}; margin-top: 20px; text-transform: uppercase;">Ref ID: ${payload.messageId}</div>
+      `;
       break;
 
     case 'report_received':
-      html = LAYOUT(`
-        <h2 style="color: ${BRAND_COLORS.risk};">Listing Report Captured</h2>
+      htmlContent = `
+        <div class="badge" style="background-color: ${BRAND_COLORS.risk}15; color: ${BRAND_COLORS.risk};">Community Signal</div>
+        <h2>Risk Report Captured</h2>
         <p>Hello ${payload.name},</p>
-        <p>Thank you for flagging listing <strong>${payload.listingId}</strong>. We take community trust seriously.</p>
-        <p>Our moderation team is investigating the report now.</p>
-      `, to);
+        <p>Thank you for flagging listing <strong>${payload.listingId}</strong>. Community vigilance is the foundation of our trust ecosystem.</p>
+        <p>Our moderation team is investigating your report now. Action will be taken if documentation discrepancies are confirmed.</p>
+      `;
       break;
 
     default:
-      html = LAYOUT(`<p>You have a new notification from Kenya Land Trust.</p>`, to);
+      htmlContent = `<h2>Notification Alert</h2><p>You have a new update from Kenya Land Trust.</p>`;
   }
+
+  const html = LAYOUT(htmlContent, to);
 
   try {
     if (!process.env.RESEND_API_KEY) {
-      console.warn('[EmailService] RESEND_API_KEY missing. Skipping delivery.');
+      console.warn('[EmailService] RESEND_API_KEY missing. Skipping delivery pulse.');
       return { success: false, error: 'Config missing' };
     }
 
@@ -166,13 +178,13 @@ export async function sendBrandedEmail(options: {
     });
 
     if (error) {
-      console.error('[EmailService] Delivery failed:', error);
+      console.error('[EmailService] Transmission failed:', error);
       return { success: false, error };
     }
 
     return { success: true, id: data?.id };
   } catch (err) {
-    console.error('[EmailService] Unexpected error:', err);
+    console.error('[EmailService] Unexpected logic error:', err);
     return { success: false, error: err };
   }
 }

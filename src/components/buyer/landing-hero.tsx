@@ -23,12 +23,13 @@ export function LandingHero() {
       <div className="absolute inset-0 z-0">
         <Image
           src="https://images.unsplash.com/photo-1646159755791-54e741749028?auto=format&fit=crop&q=80&w=2000"
-          alt="Kenyan Landscape"
+          alt="Kenyan Landscape - Expansive greenery showing land potential"
           fill
-          priority={true} // Priority for LCP element
+          priority={true} // Critical for LCP performance
           className="object-cover opacity-30 transition-transform duration-[10s] hover:scale-110"
           sizes="100vw"
           quality={90}
+          data-ai-hint="kenya landscape"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-primary/95 to-emerald-900/80" />
       </div>

@@ -1,9 +1,11 @@
 'use client';
 
+import { BuyerHomePage } from '@/components/buyer/buyer-home-page';
+
 /**
- * Redundant route segment.
- * This file is neutralized to prevent route collisions with the root page.tsx.
+ * Main Landing Page - Entry point for the Republic of Kenya's most trusted land marketplace.
+ * Inherits premium headers and footers from the (buyer) layout group.
  */
-export default function RedundantLandingPage() {
-  return null;
+export default function LandingPage() {
+  return <BuyerHomePage />;
 }

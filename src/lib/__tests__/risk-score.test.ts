@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 
 /**
  * Basic unit test for the risk score calculation logic.
- * Note: Since the function is internal to data.ts, in a real scenario we'd 
- * export it for testing or test it through public interfaces.
  */
 
 const calculateRiskScore = (data: any): number => {
@@ -37,7 +35,7 @@ describe('Risk Score Logic', () => {
       badgeSuggestion: { badge: 'Suspicious' },
       additionalRisk: true
     };
-    // 40 (image) + 50 (badge) = 90. If we add more logic, it shouldn't exceed 100.
+    // 40 (image) + 50 (badge) = 90.
     expect(calculateRiskScore(data)).toBe(90);
   });
 

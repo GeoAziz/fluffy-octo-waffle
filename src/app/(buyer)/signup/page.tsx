@@ -38,32 +38,31 @@ const GoogleIcon = () => (
 
 const formSchema = z.object({
   displayName: z.string()
-    .min(2, 'Full name must be at least 2 characters.')
-    .max(50, 'Name is too long.'),
-  email: z.string().email('Please enter a valid email address.'),
+    .min(2, 'Full legal name must be at least 2 characters.')
+    .max(50, 'Name length restricted to 50 characters.'),
+  email: z.string().email('Please enter a valid organizational or personal email.'),
   password: z.string()
-    .min(8, 'Password must be at least 8 characters.')
-    .regex(/[A-Z]/, 'Include at least one uppercase letter.')
-    .regex(/[0-9]/, 'Include at least one number.')
-    .regex(/[^A-Za-z0-9]/, 'Include at least one special character.'),
+    .min(8, 'Access token must be at least 8 characters for security.')
+    .regex(/[A-Z]/, 'Must include at least one uppercase character.')
+    .regex(/[0-9]/, 'Must include at least one numerical digit.')
+    .regex(/[^A-Za-z0-9]/, 'Must include at least one special symbol.'),
   phone: z.string().optional(),
 });
 
 function getFirebaseAuthErrorMessage(errorCode: string): string {
     switch (errorCode) {
         case 'auth/email-already-in-use':
-            return 'A vault already exists for this email. Log in instead.';
+            return 'A property vault already exists for this email. Log in instead.';
         case 'auth/invalid-email':
-            return 'The provided email format is invalid.';
+            return 'The email format provided is not recognized by the security layer.';
         case 'auth/weak-password':
-            return 'The chosen token is too easy to decipher.';
+            return 'The chosen token is too simple. Enhance with complexity.';
         case 'auth/popup-closed-by-user':
-            return 'External authentication was cancelled.';
+            return 'The SSO handshake was terminated by the user.';
         default:
-            return `Identity creation failed. System error: ${errorCode}`;
+            return `Identity provisioning failed. Protocol error: ${errorCode}`;
     }
 }
-
 
 export default function SignupPage() {
   const router = useRouter();
@@ -72,27 +71,6 @@ export default function SignupPage() {
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    let isActive = true;
-    const checkExistingSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!isActive || !data?.authenticated) return;
-        const role = data.role ?? 'BUYER';
-        const redirectTarget = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/dashboard' : '/';
-        router.replace(redirectTarget);
-      } catch (error) {
-        console.warn('[Signup] Unable to check existing session:', error);
-      }
-    };
-    checkExistingSession();
-    return () => {
-      isActive = false;
-    };
-  }, [router]);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -100,23 +78,26 @@ export default function SignupPage() {
   });
 
   const handleAuthSuccess = async (user: User) => {
-    const idToken = await user.getIdToken();
-    
-    const response = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-    });
+    try {
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+      });
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Identity transmission failed.' }));
-        throw new Error(errorData.message || 'Failed to establish security session.');
+      if (!response.ok) {
+          throw new Error('Identity transmission failed.');
+      }
+
+      toast({ title: 'Identity Verified', description: "Initializing your secure property vault." });
+      window.location.assign('/onboarding');
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Handshake Error', description: err.message });
+      setIsSubmitting(false);
     }
-
-    toast({ title: 'Identity Verified', description: "Initializing your property vault." });
-    window.location.assign('/onboarding');
   }
-
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -139,12 +120,11 @@ export default function SignupPage() {
       });
       
       await handleAuthSuccess(user);
-
     } catch (error: any) {
       const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
       toast({
         variant: 'destructive',
-        title: 'Identity Creation Failed',
+        title: 'Identity Provisioning Failed',
         description: message,
       });
       setIsSubmitting(false);
@@ -175,18 +155,16 @@ export default function SignupPage() {
         }
         
         await handleAuthSuccess(user);
-
     } catch (error: any) {
         const message = error.code ? getFirebaseAuthErrorMessage(error.code) : error.message;
         toast({
             variant: 'destructive',
-            title: 'SSO Protocol Failed',
+            title: 'SSO Handshake failure',
             description: message,
         });
         setIsGoogleSubmitting(false);
     }
   }
-
 
   return (
      <div className="w-full lg:grid lg:min-h-[calc(100vh-4rem)] lg:grid-cols-2 xl:min-h-[calc(100vh-4rem)]">
@@ -239,7 +217,7 @@ export default function SignupPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Communication Email</FormLabel>
-                        <FormControl><Input placeholder="agent@kenyalandtrust.com" {...field} className="h-11" /></FormControl>
+                        <FormControl><Input placeholder="agent@email.com" {...field} className="h-11" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -278,7 +256,7 @@ export default function SignupPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase leading-tight">Must include uppercase, number, and symbol.</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase leading-tight">Minimum 8 chars, 1 uppercase, 1 number, 1 symbol.</p>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 
 /**
  * Skeleton - Upgraded with premium shimmer effect for cinematic loading.
+ * Part of the platform's Elite visual protocol.
  */
 function Skeleton({
   className,

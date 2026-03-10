@@ -30,7 +30,10 @@ if (!getApps().length) {
 
 if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
-  performance = getPerformance(app);
+  // Only initialize performance in production to avoid logging noise during dev
+  if (process.env.NODE_ENV === 'production') {
+    performance = getPerformance(app);
+  }
 }
 
 auth = getAuth(app);

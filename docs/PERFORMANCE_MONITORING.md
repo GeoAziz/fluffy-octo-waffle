@@ -1,47 +1,29 @@
-# Performance & Monitoring Guide
+# Performance & Monitoring Strategy
 
-This document outlines the performance strategy and monitoring tools implemented for the Kenya Land Trust platform.
+This document outlines the performance protocols and monitoring tools implemented for the Kenya Land Trust platform.
 
-## 1. Firebase Performance Monitoring
-Firebase Performance is enabled for automatic tracing of:
-- **Page Load Time**: Duration from request to page fully interactive.
-- **Network Requests**: Latency and success rates of Firestore and internal API calls.
-- **App Start**: Cold-start performance.
-
-To view these metrics:
-1. Go to the [Firebase Console](https://console.firebase.google.com).
-2. Select **Performance** from the left navigation.
-3. Review the "Dashboard" for automated traces and "Network" for API performance.
-
-## 2. Core Web Vitals (Real-User Metrics)
-Next.js Core Web Vitals are instrumented and reported to **Firebase Analytics** under the event name `web_vitals`.
+## 1. Core Web Vitals (Real-User Metrics)
+Next.js Core Web Vitals are instrumented via `next/web-vitals` and reported directly to **Firebase Analytics** under the event `web_vitals`.
 
 ### Tracked Metrics:
-- **LCP (Largest Contentful Paint)**: Measures loading performance. Target: **< 2.5s**.
-- **FID (First Input Delay)**: Measures interactivity. Target: **< 100ms**.
-- **CLS (Cumulative Layout Shift)**: Measures visual stability. Target: **< 0.1**.
-- **FCP (First Contentful Paint)**: Time to first text/image.
-- **TTFB (Time to First Byte)**: Server responsiveness.
+- **LCP (Largest Contentful Paint)**: Target < 2.5s. Measures perceived loading speed.
+- **FID (First Input Delay)**: Target < 100ms. Measures responsiveness.
+- **CLS (Cumulative Layout Shift)**: Target < 0.1. Measures visual stability.
+- **TTFB (Time to First Byte)**: Measures server responsiveness.
 
-To analyze these in Firebase:
-1. Go to **Analytics** -> **Events**.
-2. Search for the `web_vitals` event.
-3. Use the `metric_name` and `metric_value` parameters to build reports.
+## 2. Firebase Performance Monitoring
+The Firebase Performance SDK is initialized in production to provide:
+- **Automated Trace**: "App Start" and "Screen Trace" durations.
+- **Network Request Latency**: Tracking of Firestore and Server Action overhead.
+- **Trace Customization**: Specific segments like AI Triage or Documentation Upload are tagged for bottleneck analysis.
 
-## 3. Image Optimization Strategy
-We utilize the `next/image` component with the following optimizations:
-- **Lazy Loading**: Default for all listing grid images to reduce initial bandwidth.
-- **Priority Loading**: The `priority` attribute is used for:
-  - Landing page hero image.
-  - First image in property carousels.
-  - Featured listings thumbnails.
-- **Dynamic Sizes**: The `sizes` attribute is configured to inform the browser of the expected display width, preventing high-DPI devices from downloading unnecessarily large assets.
+## 3. Image Optimization Protocol
+We strictly follow Next.js optimization best-practices to ensure a high-trust, fast-loading visual experience:
+- **Priority Loading**: All above-the-fold assets (Landing Hero, first 4 listing cards) use the `priority` attribute to optimize LCP.
+- **Lazy Loading**: Grid-level listings and gallery thumbnails use native lazy-loading to preserve bandwidth.
+- **Responsive Sizes**: All `Image` components implement `sizes` to ensure mobile devices do not download desktop-resolution assets.
 
-## 4. Lighthouse Audits
-We recommend running Lighthouse audits during development to maintain performance thresholds.
-- **Goal Score**: 90+ across all categories.
-- **Focus**: Accessibility, SEO, and Performance.
-
-## 5. Maintenance
-- **API Performance**: Monitor the `/api/admin/settings` and `/api/listings` endpoints for latency spikes.
-- **Asset Size**: Ensure any new UI illustrations are provided in optimized SVG or WebP formats.
+## 4. Operational Maintenance
+- **Turbopack**: Utilized in development for sub-100ms HMR (Hot Module Replacement).
+- **ISR (Incremental Static Regeneration)**: Listing pages are revalidated on-demand after mutations to balance speed and data freshness.
+- **Bundle Analysis**: Periodic audits are conducted to ensure client-side JS remains under 250KB (gzip).

@@ -40,12 +40,11 @@ import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { EmptyState } from '@/components/empty-state';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
 import { cn } from '@/lib/utils';
-import { ListingMapView } from './listing-map-view';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const KENYA_COUNTIES = [
@@ -73,7 +72,6 @@ export function ListingsContent() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   // Filter states
   const [query, setQuery] = useState('');
@@ -210,26 +208,6 @@ export function ListingsContent() {
             />
           </div>
           <div className="flex gap-2">
-            <div className="flex items-center rounded-lg border bg-background p-1 shadow-sm h-14">
-              <Button 
-                variant={viewMode === 'grid' ? 'default' : 'ghost'} 
-                size="icon" 
-                className="h-12 w-12 rounded-md"
-                onClick={() => setViewMode('grid')}
-                aria-label="Grid View"
-              >
-                <LayoutGrid className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant={viewMode === 'map' ? 'default' : 'ghost'} 
-                size="icon" 
-                className="h-12 w-12 rounded-md"
-                onClick={() => setViewMode('map')}
-                aria-label="Map View"
-              >
-                <MapIcon className="h-5 w-5" />
-              </Button>
-            </div>
             <Button 
               variant="outline" 
               className={cn("h-14 px-6 gap-2 font-black uppercase text-[10px] tracking-widest transition-all", showAdvancedFilters && "bg-accent/5 border-accent text-accent")}
@@ -405,8 +383,6 @@ export function ListingsContent() {
             <ListingCardSkeleton key={i} />
           ))}
         </div>
-      ) : viewMode === 'map' ? (
-        <ListingMapView listings={listings} />
       ) : sortedListings.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8" id="listings-section" role="feed" aria-busy="false">
@@ -425,7 +401,7 @@ export function ListingsContent() {
                       sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                       data-ai-hint={listing.images[0].hint}
-                      priority={index < 4} // Load the first 4 images with priority for better LCP
+                      priority={index < 4} // Performance Optimization: Prioritize loading the first 4 images
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

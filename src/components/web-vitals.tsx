@@ -6,26 +6,29 @@ import { logEvent } from 'firebase/analytics';
 
 /**
  * WebVitals - Monitors Core Web Vitals and reports to Firebase Analytics.
- * Tracks LCP, FID, CLS, FCP, and TTFB.
+ * Tracks LCP (Largest Contentful Paint), FID (First Input Delay), 
+ * CLS (Cumulative Layout Shift), FCP (First Contentful Paint), and TTFB (Time to First Byte).
  */
 export function WebVitals() {
   useReportWebVitals((metric) => {
     if (analytics) {
-      // Use metric name as event name, or a generic 'web_vitals' event
+      // Log Core Web Vital metrics to Firebase Analytics
       logEvent(analytics, 'web_vitals', {
         metric_id: metric.id,
         metric_name: metric.name,
         metric_value: metric.value,
         metric_rating: metric.rating, // 'good' | 'needs-improvement' | 'poor'
         metric_delta: metric.delta,
-        page_path: window.location.pathname,
+        page_path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
       });
       
-      // Also log specific event for better filtering in console
-      logEvent(analytics, `vitals_${metric.name.toLowerCase()}`, {
-        value: metric.value,
-        id: metric.id,
-      });
+      // Specifically log LCP for high-trust speed monitoring
+      if (metric.name === 'LCP') {
+        logEvent(analytics, 'speed_lcp', {
+          value: metric.value,
+          id: metric.id,
+        });
+      }
     }
   });
 
