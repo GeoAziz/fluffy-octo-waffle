@@ -36,30 +36,30 @@ export function LandingHero() {
 
       <div className="container relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
         {/* Trust Signal - Animated Entry */}
-        <div className="animate-fade-in-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest backdrop-blur-md">
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest backdrop-blur-md animate-slide-up">
           <BadgeCheck className="h-4 w-4 text-accent" />
           <span>Kenya's #1 Verified Land Marketplace</span>
         </div>
 
         {/* Hero Headline - Gradient Text */}
         <div className="max-w-4xl space-y-6">
-          <h1 className="animate-fade-in-up text-4xl font-black tracking-tighter sm:text-6xl lg:text-7xl xl:text-8xl">
+          <h1 className="text-4xl font-black tracking-tighter sm:text-6xl lg:text-7xl xl:text-8xl animate-slide-up" style={{ animationDelay: '100ms' }}>
             <span className="block">Find Land with</span>
             <span className="bg-gradient-to-r from-emerald-200 via-white to-accent bg-clip-text text-transparent">
               Ironclad Trust
             </span>
           </h1>
-          <p className="animate-fade-in-up mx-auto max-w-2xl text-lg text-emerald-50/80 delay-150 sm:text-xl md:text-2xl">
+          <p className="mx-auto max-w-2xl text-lg text-emerald-50/80 sm:text-xl md:text-2xl animate-slide-up" style={{ animationDelay: '200ms' }}>
             The only platform in Kenya that validates every title deed and survey map with AI-assisted administrative review.
           </p>
         </div>
 
         {/* CTA Actions - Tactile Hover/Active states */}
-        <div className="animate-fade-in-up mt-10 flex w-full flex-col items-center justify-center gap-4 delay-300 sm:flex-row">
+        <div className="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:flex-row animate-slide-up" style={{ animationDelay: '300ms' }}>
           <Button 
             size="lg" 
             onClick={handleExplore} 
-            className="h-14 w-full bg-white px-10 text-[11px] font-black uppercase tracking-widest text-emerald-950 hover:bg-emerald-50 sm:w-auto shadow-glow transition-all active:scale-[0.97]"
+            className="h-14 w-full bg-white px-10 text-[11px] font-black uppercase tracking-widest text-emerald-950 hover:bg-emerald-50 sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
           >
             Explore Vaulted Listings
           </Button>
@@ -67,7 +67,7 @@ export function LandingHero() {
             size="lg" 
             variant="outline" 
             asChild 
-            className="h-14 w-full border-white/30 px-10 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/10 sm:w-auto transition-all active:scale-[0.97]"
+            className="h-14 w-full border-white/30 px-10 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/10 sm:w-auto transition-all duration-300 active:scale-95"
           >
             <Link href="/trust">Our Verification Protocol</Link>
           </Button>

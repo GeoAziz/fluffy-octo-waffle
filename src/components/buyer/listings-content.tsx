@@ -40,6 +40,7 @@ import { TrustBadge } from '@/components/trust-badge';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { EmptyState } from '@/components/empty-state';
+import { StaggerContainer } from '@/components/animations/stagger-container';
 import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
@@ -218,7 +219,7 @@ export function ListingsContent() {
               <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
               <span>Refine Search</span>
               {activeFilters.length > 0 && (
-                <Badge variant="accent" className="ml-1 h-5 min-w-5 p-0 flex items-center justify-center rounded-full text-[10px]" aria-label={`${activeFilters.length} filters applied`}>
+                <Badge variant="secondary" className="ml-1 h-5 min-w-5 p-0 flex items-center justify-center rounded-full text-[10px]" aria-label={`${activeFilters.length} filters applied`}>
                   {activeFilters.length}
                 </Badge>
               )}
@@ -385,12 +386,12 @@ export function ListingsContent() {
         </div>
       ) : sortedListings.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8" id="listings-section" role="feed" aria-busy="false">
-            {sortedListings.map((listing, index) => (
+          <div id="listings-section" role="feed" aria-busy="false">
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+              {sortedListings.map((listing, index) => (
               <Card 
-                key={listing.id} 
-                className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 h-full flex flex-col border-border/40 bg-card/50 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
-                style={{ animationDelay: `${index * 60}ms`, animationDuration: '500ms' }}
+                key={listing.id}
+                className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col border-border/40 bg-card/50 backdrop-blur-sm rounded-2xl"
               >
                 <Link href={`/listings/${listing.id}`} className="block relative aspect-[4/3] overflow-hidden bg-muted" aria-label={`View details for ${listing.title} in ${listing.location}`}>
                   {listing.images && listing.images.length > 0 ? (
@@ -411,7 +412,7 @@ export function ListingsContent() {
                   
                   {/* Trust Badge - Prominent Overlay */}
                   <div className="absolute top-3 left-3 z-10 scale-110 md:scale-100 origin-top-left">
-                    <TrustBadge badge={listing.badge} />
+                    <TrustBadge badge={listing.badge} animated={true} />
                   </div>
                   
                   {/* Secondary Overlays */}
@@ -476,7 +477,8 @@ export function ListingsContent() {
                   </Button>
                 </CardFooter>
               </Card>
-            ))}
+              ))}
+            </StaggerContainer>
           </div>
 
           {hasMore && (

@@ -86,18 +86,18 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
 };
 
 const badgeVariants = {
-  emerald: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 hover:bg-emerald-500/20 shadow-glow shadow-emerald-500/5",
-  "muted-blue": "bg-accent/10 text-accent border-accent/20 hover:bg-accent/15",
-  amber: "bg-warning/10 text-warning border-warning/20 hover:bg-warning/15",
-  risk: "bg-risk/10 text-risk border-risk/20 hover:bg-risk/15 animate-shake",
-  secondary: "bg-muted text-muted-foreground border-border",
+  emerald: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 dark:border-emerald-500/40 hover:bg-emerald-500/15 dark:hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.1)] dark:shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:shadow-[0_0_24px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_0_24px_rgba(16,185,129,0.3)] transition-all duration-300",
+  "muted-blue": "bg-accent/10 text-accent dark:text-accent border-accent/30 dark:border-accent/40 hover:bg-accent/15 dark:hover:bg-accent/20 shadow-[0_0_12px_rgba(47,111,149,0.1)] dark:shadow-[0_0_12px_rgba(47,111,149,0.2)] hover:shadow-[0_0_24px_rgba(47,111,149,0.15)] dark:hover:shadow-[0_0_24px_rgba(47,111,149,0.3)] transition-all duration-300",
+  amber: "bg-warning/10 text-warning dark:text-warning border-warning/30 dark:border-warning/40 hover:bg-warning/15 dark:hover:bg-warning/20 shadow-[0_0_12px_rgba(197,139,46,0.1)] dark:shadow-[0_0_12px_rgba(197,139,46,0.2)] transition-all duration-300",
+  risk: "bg-risk/15 text-risk dark:text-red-400 border-risk/40 dark:border-risk/50 hover:bg-risk/20 dark:hover:bg-risk/25 shadow-[0_0_16px_rgba(140,47,57,0.2)] dark:shadow-[0_0_16px_rgba(140,47,57,0.4)] hover:shadow-[0_0_32px_rgba(140,47,57,0.3)] dark:hover:shadow-[0_0_32px_rgba(140,47,57,0.5)] animate-badge-glow transition-all duration-300",
+  secondary: "bg-muted text-muted-foreground border-border hover:bg-muted/80 transition-all duration-300",
 };
 
 const iconColors = {
-  emerald: "text-emerald-600",
-  "muted-blue": "text-accent",
-  amber: "text-warning",
-  risk: "text-risk",
+  emerald: "text-emerald-600 dark:text-emerald-400",
+  "muted-blue": "text-accent dark:text-accent",
+  amber: "text-warning dark:text-warning",
+  risk: "text-risk dark:text-red-400",
   secondary: "text-muted-foreground",
 };
 
@@ -105,10 +105,12 @@ export function TrustBadge({
   badge,
   className,
   showTooltip = true,
+  animated = true,
 }: {
   badge: BadgeValue | null;
   className?: string;
   showTooltip?: boolean;
+  animated?: boolean;
 }) {
   if (!badge) return null;
   const info = badgeMap[badge] || badgeMap.None;
@@ -117,13 +119,14 @@ export function TrustBadge({
   const BadgeComponent = (
     <Badge
       className={cn(
-        'transition-all duration-300 animate-soft-fade-scale whitespace-nowrap px-2.5 py-1 font-black uppercase text-[10px] tracking-widest',
+        'px-3 py-1.5 font-bold uppercase text-xs tracking-wide rounded-full border transition-all duration-300',
+        animated && 'animate-scale-in',
         badgeVariants[variant],
         className
       )}
     >
-      <Icon className={cn('mr-1.5 h-3.5 w-3.5', iconColors[variant])} aria-hidden="true" />
-      {label}
+      <Icon className={cn('mr-1.5 h-4 w-4 flex-shrink-0', iconColors[variant])} aria-hidden="true" />
+      <span className="whitespace-nowrap">{label}</span>
     </Badge>
   );
 
@@ -135,49 +138,91 @@ export function TrustBadge({
     <Popover>
       <PopoverTrigger asChild>
         <button 
-          className="inline-flex h-auto p-0 border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full cursor-help"
+          className="inline-flex h-auto p-1 border-none bg-transparent outline-none rounded-full cursor-help focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 hover:scale-105"
           aria-label={`Trust Level: ${label}. Click for details.`}
         >
           {BadgeComponent}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 overflow-hidden rounded-xl shadow-xl border-border/40 animate-in fade-in zoom-in-95 duration-200" align="start">
-        <div className={cn("p-5", variant === 'emerald' ? 'bg-emerald-500 text-white' : variant === 'risk' ? 'bg-risk text-white' : 'bg-secondary')}>
+      <PopoverContent 
+        className={cn(
+          'w-80 p-0 overflow-hidden rounded-xl border border-border/60 shadow-xl',
+          'animate-scale-in duration-200'
+        )} 
+        align="start"
+      >
+        {/* Header with variant-specific background */}
+        <div className={cn(
+          "p-5 bg-gradient-to-br",
+          variant === 'emerald' && 'from-emerald-500 to-emerald-600 text-white',
+          variant === 'muted-blue' && 'from-accent to-blue-700 text-white',
+          variant === 'amber' && 'from-warning to-amber-700 text-white',
+          variant === 'risk' && 'from-risk to-red-700 text-white shadow-lg shadow-risk/20',
+          variant === 'secondary' && 'from-secondary to-gray-400 text-foreground'
+        )}>
           <div className="flex items-center gap-3">
-            <div className="rounded-lg p-2 bg-white/20 backdrop-blur-md">
+            <div className={cn(
+              "rounded-lg p-2.5 backdrop-blur-md transition-transform duration-200",
+              variant === 'emerald' && 'bg-white/20',
+              variant === 'muted-blue' && 'bg-white/20',
+              variant === 'amber' && 'bg-white/20',
+              variant === 'risk' && 'bg-white/15',
+              variant === 'secondary' && 'bg-black/10'
+            )}>
               <Icon className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="font-black uppercase tracking-tight text-sm leading-tight">{label}</h3>
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{subtitle}</p>
+              <h3 className="font-bold uppercase tracking-tight text-sm leading-tight">{label}</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{subtitle}</p>
             </div>
           </div>
         </div>
         
-        <div className="p-5 space-y-5 bg-background">
-          <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+        {/* Content with dark mode support */}
+        <div className="p-5 space-y-5 bg-background dark:bg-slate-950 border-t border-border/40">
+          <p className="text-sm text-muted-foreground font-medium leading-relaxed">
             {description}
           </p>
 
           <div className="space-y-3" role="group" aria-labelledby="verification-checklist-label">
-            <p id="verification-checklist-label" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Verification Audit:</p>
+            <p id="verification-checklist-label" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verification Audit:</p>
             <div className="space-y-2.5">
-              {requirements.map((item) => (
-                <div key={item} className="flex items-start gap-2.5 text-[11px] font-bold text-foreground/80">
-                  <div className="mt-0.5 rounded-full bg-primary/5 p-0.5">
-                    <Check className="h-3 w-3 text-primary" strokeWidth={3} aria-hidden="true" />
+              {requirements.map((item, idx) => (
+                <div 
+                  key={item} 
+                  className="flex items-start gap-2.5 text-sm font-medium text-foreground/90 transition-all duration-200 hover:text-foreground"
+                  style={{
+                    animation: `slide-up 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards`,
+                    animationDelay: `${idx * 50}ms`,
+                    opacity: 0
+                  }}
+                >
+                  <div className={cn(
+                    "mt-0.5 rounded-full p-1 flex-shrink-0 transition-all duration-200",
+                    variant === 'emerald' && 'bg-emerald-500/10',
+                    variant === 'muted-blue' && 'bg-accent/10',
+                    variant === 'amber' && 'bg-warning/10',
+                    variant === 'risk' && 'bg-risk/10',
+                    variant === 'secondary' && 'bg-muted'
+                  )}>
+                    <Check className={cn(
+                      "h-4 w-4 stroke-[2.5]",
+                      iconColors[variant]
+                    )} aria-hidden="true" />
                   </div>
-                  <span className="leading-tight">{item}</span>
+                  <span className="leading-tight pt-0.5">{item}</span>
                 </div>
               ))}
             </div>
           </div>
           
           <div className="pt-3 border-t border-border/40 flex items-center justify-between">
-            <p className="text-[9px] text-muted-foreground font-medium italic">
+            <p className="text-xs text-muted-foreground font-medium italic">
               * Verification based on vaulted records.
             </p>
-            {variant === 'emerald' && <Sparkles className="h-3 w-3 text-emerald-500 animate-pulse" />}
+            {variant === 'emerald' && (
+              <Sparkles className="h-4 w-4 text-emerald-500 animate-pulse dark:text-emerald-400" />
+            )}
           </div>
         </div>
       </PopoverContent>
