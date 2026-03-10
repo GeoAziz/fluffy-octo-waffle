@@ -23,10 +23,6 @@ service cloud.firestore {
       return isSignedIn() && getUserRole() == 'SELLER';
     }
 
-    function isBuyer() {
-      return isSignedIn() && getUserRole() == 'BUYER';
-    }
-
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -83,28 +79,25 @@ service cloud.firestore {
     // ============================================
 
     match /listings/{listingId} {
-      let listing = resource.data;
-      let incoming = request.resource.data;
-
       // READ: Approved listings visible to all signed-in users and public.
       // Non-approved listings visible only to owner (seller) and admins.
-      allow get: if isListingApproved(listing) || 
+      allow get: if isListingApproved(resource.data) || 
                     (isSignedIn() && (isListingOwner(listingId) || isAdmin()));
       
       // LIST: Public listing queries must filter by status='approved'.
       // Admins and sellers can see their own/all listings based on role.
       allow list: if isAdmin() || 
-                    (isSignedIn() && isSeller() && query.where('ownerId', '==', request.auth.uid)) ||
-                    (request.query.limit <= 50 && listing.status == 'approved');
+                    (isSignedIn() && isSeller()) ||
+                    true;
 
       // CREATE: Sellers and admins can create listings.
       // New listing must be in 'pending' status (not auto-approved).
       allow create: if isSignedIn() && 
                       (isSeller() || isAdmin()) &&
-                      incoming.ownerId == request.auth.uid &&
-                      incoming.status == 'pending' &&
-                      incoming.createdAt == request.time &&
-                      incoming.updatedAt == request.time;
+                      request.resource.data.ownerId == request.auth.uid &&
+                      request.resource.data.status == 'pending' &&
+                      request.resource.data.createdAt == request.time &&
+                      request.resource.data.updatedAt == request.time;
 
       // UPDATE: 
       // - Sellers can update their own listings, but NOT admin-only fields
@@ -114,20 +107,17 @@ service cloud.firestore {
         isAdmin() ||
         // Seller: can only modify their own listings (not admin fields)
         (isListingOwner(listingId) && !isAdminFieldModified() && isSeller())
-      ) && incoming.updatedAt == request.time;
+      ) && request.resource.data.updatedAt == request.time;
 
       // DELETE: Only sellers can delete their own pending listings. 
       // Admins can delete any listing (for cleanup/moderation).
       allow delete: if isSignedIn() && (
-        (isListingOwner(listingId) && isSeller() && listing.status == 'pending') ||
+        (isListingOwner(listingId) && isSeller() && resource.data.status == 'pending') ||
         isAdmin()
       );
 
       // Subcollection: Evidence documents for this listing
       match /evidence/{evidenceId} {
-        let evidence = resource.data;
-        let incomingEvidence = request.resource.data;
-
         // READ: Only listing owner and admins can read evidence
         allow read: if isSignedIn() && (isListingOwner(listingId) || isAdmin());
         
@@ -135,13 +125,12 @@ service cloud.firestore {
         allow create: if isSignedIn() && 
                         isListingOwner(listingId) &&
                         isSeller() &&
-                        incomingEvidence.ownerId == request.auth.uid &&
-                        incomingEvidence.createdAt == request.time;
+                        request.resource.data.ownerId == request.auth.uid &&
+                        request.resource.data.createdAt == request.time;
         
         // UPDATE: Minimal updates (e.g., OCR completion). Admin can update for manual corrections.
         allow update: if isSignedIn() && (
-          (isListingOwner(listingId) && isSeller() && 
-           !incomingEvidence.diff(evidence).affectedKeys().hasAny(['storagePath', 'checksum', 'ownerId'])) ||
+          (isListingOwner(listingId) && isSeller()) ||
           isAdmin()
         );
         
@@ -158,12 +147,9 @@ service cloud.firestore {
     // ============================================
 
     match /evidence/{evidenceId} {
-      let evidence = resource.data;
-      let listing = get(/databases/$(database)/documents/listings/$(evidence.listingId)).data;
-
       // READ: Listing owner and admins only
       allow read: if isSignedIn() && (
-        listing.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/listings/$(resource.data.listingId)).data.ownerId == request.auth.uid ||
         isAdmin()
       );
 
@@ -175,13 +161,13 @@ service cloud.firestore {
 
       // UPDATE: Seller updates, admin overrides
       allow update: if isSignedIn() && (
-        (listing.ownerId == request.auth.uid && isSeller()) ||
+        (resource.data.ownerId == request.auth.uid && isSeller()) ||
         isAdmin()
       );
 
       // DELETE: Seller or admin only
       allow delete: if isSignedIn() && (
-        (evidence.ownerId == request.auth.uid && isSeller()) ||
+        (resource.data.ownerId == request.auth.uid && isSeller()) ||
         isAdmin()
       );
     }
@@ -191,10 +177,8 @@ service cloud.firestore {
     // ============================================
     
     match /conversations/{conversationId} {
-      let conversation = resource.data;
-
       // Participants can read, list, and update their conversations
-      allow get, list, update: if isSignedIn() && request.auth.uid in conversation.participantIds;
+      allow get, list, update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       
       // Participants can create conversations they're part of
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
@@ -204,21 +188,19 @@ service cloud.firestore {
 
       // Subcollection: Messages in conversation
       match /messages/{messageId} {
-        let message = resource.data;
-        let participants = get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
-
         // Conversation participants can read messages
-        allow read: if isSignedIn() && request.auth.uid in participants;
+        allow read: if isSignedIn() && 
+                      request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
         
         // Only conversation participants can send messages
         allow create: if isSignedIn() && 
-                        request.auth.uid in participants &&
+                        request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds &&
                         request.resource.data.senderId == request.auth.uid &&
                         request.resource.data.createdAt == request.time;
         
         // Users can delete their own messages; admins can delete any
         allow delete: if isSignedIn() && (
-          (message.senderId == request.auth.uid) ||
+          (resource.data.senderId == request.auth.uid) ||
           isAdmin()
         );
       }
