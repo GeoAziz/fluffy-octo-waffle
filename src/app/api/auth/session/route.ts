@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
-// This route is called to verify the session exists
+/**
+ * Session Management Route
+ * Handles verification, creation, and deletion of secure session cookies.
+ * NOTE: Route Handlers are server-side by default.
+ */
+
 export async function GET(request: NextRequest) {
   const sessionCookie = request.cookies.get('__session')?.value;
   
@@ -25,7 +30,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// This route is called on login/signup to create a session cookie
 export async function POST(request: NextRequest) {
   const { idToken } = await request.json();
 
@@ -39,7 +43,6 @@ export async function POST(request: NextRequest) {
   try {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
 
-    // Allow HTTP during local development; rely on request protocol or production env for HTTPS.
     const forwardedProto = request.headers.get('x-forwarded-proto');
     const isSecureContext = process.env.NODE_ENV === 'production'
       || forwardedProto === 'https'
@@ -64,7 +67,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// This route is called on logout
 export async function DELETE() {
   const response = NextResponse.json({ status: 'success' });
   response.cookies.set('__session', '', { maxAge: 0 });

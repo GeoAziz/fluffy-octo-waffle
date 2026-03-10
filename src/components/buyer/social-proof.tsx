@@ -4,6 +4,7 @@ import { ShieldCheck, Users, Globe, Coins } from 'lucide-react';
 
 /**
  * SocialProof - Displays platform metrics to build immediate credibility
+ * Featuring staggered entry animations.
  */
 export function SocialProof() {
   const stats = [

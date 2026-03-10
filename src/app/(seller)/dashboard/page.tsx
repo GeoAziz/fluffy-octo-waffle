@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { adminDb } from '@/lib/firebase-admin';
-import { getListingsForSeller, getPlatformSettings } from '@/lib/data';
-import { StatusBadge } from '@/components/status-badge';
+import { getPlatformSettings } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile, Evidence } from '@/lib/types';
-import { AlertTriangle, CheckCircle2, Eye, ListChecks, MessageSquareText, PlusCircle, TrendingUp, FileText, ShieldCheck, Clock, Activity, Target } from 'lucide-react';
+import { AlertTriangle, Eye, ListChecks, MessageSquareText, PlusCircle, FileText, ShieldCheck, Clock, Activity, Target, CheckCircle2 } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
@@ -53,7 +52,7 @@ export default async function SellerDashboard() {
   
   const listings = listingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Listing[];
   const userProfile = userProfileDoc.data() as UserProfile;
-  const evidence = evidenceSnapshot.docs.map(doc => doc.data() as Evidence);
+  const evidence = evidenceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Evidence[];
   const recentConversations = recentConversationsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Conversation[];
 
   const statusCounts = listings.reduce(
@@ -268,6 +267,65 @@ export default async function SellerDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Evidence Verification Pulse */}
+          {evidence.length > 0 && (
+            <div className="mt-10 space-y-6">
+              <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-500" /> Verification Pulse
+              </h2>
+              <Card className="border-none shadow-xl">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest pl-6">Document</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Listing</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
+                        <TableHead className="text-right pr-6 text-[10px] font-black uppercase tracking-widest">Sync</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {evidence.slice(0, 5).map((doc) => {
+                        const parentListing = listings.find(l => l.id === doc.listingId);
+                        return (
+                          <TableRow key={doc.id} className="hover:bg-muted/5 transition-all duration-200">
+                            <TableCell className="pl-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-3.5 w-3.5 text-accent" />
+                                <span className="text-xs font-bold truncate max-w-[150px]">{doc.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-[10px] font-medium text-muted-foreground uppercase truncate max-w-[150px] block">
+                                {parentListing?.title || 'Unknown'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {doc.verified ? (
+                                <Badge className="bg-emerald-500 text-white border-none h-5 text-[9px] font-black uppercase tracking-widest">
+                                  <CheckCircle2 className="mr-1 h-2.5 w-2.5" /> VERIFIED
+                                </Badge>
+                              ) : (
+                                <Badge variant="warning" className="h-5 text-[9px] font-black uppercase tracking-widest">
+                                  <Clock className="mr-1 h-2.5 w-2.5" /> REVIEWING
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                                {formatDistanceToNow(doc.uploadedAt?.toDate?.() ?? new Date(), { addSuffix: true })}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Sidebar Interactions */}

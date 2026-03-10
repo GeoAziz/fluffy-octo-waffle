@@ -53,7 +53,7 @@ export function AiTools({ listing }: { listing: Listing }) {
     const summarizeNext = async () => {
       const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
       if (nextDoc && !isSummarizing) {
-        handleSummarize(nextDoc.id, nextDoc.content, true);
+        handleSummarize(nextDoc.id, nextDoc.content, false);
       }
     };
     summarizeNext();

@@ -31,6 +31,8 @@ import { Separator } from '@/components/ui/separator';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -138,6 +140,10 @@ export function AdminNav() {
       </SidebarContent>
       <SidebarFooter>
         <Separator className="my-2" />
+        <div className="flex items-center justify-between px-2 mb-2 group-data-[collapsible=icon]:hidden">
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Appearance</span>
+          <ThemeToggle />
+        </div>
          {userProfile && (
             <div className="flex items-center gap-2 p-2">
                 <Avatar className="h-8 w-8 border border-border/40">
@@ -163,8 +169,4 @@ export function AdminNav() {
       </SidebarFooter>
     </>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

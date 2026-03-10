@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, ChevronRight, Eye, Check, X, LandPlot, AlertTriangle, ArrowUpDown, Clock, User, MapPin } from "lucide-react";
+import { Search, ChevronRight, Check, X, LandPlot, AlertTriangle, ArrowUpDown, Clock, User, MapPin } from "lucide-react";
 import { searchListingsAction, bulkUpdateListingStatus } from "@/app/actions";
 import type { Listing } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +95,7 @@ export default function AdminListingsPage() {
       toast({
         variant: 'destructive',
         title: 'Query Failed',
-        description: 'Check your internet connection or composite indexes.',
+        description: 'Check admin permissions or connectivity.',
       });
     } finally {
       setLoading(false);
@@ -172,7 +172,6 @@ export default function AdminListingsPage() {
       description="Review pending listings, triage suspicious uploads, and assign trust signals."
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { href: "/admin/listings", label: "Listings" }]}
     >
-      {/* Triage & Filter Bar */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-6 items-end">
         <div className="lg:col-span-2 space-y-2">
           <Label htmlFor="listing-search" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Search Records</Label>
@@ -307,7 +306,6 @@ export default function AdminListingsPage() {
             </div>
           ) : (
             <>
-              {/* Desktop View Table */}
               <div className="hidden lg:block">
                 <Table>
                   <TableHeader className="bg-muted/10">
@@ -336,8 +334,12 @@ export default function AdminListingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {listings.map((listing) => (
-                      <TableRow key={listing.id} className={cn("hover:bg-muted/5 transition-colors", !!selected[listing.id] && "bg-accent/5")}>
+                    {listings.map((listing, index) => (
+                      <TableRow 
+                        key={listing.id} 
+                        className={cn("hover:bg-muted/5 transition-colors animate-in fade-in slide-in-from-left-4 fill-mode-backwards", !!selected[listing.id] && "bg-accent/5")}
+                        style={{ animationDelay: `${index * 40}ms` }}
+                      >
                         <TableCell className="pl-4">
                           <Checkbox
                             checked={!!selected[listing.id]}
@@ -417,10 +419,13 @@ export default function AdminListingsPage() {
                 </Table>
               </div>
 
-              {/* Mobile View Card Stacks */}
               <div className="lg:hidden p-4 space-y-4">
-                {listings.map((listing) => (
-                  <Card key={listing.id} className={cn("border-border/60 transition-all", !!selected[listing.id] && "ring-2 ring-primary bg-primary/5")}>
+                {listings.map((listing, index) => (
+                  <Card 
+                    key={listing.id} 
+                    className={cn("border-border/60 transition-all animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards", !!selected[listing.id] && "ring-2 ring-primary bg-primary/5")}
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
                     <CardContent className="p-0">
                       <div className="flex gap-4 p-4">
                         <Checkbox

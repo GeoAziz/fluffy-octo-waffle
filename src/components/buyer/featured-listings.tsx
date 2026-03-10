@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +43,7 @@ export function FeaturedListings({ listings }: FeaturedListingsProps) {
                   height={400}
                   sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                   className="aspect-[3/2] w-full object-cover hover:scale-105 transition-transform duration-300"
-                  priority={index < 2} // Prioritize the first two featured images for LCP
+                  priority={true} // Prioritize featured listings for better LCP
                   data-ai-hint={listing.images[0]?.hint || 'landscape'}
                 />
                 <div className="absolute top-3 left-3">

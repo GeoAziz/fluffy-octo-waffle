@@ -20,13 +20,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, History, Filter, Download, User, Calendar } from "lucide-react";
+import { Search, History, Download, User, Calendar } from "lucide-react";
 import { collection, query, orderBy, limit, getDocs, where, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
 import type { AuditLog } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/empty-state";
 
 export default function AuditTrailPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -151,8 +153,15 @@ export default function AuditTrailPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.map((log) => (
-                  <TableRow key={log.id} className="hover:bg-muted/5 transition-colors">
+                {filteredLogs.map((log, index) => (
+                  <TableRow 
+                    key={log.id} 
+                    className={cn(
+                      "hover:bg-muted/5 transition-colors animate-in fade-in slide-in-from-left-4 fill-mode-backwards", 
+                      !!log.id && "animate-duration-500"
+                    )}
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
                     <TableCell className="text-[11px] font-medium text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3 w-3" />

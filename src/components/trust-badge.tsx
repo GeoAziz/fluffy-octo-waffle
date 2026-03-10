@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   FileCheck,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -28,13 +29,12 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
     icon: ShieldCheck,
     label: 'Trusted Signal',
     subtitle: 'Highest Confidence',
-    description: 'All essential legal documents are verified and consistent.',
+    description: 'The premier trust tier. Every critical record has been vaulted and verified by our moderation team.',
     requirements: [
       'Original Title Deed verified',
-      'Recent Land Survey matching boundaries',
-      'Rate Clearance Certificate up to date',
-      'Seller Identity & PIN verified',
-      'Physical site photos confirmed',
+      'Current Survey Map cross-checked',
+      'Owner Identity confirmed (ID/PIN)',
+      'Site photos matched to coordinates',
     ],
   },
   EvidenceReviewed: {
@@ -42,12 +42,11 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
     icon: FileCheck,
     label: 'Evidence Reviewed',
     subtitle: 'Verified Documents',
-    description: 'Documentation has been reviewed and found to be in order.',
+    description: 'Primary ownership documents have been provided and reviewed for basic validity.',
     requirements: [
       'Title Deed copy provided',
-      'Survey Map available',
-      'Seller ID documentation confirmed',
-      'Multiple property views available',
+      'Basic Survey Map available',
+      'Seller profile verified',
     ],
   },
   EvidenceSubmitted: {
@@ -55,44 +54,43 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
     icon: Award,
     label: 'Evidence Submitted',
     subtitle: 'Verification Pending',
-    description: 'Seller has provided documents that are currently under review.',
+    description: 'The seller has vaulted their proof. Our trust team is currently performing triage.',
     requirements: [
-      'At least one ownership document provided',
-      'Basic property details submitted',
-      'Awaiting detailed admin review',
+      'Ownership documents uploaded',
+      'Property spec check in progress',
     ],
   },
   Suspicious: {
     variant: 'risk',
     icon: ShieldAlert,
     label: 'Flagged Signal',
-    subtitle: 'Use Extreme Caution',
-    description: 'Inconsistencies detected in documentation or images.',
+    subtitle: 'High Risk Alert',
+    description: 'Our AI Trust Engine or a human moderator has detected inconsistencies in the vaulted documents.',
     requirements: [
-      'Missing critical legal proof',
-      'Conflicting document details',
-      'Reported by multiple users',
+      'Significant document mismatches',
+      'Coordinates do not match survey',
+      'Use extreme caution',
     ],
   },
   None: {
     variant: 'secondary',
     icon: HelpCircle,
-    label: 'Not Badged',
-    subtitle: 'Awaiting Documents',
-    description: 'No documentation has been submitted for review yet.',
+    label: 'No Signal',
+    subtitle: 'Awaiting Vault',
+    description: 'This listing has no vaulted evidence yet. Buyers should request documents before proceeding.',
     requirements: [
-      'Buyer must request documents directly',
-      'Perform full manual due diligence',
+      'Perform independent due diligence',
+      'Verify all records manually',
     ],
   },
 };
 
 const badgeVariants = {
-  emerald: "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200 shadow-sm",
-  "muted-blue": "bg-accent-light text-accent border-accent/20 hover:bg-accent/15 shadow-sm",
-  amber: "bg-warning-light text-warning border-warning/20 hover:bg-warning/15 shadow-sm",
-  risk: "bg-risk-light text-risk border-risk/20 hover:bg-risk/15 shadow-sm",
-  secondary: "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80 shadow-sm",
+  emerald: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 hover:bg-emerald-500/20 shadow-glow shadow-emerald-500/5",
+  "muted-blue": "bg-accent/10 text-accent border-accent/20 hover:bg-accent/15",
+  amber: "bg-warning/10 text-warning border-warning/20 hover:bg-warning/15",
+  risk: "bg-risk/10 text-risk border-risk/20 hover:bg-risk/15 animate-shake",
+  secondary: "bg-muted text-muted-foreground border-border",
 };
 
 const iconColors = {
@@ -119,7 +117,7 @@ export function TrustBadge({
   const BadgeComponent = (
     <Badge
       className={cn(
-        'transition-all duration-200 animate-soft-fade-scale whitespace-nowrap',
+        'transition-all duration-300 animate-soft-fade-scale whitespace-nowrap px-2.5 py-1 font-black uppercase text-[10px] tracking-widest',
         badgeVariants[variant],
         className
       )}
@@ -137,46 +135,49 @@ export function TrustBadge({
     <Popover>
       <PopoverTrigger asChild>
         <button 
-          className="inline-flex h-auto p-0 border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full"
+          className="inline-flex h-auto p-0 border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full cursor-help"
           aria-label={`Trust Level: ${label}. Click for details.`}
         >
           {BadgeComponent}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 overflow-hidden rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-200" align="start">
-        <div className={cn("p-4", badgeVariants[variant], "bg-opacity-50 border-none")}>
+      <PopoverContent className="w-80 p-0 overflow-hidden rounded-xl shadow-xl border-border/40 animate-in fade-in zoom-in-95 duration-200" align="start">
+        <div className={cn("p-5", variant === 'emerald' ? 'bg-emerald-500 text-white' : variant === 'risk' ? 'bg-risk text-white' : 'bg-secondary')}>
           <div className="flex items-center gap-3">
-            <div className={cn('rounded-full p-2 bg-white/80 shadow-sm', iconColors[variant])}>
+            <div className="rounded-lg p-2 bg-white/20 backdrop-blur-md">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="font-bold text-foreground text-base leading-tight">{label}</h3>
-              <p className={cn("text-xs font-semibold uppercase tracking-wider opacity-80", iconColors[variant])}>{subtitle}</p>
+              <h3 className="font-black uppercase tracking-tight text-sm leading-tight">{label}</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{subtitle}</p>
             </div>
           </div>
         </div>
         
-        <div className="p-4 space-y-4 bg-background">
-          <p className="text-sm text-muted-foreground leading-relaxed">
+        <div className="p-5 space-y-5 bg-background">
+          <p className="text-xs text-muted-foreground font-medium leading-relaxed">
             {description}
           </p>
 
-          <div className="space-y-2" role="group" aria-labelledby="verification-checklist-label">
-            <p id="verification-checklist-label" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verification Checklist:</p>
-            <div className="space-y-2">
+          <div className="space-y-3" role="group" aria-labelledby="verification-checklist-label">
+            <p id="verification-checklist-label" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Verification Audit:</p>
+            <div className="space-y-2.5">
               {requirements.map((item) => (
-                <div key={item} className="flex items-start gap-2 text-sm">
-                  <Check className="mt-0.5 h-4 w-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
-                  <span className="text-foreground/90 leading-tight">{item}</span>
+                <div key={item} className="flex items-start gap-2.5 text-[11px] font-bold text-foreground/80">
+                  <div className="mt-0.5 rounded-full bg-primary/5 p-0.5">
+                    <Check className="h-3 w-3 text-primary" strokeWidth={3} aria-hidden="true" />
+                  </div>
+                  <span className="leading-tight">{item}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="pt-2 border-t mt-2">
-            <p className="text-[10px] text-muted-foreground leading-normal italic">
-              * Badges reflect documentation quality provided by seller and are not legal guarantees of title.
+          <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+            <p className="text-[9px] text-muted-foreground font-medium italic">
+              * Verification based on vaulted records.
             </p>
+            {variant === 'emerald' && <Sparkles className="h-3 w-3 text-emerald-500 animate-pulse" />}
           </div>
         </div>
       </PopoverContent>

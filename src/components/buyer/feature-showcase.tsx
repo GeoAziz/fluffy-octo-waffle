@@ -1,7 +1,6 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { ShieldCheck, FileSearch, MessageSquare, Bot, Lock, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Bot, Lock, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -64,7 +63,7 @@ export function FeatureShowcase() {
                   {feature.description}
                 </p>
                 <div className="pt-4">
-                  <Link href="/trust" className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary hover:text-accent">
+                  <Link href="/trust" className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary hover:text-accent focus-visible:ring-2 focus-visible:ring-accent rounded-md p-1">
                     See our methodology
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Link>
@@ -72,7 +71,7 @@ export function FeatureShowcase() {
               </div>
               
               <div className="relative flex-1">
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl border-8 border-white shadow-2xl">
+                <div className="aspect-[4/3] overflow-hidden rounded-2xl border-8 border-white shadow-2xl dark:border-border/40">
                   <Image 
                     src={feature.image} 
                     alt={feature.title} 

@@ -6,7 +6,7 @@ import { Star } from 'lucide-react';
 
 /**
  * TestimonialsSection - Social proof through buyer testimonials
- * Demonstrates real user experiences with Kenya Land Trust
+ * Demonstrates real user experiences with Kenya Land Trust.
  */
 export function TestimonialsSection() {
   const testimonials = [
@@ -34,22 +34,22 @@ export function TestimonialsSection() {
   ];
 
   return (
-    <section className="py-12 sm:py-16 border-t">
-      <div className="container max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+    <section className="py-24 md:py-32 border-t bg-muted/10">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-3xl font-black uppercase tracking-tighter md:text-5xl">
             Trusted by Kenyans
           </h2>
-          <p className="mt-2 text-muted-foreground">
-            Real stories from buyers who found their perfect property
+          <p className="mt-2 text-muted-foreground text-lg">
+            Real stories from buyers who found their perfect property with certainty.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 auto-rows-max">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="overflow-hidden h-full">
-              <CardContent className="pt-6 h-full flex flex-col">
-                <div className="space-y-4">
+            <Card key={index} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
+              <CardContent className="pt-8 h-full flex flex-col">
+                <div className="space-y-6">
                   {/* Stars */}
                   <div className="flex gap-1">
                     {Array.from({ length: testimonial.rating }).map((_, i) => (
@@ -61,19 +61,19 @@ export function TestimonialsSection() {
                   </div>
 
                   {/* Quote */}
-                  <p className="text-sm leading-relaxed text-foreground italic">
+                  <p className="text-base leading-relaxed text-foreground italic">
                     "{testimonial.quote}"
                   </p>
 
                   {/* Author */}
-                  <div className="flex items-center gap-3 pt-4">
-                    <Avatar className="h-10 w-10">
+                  <div className="flex items-center gap-4 pt-4 border-t border-border/40">
+                    <Avatar className="h-12 w-12 border border-border/40">
                       <AvatarImage src={testimonial.image} alt={testimonial.name} />
                       <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{testimonial.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-bold text-sm">{testimonial.name}</p>
+                      <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
                         {testimonial.title}
                       </p>
                     </div>
@@ -82,42 +82,6 @@ export function TestimonialsSection() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Trust Metrics */}
-        <div className="mt-12 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 sm:p-8 rounded-lg bg-muted/30 border">
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary">
-              2,500+
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Happy Buyers
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary">
-              Ksh 5B+
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Verified Transactions
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary">
-              500+
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Active Listings
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary">
-              4.9★
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Average Rating
-            </p>
-          </div>
         </div>
       </div>
     </section>

@@ -31,21 +31,26 @@ export default {
         'hero': 'var(--text-hero)',
       },
       spacing: {
-        // Enforcing 8px base grid
         '0': '0',
-        '1': '0.25rem',  // 4px
-        '2': '0.5rem',   // 8px
-        '3': '0.75rem',  // 12px
-        '4': '1rem',     // 16px
-        '5': '1.25rem',  // 20px
-        '6': '1.5rem',   // 24px
-        '8': '2rem',     // 32px
-        '10': '2.5rem',  // 40px
-        '12': '3rem',    // 48px
-        '16': '4rem',    // 64px
-        '20': '5rem',    // 80px
-        '24': '6rem',    // 96px
-        '32': '8rem',    // 128px
+        '0.5': '0.125rem',
+        '1': '0.25rem',
+        '1.5': '0.375rem',
+        '2': '0.5rem',
+        '3': '0.75rem',
+        '4': '1rem',
+        '5': '1.25rem',
+        '6': '1.5rem',
+        '8': '2rem',
+        '10': '2.5rem',
+        '12': '3rem',
+        '16': '4rem',
+        '20': '5rem',
+        '24': '6rem',
+        '32': '8rem',
+        '40': '10rem',
+        '48': '12rem',
+        '56': '14rem',
+        '64': '16rem',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -113,20 +118,17 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 4px)',
-        sm: 'calc(var(--radius) - 8px)',
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius-md)',
+        sm: 'var(--radius-sm)',
+        xl: 'var(--radius-xl)',
       },
       boxShadow: {
-        // Premium layered shadow system
-        'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        'sm': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
-        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        'primary': '0 10px 15px -3px rgba(15, 61, 46, 0.1), 0 4px 6px -4px rgba(15, 61, 46, 0.1)',
-        'glow': '0 0 15px 2px rgba(47, 111, 149, 0.15)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+        glow: '0 0 15px 2px rgba(47, 111, 149, 0.15)',
       },
       keyframes: {
         'accordion-down': {
@@ -149,7 +151,10 @@ export default {
         'fade-in-up': {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -158,6 +163,7 @@ export default {
         'shake': 'shake 400ms ease-in-out',
         'fade-in-up': 'fade-in-up 500ms ease-out',
         'page-enter': 'soft-fade-scale 150ms ease-out',
+        shimmer: 'shimmer 2s infinite',
       },
     },
   },

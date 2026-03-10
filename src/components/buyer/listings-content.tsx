@@ -141,7 +141,7 @@ export function ListingsContent() {
     setPriceRange([Number(params.get('minPrice') || 0), Number(params.get('maxPrice') || 50000000)]);
     setAreaRange([Number(params.get('minArea') || 0), Number(params.get('maxArea') || 100)]);
     setBadges(params.get('badges')?.split(',').filter(Boolean) as BadgeValue[] || []);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     setLoading(true);
@@ -425,6 +425,7 @@ export function ListingsContent() {
                       sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                       data-ai-hint={listing.images[0].hint}
+                      priority={index < 4} // Load the first 4 images with priority for better LCP
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

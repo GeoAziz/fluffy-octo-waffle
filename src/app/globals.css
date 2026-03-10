@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Color Token System - Blueprint Specification */
+    /* Brand-Specific Light Mode HSL Values */
     --primary: 161 61% 15%;        /* Deep Green (#0F3D2E) */
     --primary-mid: 161 40% 25%;
     --primary-light: 161 30% 90%;
@@ -21,7 +21,7 @@
     --risk: 353 50% 37%;         /* Muted Red (#8C2F39) */
     --risk-light: 353 40% 94%;
 
-    /* Semantic Mappings for Shadcn/UI */
+    /* Standard Shadcn/UI Variables using Brand Colors */
     --background: var(--sand);
     --foreground: 161 58% 10%;
     
@@ -32,18 +32,12 @@
     --popover-foreground: 161 58% 10%;
     
     --primary-foreground: 38 27% 98%;
-    
     --secondary: var(--sand-dark);
     --secondary-foreground: var(--primary);
-    
     --muted: var(--sand-dark);
     --muted-foreground: 161 20% 40%;
-    
-    --accent-foreground: 38 27% 98%;
-    
     --destructive: var(--risk);
     --destructive-foreground: 38 27% 98%;
-    
     --success: 142 71% 45%;
     --success-foreground: 38 27% 98%;
     
@@ -51,10 +45,9 @@
     --input: 161 10% 88%;
     --ring: var(--accent);
     
-    /* Radius Spec: 12px based lg */
     --radius: 0.75rem; 
-    
-    /* Fluid Typography Scale using clamp() */
+
+    /* Fluid Typography Scale */
     --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.8rem);
     --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
     --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
@@ -75,31 +68,42 @@
   }
 
   .dark {
-    --background: 161 30% 5%;
-    --foreground: 38 27% 94%;
-    --card: 161 30% 8%;
-    --card-foreground: 38 27% 94%;
-    --popover: 161 30% 5%;
-    --popover-foreground: 38 27% 94%;
-    --primary: 38 27% 94%;
-    --primary-foreground: 161 58% 15%;
-    --secondary: 161 30% 12%;
-    --secondary-foreground: 38 27% 94%;
-    --muted: 161 30% 12%;
-    --muted-foreground: 38 27% 70%;
+    /* Deep Forest Dark Theme Tokens */
+    --background: 161 40% 4%;
+    --foreground: 38 27% 92%;
+    
+    --card: 161 40% 6%;
+    --card-foreground: 38 27% 92%;
+    
+    --popover: 161 40% 4%;
+    --popover-foreground: 38 27% 92%;
+    
+    --primary: 161 61% 45%;
+    --primary-foreground: 161 40% 4%;
+    
+    --secondary: 161 30% 10%;
+    --secondary-foreground: 38 27% 92%;
+    
+    --muted: 161 30% 10%;
+    --muted-foreground: 161 10% 65%;
+    
     --accent: 203 51% 48%;
     --accent-foreground: 38 27% 98%;
+    
     --destructive: 353 50% 47%;
     --destructive-foreground: 38 27% 98%;
+    
     --warning: 36 63% 58%;
     --warning-foreground: 38 27% 98%;
+    
     --success: 142 71% 55%;
     --success-foreground: 38 27% 98%;
+    
     --border: 161 30% 15%;
     --input: 161 30% 12%;
     --ring: 203 51% 48%;
 
-    --sidebar-background: 161 30% 10%;
+    --sidebar-background: 161 40% 6%;
     --sidebar-foreground: 38 27% 94%;
     --sidebar-border: 161 30% 15%;
     --sidebar-ring: 203 51% 48%;
@@ -115,54 +119,72 @@
   body {
     @apply bg-background text-foreground selection:bg-accent/20;
     font-feature-settings: "rlig" 1, "calt" 1;
+    min-height: 100dvh;
   }
-  
-  /* Focus States - High Visibility for A11y */
+
+  /* Accessibility: High-Contrast Focus Rings */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
-  input[aria-invalid='true'],
-  textarea[aria-invalid='true'] {
-    @apply border-destructive ring-destructive/20;
+  /* Accessibility: Respect Reduced Motion Preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-delay: -1ms !important;
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      background-attachment: initial !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+    }
   }
 }
 
 @layer utilities {
-  .container-tight {
-    @apply mx-auto w-full max-w-4xl px-4;
-  }
-  .section-padding {
-    @apply py-12 md:py-20 lg:py-32;
-  }
-  .stack-sm {
-    @apply space-y-4;
-  }
-  .stack-md {
-    @apply space-y-8;
-  }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
-  .min-h-screen {
-    min-height: 100vh;
-    min-height: 100dvh;
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
   }
-  .h-screen {
-    height: 100vh;
-    height: 100dvh;
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
   }
-}
 
-/* Accessibility: Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  .shimmer-wrapper {
+    @apply relative overflow-hidden;
+  }
+  
+  .shimmer-wrapper::after {
+    @apply absolute inset-0 -translate-x-full;
+    content: '';
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.1) 20%,
+      rgba(255, 255, 255, 0.3) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+  }
+  
+  .dark .shimmer-wrapper::after {
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.05) 20%,
+      rgba(255, 255, 255, 0.1) 60%,
+      rgba(255, 255, 255, 0)
+    );
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
   }
 }

@@ -1,9 +1,9 @@
-import { redirect } from 'next/navigation';
+'use client';
 
 /**
- * Conflicting entry point neutralized.
- * Home page logic unified in root app/page.tsx to avoid ambiguity in Turbopack.
+ * Redundant route segment.
+ * This file is neutralized to prevent route collisions with the root page.tsx.
  */
-export default function Page() {
-  redirect('/explore');
+export default function RedundantLandingPage() {
+  return null;
 }

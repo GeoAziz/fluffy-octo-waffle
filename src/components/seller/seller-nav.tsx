@@ -16,6 +16,7 @@ import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCir
 import { useAuth } from '@/components/providers';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/firebase';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const workspaceItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Overview & analytics' },
@@ -126,6 +127,10 @@ export function SellerNav() {
         </div>
       </SidebarContent>
       <SidebarFooter className="border-t">
+        <div className="flex items-center justify-between px-2 mb-4 group-data-[collapsible=icon]:hidden">
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
         {userProfile && (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">

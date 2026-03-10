@@ -31,6 +31,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+/**
+ * BuyerHeader - Premium navigation system for the high-trust marketplace.
+ * Optimised for mobile reachability and accessibility.
+ */
 export function BuyerHeader() {
   const pathname = usePathname();
   const { user, userProfile, loading } = useAuth();
@@ -53,9 +57,9 @@ export function BuyerHeader() {
   };
 
   const navLinks = [
-    { href: '/explore', label: 'Browse Listings' },
-    { href: '/trust', label: 'How It Works' },
-    { href: '/contact', label: 'About' },
+    { href: '/explore', label: 'Browse Listings', description: 'Explore verified properties' },
+    { href: '/trust', label: 'How It Works', description: 'Learn about trust badges' },
+    { href: '/contact', label: 'About', description: 'Get in touch' },
   ];
 
   const dashboardUrl = isSeller ? '/dashboard' : '/buyer/dashboard';
@@ -63,21 +67,26 @@ export function BuyerHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-7xl items-center gap-4">
-        <Link href="/" className="mr-2 flex shrink-0 items-center space-x-2" aria-label="Kenya Land Trust Home">
+        <Link 
+          href="/" 
+          className="mr-2 flex shrink-0 items-center space-x-2 focus-visible:ring-offset-4" 
+          aria-label="Kenya Land Trust Home"
+        >
           <LandPlot className="h-6 w-6 text-primary" aria-hidden="true" />
           <span className="hidden font-bold sm:inline-block">Kenya Land Trust</span>
         </Link>
 
-        <nav className="hidden flex-1 items-center gap-6 text-sm md:flex" aria-label="Main Navigation">
+        <nav className="hidden flex-1 items-center gap-6 text-sm md:flex" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                'relative font-medium transition-colors hover:text-foreground/80',
+                'relative font-medium transition-colors hover:text-foreground/80 focus-visible:ring-offset-4',
                 pathname === link.href ? 'text-foreground' : 'text-foreground/60',
               )}
               aria-current={pathname === link.href ? 'page' : undefined}
+              aria-label={`${link.label} - ${link.description}`}
             >
               {link.label}
             </Link>
@@ -92,15 +101,19 @@ export function BuyerHeader() {
               <Skeleton className="h-8 w-24" />
             ) : user && userProfile ? (
               <>
-                <Button asChild className="hidden lg:inline-flex" variant="outline" size="sm">
+                <Button asChild className="hidden lg:inline-flex font-bold" variant="outline" size="sm">
                   <Link href={dashboardUrl}>Dashboard</Link>
                 </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" aria-label="User menu">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
+                    <Button 
+                      variant="ghost" 
+                      className="relative h-10 w-10 rounded-full p-0 border border-border/40 shadow-sm" 
+                      aria-label="User account and profile menu"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? 'User profile photo'} />
                         <AvatarFallback aria-hidden="true">{userProfile?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                     </Button>
@@ -108,56 +121,56 @@ export function BuyerHeader() {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{userProfile?.displayName}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {userProfile.role.charAt(0) + userProfile.role.slice(1).toLowerCase()} Account
+                        <p className="text-sm font-bold leading-none">{userProfile?.displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground uppercase font-black tracking-widest mt-1">
+                          {userProfile.role} ACCOUNT
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem asChild>
-                      <Link href={dashboardUrl}>
+                      <Link href={dashboardUrl} className="font-medium">
                         <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden="true" />
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem asChild>
-                      <Link href="/favorites">
+                      <Link href="/favorites" className="font-medium">
                         <Heart className="mr-2 h-4 w-4" aria-hidden="true" />
                         Favorites
                       </Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem asChild>
-                      <Link href="/messages">
+                      <Link href="/messages" className="font-medium">
                         <MessageSquare className="mr-2 h-4 w-4" aria-hidden="true" />
                         Messages
                       </Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem asChild>
-                      <Link href="/profile">
+                      <Link href="/profile" className="font-medium">
                         <UserCircle className="mr-2 h-4 w-4" aria-hidden="true" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuItem onClick={handleLogout} className="text-risk font-bold">
                       <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Log out
+                      Transmit Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
               <>
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" asChild className="font-bold">
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button asChild variant="accent">
+                <Button asChild variant="accent" className="font-black uppercase text-[10px] tracking-widest">
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </>
@@ -165,94 +178,106 @@ export function BuyerHeader() {
           </div>
         </div>
 
+        {/* Mobile Menu Trigger */}
         <div className="ml-auto flex items-center md:hidden">
           {isMounted ? (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open mobile navigation menu">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-11 w-11 hover:bg-accent/10" 
+                  aria-label="Open mobile navigation menu"
+                >
                   <Menu className="h-6 w-6" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full max-w-sm p-0">
-                <SheetHeader className="border-b px-4 py-3">
-                  <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetHeader className="border-b px-4 py-4">
+                  <SheetTitle className="text-sm font-black uppercase tracking-widest">Navigation Center</SheetTitle>
                 </SheetHeader>
 
-                <div className="flex max-h-[calc(100dvh-57px)] flex-col overflow-y-auto px-4 py-4 pb-safe">
+                <div className="flex max-h-[calc(100dvh-57px)] flex-col overflow-y-auto px-4 py-6 pb-safe">
                   {user && userProfile && (
-                    <div className="mb-6">
-                      <div className="mb-4 flex items-center gap-3 px-3 py-2">
-                        <Avatar className="h-12 w-12 flex-shrink-0">
-                          <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? ''} />
-                          <AvatarFallback className="text-lg font-bold" aria-hidden="true">
+                    <div className="mb-8">
+                      <div className="mb-6 flex items-center gap-4 px-3 py-3 rounded-xl bg-muted/20 border border-border/40">
+                        <Avatar className="h-14 w-14 flex-shrink-0 shadow-sm">
+                          <AvatarImage src={userProfile?.photoURL ?? undefined} alt={userProfile?.displayName ?? 'User avatar'} />
+                          <AvatarFallback className="text-xl font-black" aria-hidden="true">
                             {userProfile?.displayName?.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">{userProfile?.displayName}</p>
+                          <p className="truncate text-base font-black tracking-tight">{userProfile?.displayName}</p>
                           <p className="truncate text-xs text-muted-foreground">{userProfile?.email}</p>
-                          <p className="mt-1 text-xs font-medium text-primary">{userProfile?.role}</p>
+                          <Badge variant="accent" className="mt-2 h-5 text-[9px] font-black uppercase tracking-widest border-none">
+                            {userProfile?.role}
+                          </Badge>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <Link href={dashboardUrl} onClick={() => setIsSheetOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-accent/50">
-                          <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+                      <nav className="space-y-1" aria-label="User actions">
+                        <Link href={dashboardUrl} onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all border border-transparent active:scale-[0.98]">
+                          <LayoutDashboard className="h-5 w-5 text-primary" aria-hidden="true" />
                           Dashboard
                         </Link>
                         {isSeller && (
-                          <Link href="/dashboard/listings" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-accent/50">
-                            <PlusCircle className="h-5 w-5" aria-hidden="true" />
+                          <Link href="/dashboard/listings" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all border border-transparent active:scale-[0.98]">
+                            <PlusCircle className="h-5 w-5 text-primary" aria-hidden="true" />
                             My Listings
                           </Link>
                         )}
-                        <Link href="/messages" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-accent/50">
-                          <MessageSquare className="h-5 w-5" aria-hidden="true" />
-                          Messages
+                        <Link href="/messages" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all border border-transparent active:scale-[0.98]">
+                          <MessageSquare className="h-5 w-5 text-primary" aria-hidden="true" />
+                          Inbox
                         </Link>
-                        <Link href="/favorites" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-accent/50">
-                          <Heart className="h-5 w-5" aria-hidden="true" />
-                          Saved Properties
+                        <Link href="/favorites" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all border border-transparent active:scale-[0.98]">
+                          <Heart className="h-5 w-5 text-primary" aria-hidden="true" />
+                          Saved Vaults
                         </Link>
-                        <Link href="/profile" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-accent/50">
-                          <UserCircle className="h-5 w-5" aria-hidden="true" />
-                          Profile
+                        <Link href="/profile" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all border border-transparent active:scale-[0.98]">
+                          <UserCircle className="h-5 w-5 text-primary" aria-hidden="true" />
+                          Profile Protocol
                         </Link>
-                      </div>
+                      </nav>
                     </div>
                   )}
 
-                  <div className="space-y-1 border-t pt-4">
+                  <nav className="space-y-1 border-t pt-6" aria-label="Primary pages">
                     {navLinks.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
                         onClick={() => setIsSheetOpen(false)}
                         className={cn(
-                          'block rounded-md px-3 py-3 text-sm font-medium transition-colors',
+                          'block rounded-xl px-4 py-4 text-base font-black uppercase tracking-widest transition-all border border-transparent active:scale-[0.98]',
                           pathname === link.href
-                            ? 'bg-accent text-accent-foreground'
-                            : 'text-foreground/70 hover:bg-accent/50 hover:text-foreground',
+                            ? 'bg-primary text-white shadow-md'
+                            : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground',
                         )}
                       >
                         {link.label}
                       </Link>
                     ))}
-                  </div>
+                  </nav>
 
-                  <div className="mt-6 border-t px-2 pt-4">
+                  <div className="mt-auto pt-8">
                     {user && userProfile ? (
-                      <Button variant="outline" onClick={() => { handleLogout(); setIsSheetOpen(false); }} className="w-full h-12">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => { handleLogout(); setIsSheetOpen(false); }} 
+                        className="w-full h-14 font-black uppercase text-xs tracking-widest text-risk border-risk/20 active:scale-[0.98]"
+                      >
                         <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />
-                        Log out
+                        Terminate Session
                       </Button>
                     ) : (
-                      <div className="flex flex-col gap-3">
-                        <Button variant="outline" asChild className="h-12">
-                          <Link href="/login" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
+                      <div className="flex flex-col gap-4">
+                        <Button variant="outline" asChild className="h-14 font-black uppercase text-xs tracking-widest active:scale-[0.98]">
+                          <Link href="/login" onClick={() => setIsSheetOpen(false)}>Terminal Access</Link>
                         </Button>
-                        <Button asChild className="h-12">
-                          <Link href="/signup" onClick={() => setIsSheetOpen(false)}>List Your Land</Link>
+                        <Button asChild className="h-14 font-black uppercase text-xs tracking-widest shadow-glow active:scale-[0.98]">
+                          <Link href="/signup" onClick={() => setIsSheetOpen(false)}>Provision Vault</Link>
                         </Button>
                       </div>
                     )}
@@ -261,7 +286,7 @@ export function BuyerHeader() {
               </SheetContent>
             </Sheet>
           ) : (
-            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-11 w-11 rounded-full" />
           )}
         </div>
       </div>

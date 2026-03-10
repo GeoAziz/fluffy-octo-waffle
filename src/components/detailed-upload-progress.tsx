@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Loader2, ShieldCheck, Wifi, Activity, Clock } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Wifi, Activity, Clock, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DetailedUploadProgressProps {
@@ -12,9 +12,10 @@ interface DetailedUploadProgressProps {
   filesCount: number;
   totalSize: number; // in bytes
   isComplete?: boolean;
+  onCancel?: () => void;
 }
 
-export function DetailedUploadProgress({ progress, filesCount, totalSize, isComplete }: DetailedUploadProgressProps) {
+export function DetailedUploadProgress({ progress, filesCount, totalSize, isComplete, onCancel }: DetailedUploadProgressProps) {
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [eta, setEta] = useState(0);
   const [phase, setPhase] = useState<'uploading' | 'verifying' | 'completed'>('uploading');
@@ -65,12 +66,22 @@ export function DetailedUploadProgress({ progress, filesCount, totalSize, isComp
               </p>
             </div>
           </div>
-          <Badge className={cn(
-            "font-black text-[10px] tracking-widest border-none h-6 px-3",
-            phase === 'uploading' ? "bg-accent text-white" : phase === 'verifying' ? "bg-warning text-white" : "bg-success text-white"
-          )}>
-            {progress}% {phase === 'verifying' && ' VERIFYING'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {phase === 'uploading' && onCancel && (
+              <button 
+                onClick={onCancel}
+                className="text-[9px] font-black uppercase tracking-widest text-risk hover:underline"
+              >
+                Abort
+              </button>
+            )}
+            <Badge className={cn(
+              "font-black text-[10px] tracking-widest border-none h-6 px-3",
+              phase === 'uploading' ? "bg-accent text-white" : phase === 'verifying' ? "bg-warning text-white" : "bg-success text-white"
+            )}>
+              {progress}% {phase === 'verifying' && ' VERIFYING'}
+            </Badge>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -97,7 +108,7 @@ export function DetailedUploadProgress({ progress, filesCount, totalSize, isComp
 
             <div className="flex flex-col gap-1 text-right">
               <span className="flex items-center gap-1.5 justify-end text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                <ShieldCheck className="h-2.5 w-2.5" /> Integrity
+                <FileCheck className="h-2.5 w-2.5" /> Integrity
               </span>
               <span className="text-xs font-bold text-foreground truncate">
                 {phase === 'completed' ? 'Verified (SHA-256)' : 'Pending Pulse'}
