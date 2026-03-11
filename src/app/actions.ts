@@ -48,6 +48,11 @@ export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) throw new Error('Authentication required.');
   
+  // Idempotency check: Don't update if already a seller
+  if (authUser.role === 'SELLER') {
+    return { success: true };
+  }
+
   if (authUser.role === 'ADMIN') {
     throw new Error('Administrators cannot transition to seller accounts.');
   }

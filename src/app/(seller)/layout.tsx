@@ -23,7 +23,7 @@ export default async function SellerLayout({ children }: PropsWithChildren) {
     const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
     if (userRole !== 'SELLER' && userRole !== 'ADMIN') {
-      redirect('/denied');
+      redirect(`/denied?role=${userRole || 'UNKNOWN'}&required=SELLER&path=${encodeURIComponent('/dashboard')}`);
     }
   } catch (error) {
     console.error('[SellerLayout] Auth verification failed:', error);

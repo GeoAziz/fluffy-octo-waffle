@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 /**
  * AdminLayout - Enforces ADMIN role at the server level.
  * This runs in the Node.js runtime, supporting 'firebase-admin'.
+ * Provides authoritative authorization fallback for the middleware hint.
  */
 export default async function AdminLayout({ children }: PropsWithChildren) {
   const cookieStore = await cookies();
@@ -23,7 +24,7 @@ export default async function AdminLayout({ children }: PropsWithChildren) {
     const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
     if (userRole !== 'ADMIN') {
-      redirect('/denied');
+      redirect(`/denied?role=${userRole || 'UNKNOWN'}&required=ADMIN&path=${encodeURIComponent('/admin')}`);
     }
   } catch (error) {
     console.error('[AdminLayout] Auth verification failed:', error);

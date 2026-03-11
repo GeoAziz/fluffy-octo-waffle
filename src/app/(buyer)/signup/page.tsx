@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, type User } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -10,9 +11,10 @@ import { Loader2, LandPlot, ShieldCheck, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
-import { cn } from '@/lib/utils';
+import { cn, validateRedirect } from '@/lib/utils';
 
 export default function SignupPage() {
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | undefined>(undefined);
@@ -57,8 +59,16 @@ export default function SignupPage() {
       if (!response.ok) throw new Error('Identity transmission failed.');
       toast({ title: 'Identity Verified', description: "Initializing your secure property vault." });
       
-      // Automatic role-based initial landing
-      const redirectPath = role === 'SELLER' ? '/dashboard' : '/onboarding';
+      // 1. Check for validated redirect param (security: prevents open redirects)
+      const requestedRedirect = searchParams.get('redirect');
+      const safeRedirect = validateRedirect(requestedRedirect, role);
+      if (safeRedirect) {
+        window.location.assign(safeRedirect);
+        return;
+      }
+
+      // 2. Default landing protocol
+      const redirectPath = role === 'SELLER' ? '/dashboard' : '/buyer/onboarding';
       window.location.assign(redirectPath);
     } catch (err: any) {
       setServerError(err.message);
@@ -97,12 +107,13 @@ export default function SignupPage() {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
+      // Identity Protocol: Only sets role if this is a fresh account creation
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
           uid: user.uid, 
           email: user.email, 
           displayName: user.displayName,
-          role: role, // Intent captured even via SSO
+          role: role, // Intent captured from selection UI
           verified: false, 
           createdAt: serverTimestamp(),
         });

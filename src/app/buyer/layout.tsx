@@ -34,7 +34,7 @@ export default async function BuyerSectionLayout({ children }: PropsWithChildren
       if (userRole === 'SELLER') {
         redirect('/dashboard');
       }
-      redirect('/denied');
+      redirect(`/denied?role=${userRole || 'UNKNOWN'}&required=BUYER&path=${encodeURIComponent('/buyer/dashboard')}`);
     }
   } catch (error) {
     console.error('[BuyerSectionLayout] Auth verification pulse failed:', error);

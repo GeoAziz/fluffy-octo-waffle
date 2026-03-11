@@ -116,6 +116,9 @@ export default function ProfilePage() {
   };
 
   const handleRoleUpgrade = async () => {
+    // Idempotency check: Don't trigger if already in progress or already a seller
+    if (isUpgradingRole || userProfile?.role === 'SELLER') return;
+
     setIsUpgradingRole(true);
     try {
       await requestSellerRoleAction();
@@ -834,8 +837,7 @@ function ProfileSkeleton() {
               <CardContent>
                 <Skeleton className="h-24 w-full rounded-lg" />
               </CardContent>
-            </Card>
-          </div>
+            </div>
         </BuyerPage>
     )
 }

@@ -4,12 +4,17 @@ import type { NextRequest } from 'next/server';
 /**
  * Next.js Middleware
  * Runs on the Edge Runtime. Node.js modules like 'path' or 'fs' are NOT supported.
- * Logic that requires 'firebase-admin' has been moved to Server Components (Layouts).
+ * 
+ * Authorization Strategy:
+ * 1. Authentication is authoritative via the __session cookie.
+ * 2. Authorization (role-based) uses a __user_role "hint" cookie for immediate Edge redirection.
+ * 3. Final, secure authorization is ALWAYS verified server-side in Layouts/Server Components.
  */
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('__session')?.value;
+  const userRole = request.cookies.get('__user_role')?.value;
   
   // Skip middleware for internal Next.js paths and assets
   if (
@@ -22,25 +27,45 @@ export function middleware(request: NextRequest) {
 
   // Define route groups
   const authPages = ['/login', '/signup'];
-  const generalProtectedPages = ['/messages', '/profile', '/favorites', '/onboarding', '/buyer/dashboard'];
+  const buyerPages = ['/buyer/dashboard', '/buyer/onboarding'];
   const sellerPages = ['/dashboard', '/listings/new'];
+  const generalProtectedPages = ['/messages', '/profile', '/favorites', ...buyerPages];
+  
   const isAdminRoute = pathname.startsWith('/admin');
   const isSellerRoute = sellerPages.some(p => pathname.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(pathname);
-  const isGeneralProtectedRoute = generalProtectedPages.some(p => pathname.startsWith(p));
+  const isBuyerRoute = buyerPages.some(p => pathname.startsWith(p)) || pathname === '/favorites';
+  const isGeneralProtectedRoute = generalProtectedPages.some(p => pathname.startsWith(p)) || isSellerRoute || isAdminRoute;
 
   // 1. Redirect already logged-in users away from auth pages
   if (authPages.includes(pathname) && sessionCookie) {
-    // We don't check roles here to keep it Edge-compatible. 
-    // The specific page/layout will handle final landing.
     return NextResponse.next();
   }
 
   // 2. Protect routes requiring authentication
-  if (isGeneralProtectedRoute || isSellerRoute || isAdminRoute) {
+  if (isGeneralProtectedRoute) {
     if (!sessionCookie) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // 3. Perform Role-Based Authorization Hints
+    // Note: This reduces "pass-through" to unauthorized layouts
+    
+    if (isAdminRoute && userRole !== 'ADMIN') {
+      return NextResponse.redirect(new URL(`/denied?role=${userRole || 'UNKNOWN'}&required=ADMIN&path=${encodeURIComponent(pathname)}`, request.url));
+    }
+
+    if (isSellerRoute && userRole !== 'SELLER' && userRole !== 'ADMIN') {
+      return NextResponse.redirect(new URL(`/denied?role=${userRole || 'UNKNOWN'}&required=SELLER&path=${encodeURIComponent(pathname)}`, request.url));
+    }
+
+    if (isBuyerRoute && userRole !== 'BUYER' && userRole !== 'ADMIN') {
+      // Logic for Sellers accidentally hitting Buyer dashboards
+      if (userRole === 'SELLER') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+      return NextResponse.redirect(new URL(`/denied?role=${userRole || 'UNKNOWN'}&required=BUYER&path=${encodeURIComponent(pathname)}`, request.url));
     }
   }
 

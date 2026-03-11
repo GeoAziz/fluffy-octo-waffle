@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 /**
  * Session Management Route
  * Handles verification, creation, and deletion of secure session cookies.
+ * Now includes role-hint cookie provisioning for Edge-compatible middleware authorization.
  */
 
 export async function GET(request: NextRequest) {
@@ -40,6 +41,11 @@ export async function POST(request: NextRequest) {
   const expiresInMs = 60 * 60 * 24 * 5 * 1000;
 
   try {
+    // Authoritative role fetch during session creation
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    const role = userDoc.exists ? userDoc.data()?.role : 'BUYER';
+
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn: expiresInMs });
 
     const forwardedProto = request.headers.get('x-forwarded-proto');
@@ -57,8 +63,19 @@ export async function POST(request: NextRequest) {
         path: '/' 
     };
     
-    const response = NextResponse.json({ status: 'success' });
+    const response = NextResponse.json({ status: 'success', role });
     response.cookies.set(options);
+    
+    // Set a non-httpOnly role hint for Edge Middleware routing
+    response.cookies.set({
+      name: '__user_role',
+      value: role,
+      maxAge: expiresInMs / 1000,
+      path: '/',
+      secure: isSecureContext,
+      sameSite: 'lax'
+    });
+
     return response;
   } catch (error: any) {
     console.error("/api/auth/session POST: Error creating session cookie:", error);
@@ -69,5 +86,6 @@ export async function POST(request: NextRequest) {
 export async function DELETE() {
   const response = NextResponse.json({ status: 'success' });
   response.cookies.set('__session', '', { maxAge: 0 });
+  response.cookies.set('__user_role', '', { maxAge: 0 });
   return response;
 }

@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
 import type { UserProfile } from '@/lib/types';
+import { validateRedirect } from '@/lib/utils';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -52,17 +53,19 @@ export default function LoginPage() {
       
       toast({ title: 'Welcome Back', description: "Security handshake complete." });
       
-      // Determine logical landing page based on role if no redirect exists
+      // Authoritative role fetch for intelligent routing
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const role = (userDoc.data() as UserProfile)?.role || 'BUYER';
+
+      // 1. Check for validated redirect param (security: prevents open redirects)
       const requestedRedirect = searchParams.get('redirect');
-      if (requestedRedirect) {
-        window.location.assign(requestedRedirect);
+      const safeRedirect = validateRedirect(requestedRedirect, role);
+      if (safeRedirect) {
+        window.location.assign(safeRedirect);
         return;
       }
 
-      // Role-based redirection logic
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const role = (userDoc.data() as UserProfile)?.role;
-
+      // 2. Fallback to default role-based landing registry
       if (role === 'ADMIN') {
         window.location.assign('/admin');
       } else if (role === 'SELLER') {
@@ -99,11 +102,17 @@ export default function LoginPage() {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
+      // Idempotent Identity Provisioning: Preserves existing role
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
-          uid: user.uid, email: user.email, displayName: user.displayName,
-          photoURL: user.photoURL, phone: user.phoneNumber || null,
-          role: 'BUYER', verified: false, createdAt: serverTimestamp(),
+          uid: user.uid, 
+          email: user.email, 
+          displayName: user.displayName,
+          photoURL: user.photoURL, 
+          phone: user.phoneNumber || null,
+          role: 'BUYER', // Default for direct login
+          verified: false, 
+          createdAt: serverTimestamp(),
         });
       }
       await handleLoginSuccess(user);

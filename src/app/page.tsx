@@ -1,9 +1,6 @@
-import { BuyerHomePage } from '@/components/buyer/buyer-home-page';
-
 /**
- * Root entry point — renders the main landing page.
- * Content is provided by BuyerHomePage; layout comes from src/app/(buyer)/layout.tsx.
+ * Neutralized shell file. 
+ * Root landing page has been unified at src/app/(buyer)/page.tsx 
+ * to ensure correct layout and header/footer inheritance.
  */
-export default function RootPage() {
-  return <BuyerHomePage />;
-}
+export { default } from './(buyer)/page';
