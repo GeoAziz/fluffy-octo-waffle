@@ -27,9 +27,9 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
   TrustedSignal: {
     variant: 'emerald',
     icon: ShieldCheck,
-    label: 'Trusted Signal',
-    subtitle: 'Highest Confidence',
-    description: 'The premier trust tier. Every critical record has been vaulted and verified by our moderation team.',
+    label: 'Gold Badge',
+    subtitle: 'Trusted Signal',
+    description: 'The highest trust tier. Every critical record has been vaulted and verified by our moderation team.',
     requirements: [
       'Original Title Deed verified',
       'Current Survey Map cross-checked',
@@ -40,8 +40,8 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
   EvidenceReviewed: {
     variant: 'muted-blue',
     icon: FileCheck,
-    label: 'Evidence Reviewed',
-    subtitle: 'Verified Documents',
+    label: 'Silver Badge',
+    subtitle: 'Evidence Reviewed',
     description: 'Primary ownership documents have been provided and reviewed for basic validity.',
     requirements: [
       'Title Deed copy provided',
@@ -52,8 +52,8 @@ const badgeMap: Record<BadgeValue, BadgeInfo> = {
   EvidenceSubmitted: {
     variant: 'amber',
     icon: Award,
-    label: 'Evidence Submitted',
-    subtitle: 'Verification Pending',
+    label: 'Bronze Badge',
+    subtitle: 'Evidence Submitted',
     description: 'The seller has vaulted their proof. Our trust team is currently performing triage.',
     requirements: [
       'Ownership documents uploaded',
@@ -151,7 +151,6 @@ export function TrustBadge({
         )} 
         align="start"
       >
-        {/* Header with variant-specific background */}
         <div className={cn(
           "p-5 bg-gradient-to-br",
           variant === 'emerald' && 'from-emerald-500 to-emerald-600 text-white',
@@ -178,7 +177,6 @@ export function TrustBadge({
           </div>
         </div>
         
-        {/* Content with dark mode support */}
         <div className="p-5 space-y-5 bg-background dark:bg-slate-950 border-t border-border/40">
           <p className="text-sm text-muted-foreground font-medium leading-relaxed">
             {description}

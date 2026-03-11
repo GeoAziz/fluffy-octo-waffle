@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * BadgeLegend - Explains the high-trust Signal system
- * Aligned with the PRD badge values and color scheme
+ * Updated to match the Gold/Silver/Bronze product naming.
  */
 export function BadgeLegend({
   distribution,
@@ -19,33 +19,36 @@ export function BadgeLegend({
 
   const badges = [
     {
-      name: 'Trusted Signal',
+      name: 'Gold Badge',
       id: 'TrustedSignal',
       icon: ShieldCheck,
       color: 'text-emerald-600',
       bg: 'bg-emerald-100',
+      tagline: 'Trusted Signal',
       percentage: pct(distribution?.TrustedSignal || 0),
       requirements: ['Title deed fully verified', 'Land survey confirmed', 'Seller ID & PIN checked', 'Site photos matched'],
-      description: 'The gold standard of trust. Full legal documentation verified by our expert team.',
+      description: 'The premier trust tier. Every critical record has been vaulted and verified by our moderation team.',
     },
     {
-      name: 'Evidence Reviewed',
+      name: 'Silver Badge',
       id: 'EvidenceReviewed',
       icon: FileCheck,
       color: 'text-accent',
       bg: 'bg-accent-light',
+      tagline: 'Evidence Reviewed',
       percentage: pct(distribution?.EvidenceReviewed || 0),
       requirements: ['Primary ownership docs provided', 'Basic survey plan uploaded', 'No obvious discrepancies'],
       description: 'Solid documentation provided. Key records have been checked for basic validity.',
     },
     {
-      name: 'Evidence Submitted',
+      name: 'Bronze Badge',
       id: 'EvidenceSubmitted',
       icon: Award,
       color: 'text-warning',
       bg: 'bg-warning-light',
+      tagline: 'Evidence Submitted',
       percentage: pct(distribution?.EvidenceSubmitted || 0),
-      requirements: ['Documentation uploaded', 'Awaiting deep review', 'Basic listing details confirmed'],
+      requirements: ['Ownership documents uploaded', 'Awaiting deep review', 'Basic listing details confirmed'],
       description: 'The entry trust level. Seller has provided proof which is currently in the queue for review.',
     },
   ];
@@ -80,9 +83,11 @@ export function BadgeLegend({
                   </span>
                 </div>
                 
-                <h3 className="text-lg font-bold mb-2 tracking-tight group-hover:text-accent transition-colors">
+                <h3 className="text-lg font-bold mb-1 tracking-tight group-hover:text-accent transition-colors">
                   {badge.name}
                 </h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">{badge.tagline}</p>
+                
                 <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                   {badge.description}
                 </p>

@@ -19,11 +19,16 @@ export interface InputProps
 const EnhancedInput = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, error, success, icon, label, type = 'text', ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false);
+    const generatedId = React.useId();
+    const id = props.id || generatedId;
 
     return (
       <div className="w-full space-y-2">
         {label && (
-          <label className="block text-sm font-medium text-foreground">
+          <label 
+            htmlFor={id}
+            className="block text-sm font-medium text-foreground cursor-pointer"
+          >
             {label}
             {props.required && <span className="text-destructive ml-1">*</span>}
           </label>
@@ -37,6 +42,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, InputProps>(
           )}
 
           <input
+            id={id}
             type={type === 'password' && showPassword ? 'text' : type}
             className={cn(
               'flex h-11 w-full rounded-lg border bg-background px-4 py-2 text-sm transition-all duration-200',
@@ -45,14 +51,14 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, InputProps>(
               'disabled:cursor-not-allowed disabled:opacity-50',
               'autofill:shadow-[inset_0_0_0px_1000px_hsl(var(--background))]',
               icon && 'pl-10',
-              error && 'border-destructive focus:ring-destructive focus:ring-destructive animate-shake-error',
+              error && 'border-destructive focus:ring-destructive animate-shake-error',
               success && 'border-green-500 focus:ring-green-500',
               !error && !success && 'border-input hover:border-input/70',
               className
             )}
             ref={ref}
             aria-invalid={!!error}
-            aria-describedby={error ? `${props.id}-error` : undefined}
+            aria-describedby={error ? `${id}-error` : undefined}
             {...props}
           />
 
@@ -87,7 +93,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, InputProps>(
           <div
             className="flex items-center gap-2 text-sm text-destructive animate-slide-up"
             role="alert"
-            id={`${props.id}-error`}
+            id={`${id}-error`}
           >
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             <span className="leading-tight">{error}</span>

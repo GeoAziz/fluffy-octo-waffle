@@ -12,11 +12,12 @@ import { EnhancedInput } from '@/components/form/enhanced-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ChevronRight, ChevronLeft, ShieldCheck, Info, FileCheck, MapPin } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft, ShieldCheck, CheckCircle2, MapPin } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { FileDragAndDrop } from '@/components/file-drag-and-drop';
 import { SellerPage } from '@/components/seller/seller-page';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 const ListingLocationPicker = dynamic(() => import('@/components/listing-location-picker').then(mod => ({ default: mod.ListingLocationPicker })), {
   ssr: false,
@@ -25,17 +26,17 @@ const ListingLocationPicker = dynamic(() => import('@/components/listing-locatio
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title is too short.').max(100),
-  location: z.string().min(3),
-  county: z.string().min(3),
-  price: z.coerce.number().min(1000),
-  area: z.coerce.number().min(0.01),
-  size: z.string().min(2),
-  landType: z.string().min(3),
-  description: z.string().min(20),
-  images: z.custom<FileList>().refine(f => f?.length > 0, 'Image required'),
+  location: z.string().min(3, 'Location description is required.'),
+  county: z.string().min(3, 'County signal is required.'),
+  price: z.coerce.number().min(1000, 'Minimum price threshold not met.'),
+  area: z.coerce.number().min(0.01, 'Invalid area metric.'),
+  size: z.string().min(2, 'Dimensions required.'),
+  landType: z.string().min(3, 'Category selection required.'),
+  description: z.string().min(20, 'Narrative too brief for verification.'),
+  images: z.custom<FileList>().refine(f => f?.length > 0, 'Visual proof required.'),
   evidence: z.custom<FileList>().optional(),
-  latitude: z.coerce.number().refine(v => v !== 0, 'Select location'),
-  longitude: z.coerce.number().refine(v => v !== 0, 'Select location'),
+  latitude: z.coerce.number().refine(v => v !== 0, 'Coordinate triage required.'),
+  longitude: z.coerce.number().refine(v => v !== 0, 'Coordinate triage required.'),
 });
 
 const DRAFT_KEY = 'seller:new-listing:draft:v3';
@@ -103,12 +104,46 @@ export default function NewListingPage() {
     }
   }
 
+  const steps = [
+    { id: 1, label: 'Identity' },
+    { id: 2, label: 'Specs' },
+    { id: 3, label: 'Triage' },
+    { id: 4, label: 'Evidence' },
+  ];
+
   return (
     <SellerPage title="Provision New Listing" description={`Protocol Stage ${step} of 4`}>
       <FormProvider {...form}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-8">
-            <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl mx-auto space-y-8 pb-20">
+            {/* Elite Step Indicator */}
+            <div className="relative mb-12 px-2">
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2" />
+              <div 
+                className="absolute top-1/2 left-0 h-0.5 bg-primary transition-all duration-500 -translate-y-1/2" 
+                style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+              />
+              <div className="relative flex justify-between">
+                {steps.map((s) => (
+                  <div key={s.id} className="flex flex-col items-center gap-2">
+                    <div className={cn(
+                      "h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-black transition-all duration-300 z-10",
+                      step >= s.id ? "bg-primary border-primary text-white scale-110 shadow-lg" : "bg-background border-muted text-muted-foreground"
+                    )}>
+                      {step > s.id ? <CheckCircle2 className="h-4 w-4" /> : s.id}
+                    </div>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      step >= s.id ? "text-primary" : "text-muted-foreground"
+                    )}>
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
               <CardHeader className="border-b bg-muted/10">
                 <div className="flex items-center justify-between">
                     <div>
@@ -125,18 +160,22 @@ export default function NewListingPage() {
                             {step === 4 && 'Upload restricted documentation proof'}
                         </CardDescription>
                     </div>
-                    <div className="h-12 w-12 rounded-full border-4 border-muted flex items-center justify-center font-black text-sm text-primary">
-                        {step}/4
-                    </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-8">
+              <CardContent className="p-6 md:p-10">
                 {step === 1 && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                     <FormField name="title" render={({ field }) => (
-                      <FormItem><EnhancedInput label="Registry Title" placeholder="e.g., 5-Acre Prime Agricultural Land" {...field} success={field.value.length >= 5} /></FormItem>
+                      <FormItem>
+                        <EnhancedInput 
+                          label="Registry Title" 
+                          placeholder="e.g., 5-Acre Prime Agricultural Land" 
+                          {...field} 
+                          success={field.value.length >= 5} 
+                        />
+                      </FormItem>
                     )} />
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField name="location" render={({ field }) => <FormItem><EnhancedInput label="Neighborhood Node" placeholder="e.g., Isinya" {...field} /></FormItem>} />
                       <FormField name="county" render={({ field }) => <FormItem><EnhancedInput label="County Signal" placeholder="e.g., Kajiado" {...field} /></FormItem>} />
                     </div>
@@ -144,9 +183,13 @@ export default function NewListingPage() {
                 )}
                 {step === 2 && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField name="area" render={({ field }) => <FormItem><EnhancedInput type="number" label="Area Metric (Acres)" {...field} /></FormItem>} />
                       <FormField name="price" render={({ field }) => <FormItem><EnhancedInput type="number" label="Asking Value (Ksh)" {...field} /></FormItem>} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField name="size" render={({ field }) => <FormItem><EnhancedInput label="Physical Dimensions" placeholder='e.g. 50x100 ft' {...field} /></FormItem>} />
+                      <FormField name="landType" render={({ field }) => <FormItem><EnhancedInput label="Registry Category" placeholder='e.g. Residential' {...field} /></FormItem>} />
                     </div>
                     <FormField name="description" render={({ field }) => (
                       <FormItem>
@@ -179,14 +222,26 @@ export default function NewListingPage() {
                             <ul className="mt-2 list-disc ml-4 space-y-1">
                                 <li>Current Title Deed (Full scan)</li>
                                 <li>Approved Survey Map</li>
-                                <li>Rate Clearance Certificate</li>
+                                <li>Seller ID & PIN Proof</li>
                             </ul>
                         </AlertDescription>
                     </Alert>
                     
-                    <FileDragAndDrop name="images" label="Public Visual Assets" accept="image/*" multiple description="Minimum 3 high-resolution photos recommended." />
-                    <Separator />
-                    <FileDragAndDrop name="evidence" label="Restricted Documentation" multiple isEvidence description="PDF or high-res JPG scans. Max 10MB per file." />
+                    <FileDragAndDrop 
+                      name="images" 
+                      label="Public Visual Assets" 
+                      accept="image/*" 
+                      multiple 
+                      description="Minimum 3 high-resolution photos recommended." 
+                    />
+                    <div className="h-px bg-border/40" />
+                    <FileDragAndDrop 
+                      name="evidence" 
+                      label="Restricted Documentation" 
+                      multiple 
+                      isEvidence 
+                      description="PDF or high-res JPG scans. Max 10MB per file." 
+                    />
                   </div>
                 )}
               </CardContent>

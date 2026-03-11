@@ -11,6 +11,7 @@ import { Loader2, LandPlot } from 'lucide-react';
 import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
+import type { UserProfile } from '@/lib/types';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -50,8 +51,25 @@ export default function LoginPage() {
       if (!response.ok) throw new Error('Security session negotiation failed.');
       
       toast({ title: 'Welcome Back', description: "Security handshake complete." });
+      
+      // Determine logical landing page based on role if no redirect exists
       const requestedRedirect = searchParams.get('redirect');
-      window.location.assign(requestedRedirect || '/');
+      if (requestedRedirect) {
+        window.location.assign(requestedRedirect);
+        return;
+      }
+
+      // Role-based redirection logic
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const role = (userDoc.data() as UserProfile)?.role;
+
+      if (role === 'ADMIN') {
+        window.location.assign('/admin');
+      } else if (role === 'SELLER') {
+        window.location.assign('/dashboard');
+      } else {
+        window.location.assign('/');
+      }
     } catch (err: any) {
       setServerError(err.message);
     }

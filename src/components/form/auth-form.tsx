@@ -160,7 +160,7 @@ export function AuthForm({
               error={fieldErrors[field.name]}
               disabled={isProcessing || isLoading}
               required={field.required}
-              aria-name={field.label}
+              aria-label={field.label}
             />
           </div>
         ))}

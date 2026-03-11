@@ -6,15 +6,17 @@ import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LandPlot } from 'lucide-react';
+import { Loader2, LandPlot, ShieldCheck, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
+import { cn } from '@/lib/utils';
 
 export default function SignupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | undefined>(undefined);
+  const [role, setRole] = useState<'BUYER' | 'SELLER'>('BUYER');
 
   const signupFields: AuthFormField[] = [
     {
@@ -54,7 +56,10 @@ export default function SignupPage() {
 
       if (!response.ok) throw new Error('Identity transmission failed.');
       toast({ title: 'Identity Verified', description: "Initializing your secure property vault." });
-      window.location.assign('/onboarding');
+      
+      // Automatic role-based initial landing
+      const redirectPath = role === 'SELLER' ? '/dashboard' : '/onboarding';
+      window.location.assign(redirectPath);
     } catch (err: any) {
       setServerError(err.message);
     }
@@ -67,8 +72,12 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(userCredential.user, { displayName: data.displayName });
       await setDoc(doc(db, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid, email: data.email, displayName: data.displayName,
-        role: 'BUYER', verified: false, createdAt: serverTimestamp(),
+        uid: userCredential.user.uid, 
+        email: data.email, 
+        displayName: data.displayName,
+        role: role, // Chosen role committed to vault
+        verified: false, 
+        createdAt: serverTimestamp(),
       });
       await handleAuthSuccess(userCredential.user);
     } catch (error: any) {
@@ -90,8 +99,12 @@ export default function SignupPage() {
 
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
-          uid: user.uid, email: user.email, displayName: user.displayName,
-          role: 'BUYER', verified: false, createdAt: serverTimestamp(),
+          uid: user.uid, 
+          email: user.email, 
+          displayName: user.displayName,
+          role: role, // Intent captured even via SSO
+          verified: false, 
+          createdAt: serverTimestamp(),
         });
       }
       await handleAuthSuccess(user);
@@ -121,6 +134,36 @@ export default function SignupPage() {
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-black uppercase tracking-tight">Provision</h1>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Establish your secure property vault</p>
+            </div>
+
+            {/* Role Selection Protocol */}
+            <div className="grid grid-cols-2 gap-3 p-1 rounded-xl bg-muted/30 border border-border/40">
+              <button
+                type="button"
+                onClick={() => setRole('BUYER')}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all border-2",
+                  role === 'BUYER' 
+                    ? "bg-background border-primary text-primary shadow-sm" 
+                    : "border-transparent text-muted-foreground hover:bg-background/50"
+                )}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Buy Land</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('SELLER')}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all border-2",
+                  role === 'SELLER' 
+                    ? "bg-background border-accent text-accent shadow-sm" 
+                    : "border-transparent text-muted-foreground hover:bg-background/50"
+                )}
+              >
+                <ShieldCheck className="h-5 w-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Sell Land</span>
+              </button>
             </div>
 
             <AuthForm 

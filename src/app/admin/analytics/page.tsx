@@ -7,11 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Download, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Download, RefreshCw, ArrowUp, ArrowDown, Activity, Users, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { getAdminAnalyticsSummaryAction } from '@/app/actions';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
+import { PageGrid } from '@/components/page-wrapper';
 
 type Range = '7' | '30' | '90' | 'custom';
 
@@ -26,19 +27,19 @@ type AnalyticsSummary = {
 };
 
 const BADGE_COLORS: Record<string, string> = {
-  Gold: '#f59e0b',
-  Silver: '#64748b',
-  Bronze: '#a16207',
+  Gold: '#10b981', // emerald-500
+  Silver: '#2f6f95', // accent
+  Bronze: '#c58b2e', // warning
   None: '#94a3b8',
 };
 
 const Delta = ({ value }: { value: number }) => {
   if (value === 0) {
-    return <span className="text-muted-foreground text-xs font-normal">(no change)</span>;
+    return <span className="text-muted-foreground text-[10px] font-normal uppercase tracking-widest">(no change)</span>;
   }
   const isPositive = value > 0;
   return (
-    <span className={cn('text-xs font-semibold flex items-center', isPositive ? 'text-green-600' : 'text-red-600')}>
+    <span className={cn('text-[10px] font-black uppercase tracking-widest flex items-center', isPositive ? 'text-emerald-600' : 'text-risk')}>
       {isPositive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
       {Math.abs(value)}%
     </span>
@@ -98,52 +99,53 @@ export default function AnalyticsPage() {
 
   return (
     <AdminPage
-      title="Analytics"
-      description="Line, bar, and pie breakdowns for moderation and listing distribution."
+      title="Platform Analytics"
+      description="Deep-dive into moderation velocity, document integrity metrics, and listing distribution."
       breadcrumbs={[{ href: '/admin', label: 'Dashboard' }, { href: '/admin/analytics', label: 'Analytics' }]}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+          <Button variant="outline" size="sm" onClick={fetchData} className="h-10 font-bold uppercase text-[10px] tracking-widest">
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Sync Pulse
           </Button>
-          <Button size="sm" onClick={exportCsv} disabled={!summary}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+          <Button size="sm" onClick={exportCsv} disabled={!summary} className="h-10 font-black uppercase text-[10px] tracking-widest shadow-glow">
+            <Download className="mr-2 h-3.5 w-3.5" />
+            Export Vault
           </Button>
         </div>
       }
     >
-      <Card className="mb-6">
-        <CardContent className="grid gap-4 pt-6 md:grid-cols-4">
+      {/* Date Filter Protocol */}
+      <Card className="mb-8 border-none shadow-xl bg-card/50 backdrop-blur-sm">
+        <CardContent className="grid gap-6 pt-6 md:grid-cols-4">
           <div className="space-y-2">
-            <Label>Date range</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Range Select</Label>
             <Select value={range} onValueChange={(value) => setRange(value as Range)}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 font-bold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
+                <SelectItem value="7">Last 7 Cycles</SelectItem>
+                <SelectItem value="30">Last 30 Cycles</SelectItem>
+                <SelectItem value="90">Last 90 Cycles</SelectItem>
+                <SelectItem value="custom">Custom Protocol</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {range === 'custom' && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="start-date">Start date</Label>
-                <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
+                <Label htmlFor="start-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Start Epoch</Label>
+                <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-11 font-bold" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-date">End date</Label>
-                <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
+                <Label htmlFor="end-date" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">End Epoch</Label>
+                <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-11 font-bold" />
               </div>
               <div className="flex items-end">
-                <Button className="w-full" onClick={fetchData} disabled={!startDate || !endDate}>
-                  Apply custom range
+                <Button className="w-full h-11 font-black uppercase text-[10px] tracking-widest" onClick={fetchData} disabled={!startDate || !endDate}>
+                  Execute Filter
                 </Button>
               </div>
             </>
@@ -151,116 +153,136 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">Approved</CardTitle>
-            {summary && <Delta value={trendDeltas.approved} />}
+      {/* KPI Signals */}
+      <PageGrid columns={3} className="mb-8">
+        <Card className="border-none shadow-lg bg-emerald-500 text-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><BadgeCheck size={80} /></div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80 flex items-center gap-2">
+              <BadgeCheck className="h-3 w-3" /> Approved Assets
+            </CardTitle>
           </CardHeader>
-          <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.approved}</p>}</CardContent>
+          <CardContent className="flex items-end justify-between">
+            {loading ? <Skeleton className="h-10 w-24 bg-white/20" /> : <p className="text-4xl font-black">{moderationTotals.approved}</p>}
+            {summary && <div className="bg-white/20 rounded px-2 py-1"><Delta value={trendDeltas.approved} /></div>}
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">New Pending</CardTitle>
-            {summary && <Delta value={trendDeltas.pending} />}
+        
+        <Card className="border-none shadow-lg bg-accent text-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><Activity size={80} /></div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80 flex items-center gap-2">
+              <Activity className="h-3 w-3" /> Pending Triage
+            </CardTitle>
           </CardHeader>
-          <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.pending}</p>}</CardContent>
+          <CardContent className="flex items-end justify-between">
+            {loading ? <Skeleton className="h-10 w-24 bg-white/20" /> : <p className="text-4xl font-black">{moderationTotals.pending}</p>}
+            {summary && <div className="bg-white/20 rounded px-2 py-1"><Delta value={trendDeltas.pending} /></div>}
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">Rejected</CardTitle>
-            {summary && <Delta value={trendDeltas.rejected} />}
-          </CardHeader>
-          <CardContent>{loading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{moderationTotals.rejected}</p>}</CardContent>
-        </Card>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Moderation trend (line)</CardTitle>
-            <CardDescription>Approvals and rejections over time.</CardDescription>
+        <Card className="border-none shadow-lg bg-risk text-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldAlert size={80} /></div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80 flex items-center gap-2">
+              <ShieldAlert className="h-3 w-3" /> Rejected Records
+            </CardTitle>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="flex items-end justify-between">
+            {loading ? <Skeleton className="h-10 w-24 bg-white/20" /> : <p className="text-4xl font-black">{moderationTotals.rejected}</p>}
+            {summary && <div className="bg-white/20 rounded px-2 py-1"><Delta value={trendDeltas.rejected} /></div>}
+          </CardContent>
+        </Card>
+      </PageGrid>
+
+      {/* Visual Data Nodes */}
+      <div className="grid gap-8 xl:grid-cols-2">
+        <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
+          <CardHeader className="border-b bg-muted/10 pb-4">
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Moderation Velocity (Line)</CardTitle>
+            <CardDescription className="text-xs">Timeline of approved vs rejected protocols.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px] pt-6">
             {loading || !summary ? (
-              <Skeleton className="h-full w-full" />
+              <Skeleton className="h-full w-full rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={summary.moderationTimeline}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="approved" stroke="#16a34a" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="rejected" stroke="#ef4444" strokeWidth={2} dot={false} />
+                <LineChart data={summary.moderationTimeline} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
+                  <Legend iconType="circle" wrapperStyle={{fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em'}} />
+                  <Line type="monotone" name="Approved" dataKey="approved" stroke="#10b981" strokeWidth={4} dot={{r: 4, strokeWidth: 2, fill: '#fff'}} activeDot={{r: 6}} />
+                  <Line type="monotone" name="Rejected" dataKey="rejected" stroke="#8c2f39" strokeWidth={4} dot={{r: 4, strokeWidth: 2, fill: '#fff'}} activeDot={{r: 6}} />
                 </LineChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Listings by county (bar)</CardTitle>
-            <CardDescription>Top counties by listing volume in this period.</CardDescription>
+        <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
+          <CardHeader className="border-b bg-muted/10 pb-4">
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Listing Heatmap (Bar)</CardTitle>
+            <CardDescription className="text-xs">Vault density by primary county signals.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[350px] pt-6">
             {loading || !summary ? (
-              <Skeleton className="h-full w-full" />
+              <Skeleton className="h-full w-full rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={summary.countyDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="county" interval={0} angle={-20} height={70} textAnchor="end" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <BarChart data={summary.countyDistribution} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="county" interval={0} angle={-25} textAnchor="end" height={60} tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{fill: 'hsl(var(--accent)/0.05)'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
+                  <Bar dataKey="count" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Badge distribution (pie)</CardTitle>
-            <CardDescription>Trust levels across approved listings created in this period.</CardDescription>
+        <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
+          <CardHeader className="border-b bg-muted/10 pb-4">
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Signal Distribution (Pie)</CardTitle>
+            <CardDescription className="text-xs">Current trust signals across all approved records.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[350px] pt-6">
             {loading || !summary ? (
-              <Skeleton className="h-full w-full" />
+              <Skeleton className="h-full w-full rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={summary.badgeDistribution} dataKey="count" nameKey="badge" outerRadius={110} label>
+                  <Pie data={summary.badgeDistribution} dataKey="count" nameKey="badge" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} label>
                     {summary.badgeDistribution.map((entry) => (
-                      <Cell key={`cell-${entry.badge}`} fill={BADGE_COLORS[entry.badge] || '#cccccc'} />
+                      <Cell key={`cell-${entry.badge}`} fill={BADGE_COLORS[entry.badge] || '#cccccc'} stroke="none" />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
+                  <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em'}} />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending queue aging</CardTitle>
-            <CardDescription>How long all current pending listings have been waiting.</CardDescription>
+        <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
+          <CardHeader className="border-b bg-muted/10 pb-4">
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Queue Latency (Aging)</CardTitle>
+            <CardDescription className="text-xs">Wait times for pending documentation triage.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[350px] pt-6">
             {loading || !summary ? (
-              <Skeleton className="h-full w-full" />
+              <Skeleton className="h-full w-full rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={summary.pendingAgeBuckets}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="bucket" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <BarChart data={summary.pendingAgeBuckets} layout="vertical" margin={{ top: 10, right: 30, bottom: 10, left: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
+                  <YAxis dataKey="bucket" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
+                  <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
+                  <Bar dataKey="count" fill="#f59e0b" radius={[0, 6, 6, 0]} barSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             )}

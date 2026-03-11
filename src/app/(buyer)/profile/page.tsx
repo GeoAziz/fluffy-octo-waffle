@@ -11,8 +11,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfileAction, deleteUserAccountAction, sendEmailVerificationAction, changeUserPasswordAction } from '@/app/actions';
-import { Loader2, Upload, CheckCircle2, AlertCircle, Mail, Phone, Shield, LogOut, Trash2, Eye, EyeOff } from 'lucide-react';
+import { updateUserProfileAction, deleteUserAccountAction, sendEmailVerificationAction, changeUserPasswordAction, requestSellerRoleAction } from '@/app/actions';
+import { Loader2, Upload, CheckCircle2, AlertCircle, Mail, Phone, Shield, LogOut, Trash2, Eye, EyeOff, Briefcase } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BuyerPage } from '@/components/buyer/buyer-page';
 import { useRouter } from 'next/navigation';
@@ -46,6 +46,7 @@ export default function ProfilePage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isUpgradingRole, setIsUpgradingRole] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -111,6 +112,28 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRoleUpgrade = async () => {
+    setIsUpgradingRole(true);
+    try {
+      await requestSellerRoleAction();
+      toast({
+        title: 'Identity Transition Complete',
+        description: 'You are now a verified land seller. Transmitting to workspace...',
+      });
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Transition Failed',
+        description: error instanceof Error ? error.message : 'Could not process role upgrade.',
+      });
+    } finally {
+      setIsUpgradingRole(false);
     }
   };
 
@@ -253,7 +276,7 @@ export default function ProfilePage() {
       title="Profile"
       description="Manage your account settings and personal information"
     >
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-4xl space-y-6 pb-20">
         
         {/* Profile Header Card */}
         <Card>
@@ -298,11 +321,11 @@ export default function ProfilePage() {
                   
                   {/* Role Badge */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+                    <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-widest">
                       {userProfile?.role || 'BUYER'}
                     </span>
                     {!userProfile?.verified && (
-                      <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full flex items-center gap-1">
+                      <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         Unverified
                       </span>
@@ -310,7 +333,7 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Quick Info */}
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm font-medium">
                     Member since {formattedDate}
                   </p>
                 </div>
@@ -319,12 +342,12 @@ export default function ProfilePage() {
               {/* Profile Completeness */}
               <div className="text-right">
                 <div className="mb-2">
-                  <p className="text-sm font-semibold text-foreground">Profile Complete</p>
-                  <p className="text-2xl font-bold text-primary">{completeness}%</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vault Integrity</p>
+                  <p className="text-2xl font-black text-primary">{completeness}%</p>
                 </div>
-                <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-primary transition-all duration-300" 
+                    className="h-full bg-primary transition-all duration-1000" 
                     style={{ width: `${completeness}%` }}
                   />
                 </div>
@@ -333,11 +356,35 @@ export default function ProfilePage() {
           </CardHeader>
         </Card>
 
+        {/* Business Upgrading Card */}
+        {userProfile.role === 'BUYER' && (
+          <Card className="border-accent/20 bg-accent/5">
+            <CardHeader>
+              <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-accent">
+                <Briefcase className="h-5 w-5" /> Business Provisioning
+              </CardTitle>
+              <CardDescription className="text-xs font-medium text-accent/80">
+                Ready to list and sell property? Upgrade your vault to access seller tools and documentation review.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleRoleUpgrade} 
+                disabled={isUpgradingRole}
+                className="bg-accent text-white font-black uppercase text-[10px] tracking-widest h-11 px-8 shadow-glow"
+              >
+                {isUpgradingRole ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+                Transition to Seller Role
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Personal Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Update your contact details and bio</CardDescription>
+            <CardTitle className="text-lg font-black uppercase tracking-tight">Personal Identity</CardTitle>
+            <CardDescription className="text-xs font-medium">Update your contact nodes and bio.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -349,9 +396,9 @@ export default function ProfilePage() {
                   name="displayName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name *</FormLabel>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Full Legal Name *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your full name" {...field} />
+                        <Input placeholder="Registry name" {...field} className="h-11 font-bold" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -364,12 +411,12 @@ export default function ProfilePage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone Node</FormLabel>
                       <FormControl>
-                        <Input placeholder="+254 (0) 7XX XXX XXX" {...field} />
+                        <Input placeholder="+254 (0) 7XX XXX XXX" {...field} className="h-11 font-bold" />
                       </FormControl>
-                      <FormDescription>
-                        Optional, but helps buyers reach you faster
+                      <FormDescription className="text-[10px] italic">
+                        Accelerates buyer inquiry resolution.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -382,17 +429,17 @@ export default function ProfilePage() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bio</FormLabel>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Account Narrative</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Tell buyers about yourself (e.g., years of experience, areas of expertise, etc.)" 
+                          placeholder="Provide context for your property transactions..." 
                           className="resize-none" 
                           rows={4}
                           {...field} 
                         />
                       </FormControl>
-                      <FormDescription>
-                        {field.value?.length || 0}/500 characters
+                      <FormDescription className="text-[10px] font-bold">
+                        {field.value?.length || 0} / 500 characters
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -405,10 +452,10 @@ export default function ProfilePage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Encrypted Email Node</FormLabel>
                       <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Input readOnly disabled {...field} className="flex-1" />
+                        <div className="flex items-center gap-3">
+                          <Input readOnly disabled {...field} className="flex-1 h-11 bg-muted/20 font-mono text-xs opacity-60" />
                           {userProfile?.verified ? (
                             <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                           ) : (
@@ -416,16 +463,16 @@ export default function ProfilePage() {
                           )}
                         </div>
                       </FormControl>
-                      <FormDescription>
-                        Email cannot be changed. Contact support if you need assistance.
+                      <FormDescription className="text-[10px]">
+                        Identity nodes are immutable. Contact Registry Support for change requests.
                       </FormDescription>
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
+                <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} className="h-12 px-10 font-black uppercase text-xs tracking-widest shadow-glow">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
+                  Synchronize Identity
                 </Button>
               </form>
             </Form>
@@ -435,35 +482,34 @@ export default function ProfilePage() {
         {/* Account Security Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security & Sessions
+            <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" /> Security Pulse
             </CardTitle>
-            <CardDescription>Manage your account security and active sessions</CardDescription>
+            <CardDescription className="text-xs font-medium">Session management and authentication protocols.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             
             {/* Verification Status */}
-            <div className="p-4 bg-accent/30 rounded-lg border border-accent/50">
+            <div className="p-4 bg-muted/20 rounded-xl border border-border/40">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-foreground flex items-center gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                     {userProfile?.verified ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
                         Account Verified
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-yellow-600" />
-                        Account Not Verified
+                        <AlertCircle className="h-3 w-3 text-yellow-600" />
+                        Awaiting Verification
                       </>
                     )}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
                     {userProfile?.verified 
-                      ? 'Your email address has been verified' 
-                      : 'Verify your email to unlock full features'}
+                      ? 'Email handshake confirmed.' 
+                      : 'Complete verification to unlock high-trust signals.'}
                   </p>
                 </div>
                 {!userProfile?.verified && (
@@ -472,30 +518,32 @@ export default function ProfilePage() {
                     size="sm"
                     onClick={handleVerifyEmail}
                     disabled={isVerifying}
+                    className="h-9 text-[10px] font-bold uppercase tracking-widest"
                   >
-                    {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Verify Now
+                    {isVerifying && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Initiate Pulse
                   </Button>
                 )}
               </div>
             </div>
 
             {/* Password Change */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-foreground">Change Password</h4>
-              <p className="text-sm text-muted-foreground">
-                It's a good idea to use a strong, unique password
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground">Access Token Rotation</h4>
+              <p className="text-xs text-muted-foreground font-medium">
+                Cycle your access credentials to maintain vault integrity.
               </p>
               
               {!showPasswordForm ? (
                 <Button 
                   variant="outline"
                   onClick={() => setShowPasswordForm(true)}
+                  className="h-10 text-[10px] font-bold uppercase tracking-widest"
                 >
-                  Update Password
+                  Modify Access Token
                 </Button>
               ) : (
-                <div className="p-4 bg-secondary/30 rounded-lg border border-border/40 space-y-4">
+                <div className="p-5 bg-secondary/10 rounded-xl border border-border/40 space-y-4 animate-in fade-in slide-in-from-top-2">
                   <Form {...passwordForm}>
                     <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                       
@@ -504,13 +552,14 @@ export default function ProfilePage() {
                         name="currentPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Current Password</FormLabel>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest">Active Token</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   type={showPassword.current ? 'text' : 'password'}
-                                  placeholder="Enter current password" 
+                                  placeholder="Current identifier" 
                                   {...field} 
+                                  className="h-11"
                                 />
                                 <button
                                   type="button"
@@ -531,13 +580,14 @@ export default function ProfilePage() {
                         name="newPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>New Password</FormLabel>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest">New Target Token</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   type={showPassword.new ? 'text' : 'password'}
-                                  placeholder="Enter new password" 
+                                  placeholder="Minimum 8 characters" 
                                   {...field} 
+                                  className="h-11"
                                 />
                                 <button
                                   type="button"
@@ -558,13 +608,14 @@ export default function ProfilePage() {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest">Confirm Sync</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   type={showPassword.confirm ? 'text' : 'password'}
-                                  placeholder="Confirm new password" 
+                                  placeholder="Repeat target token" 
                                   {...field} 
+                                  className="h-11"
                                 />
                                 <button
                                   type="button"
@@ -584,19 +635,21 @@ export default function ProfilePage() {
                         <Button 
                           type="submit" 
                           disabled={isChangingPassword}
+                          className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
                         >
-                          {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Change Password
+                          {isChangingPassword && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                          Update Protocol
                         </Button>
                         <Button 
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                           onClick={() => {
                             setShowPasswordForm(false);
                             passwordForm.reset();
                           }}
+                          className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
                         >
-                          Cancel
+                          Abort
                         </Button>
                       </div>
                     </form>
@@ -606,22 +659,23 @@ export default function ProfilePage() {
             </div>
 
             {/* Active Sessions */}
-            <div className="space-y-2 pt-2 border-t border-border/40">
-              <h4 className="font-semibold text-foreground">Current Session</h4>
-              <div className="p-3 bg-secondary/30 rounded-lg border border-border/40 flex items-center justify-between">
+            <div className="space-y-3 pt-4 border-t border-border/40">
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground">Identity Session</h4>
+              <div className="p-4 bg-muted/10 rounded-xl border border-border/40 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">This device</p>
-                  <p className="text-xs text-muted-foreground">Last active: just now</p>
+                  <p className="text-xs font-bold text-foreground">Primary Terminal</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">Active Network Node</p>
                 </div>
                 <Button 
-                  variant="destructive" 
+                  variant="outline" 
                   size="sm"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
+                  className="h-9 border-risk/20 text-risk hover:bg-risk-light hover:text-risk text-[10px] font-black uppercase tracking-widest"
                 >
-                  {isLoggingOut && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  {isLoggingOut && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  <LogOut className="mr-2 h-3.5 w-3.5" />
+                  Terminal Exit
                 </Button>
               </div>
             </div>
@@ -629,56 +683,58 @@ export default function ProfilePage() {
         </Card>
 
         {/* Danger Zone Card */}
-        <Card className="border-red-200">
+        <Card className="border-risk/20 bg-risk-light/30">
           <CardHeader>
-            <CardTitle className="text-red-600 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Danger Zone
+            <CardTitle className="text-risk flex items-center gap-2 text-lg font-black uppercase tracking-tight">
+              <AlertCircle className="h-5 w-5" /> Danger Protocol
             </CardTitle>
-            <CardDescription>Irreversible and destructive actions</CardDescription>
+            <CardDescription className="text-xs font-medium text-risk/80">Irreversible registry purge and account liquidation.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex items-center justify-between">
+            <div className="p-4 bg-risk-light/50 rounded-xl border border-risk/20">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-semibold text-red-900">Delete Account</p>
-                  <p className="text-sm text-red-700 mt-1">
-                    Permanently delete your account and all associated data
+                  <p className="text-xs font-black uppercase tracking-widest text-risk">Purge Identity</p>
+                  <p className="text-[10px] text-risk/70 mt-1 font-medium leading-relaxed">
+                    Permanently delete your property vault and identity history.
                   </p>
                 </div>
                 <Button 
                   variant="destructive" 
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeletingAccount}
+                  className="h-10 px-6 font-black uppercase text-[10px] tracking-widest bg-risk shadow-md hover:bg-risk/90"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Account
+                  Execute Liquidation
                 </Button>
               </div>
             </div>
 
             {/* Delete Confirmation */}
             {showDeleteConfirm && (
-              <div className="p-4 bg-red-100 border-2 border-red-400 rounded-lg space-y-3">
-                <p className="font-semibold text-red-900">Are you absolutely sure?</p>
-                <p className="text-sm text-red-800">
-                  This action cannot be undone. All your data including listings, messages, and profile information will be permanently deleted.
+              <div className="p-5 bg-risk border-2 border-risk/40 rounded-xl space-y-4 animate-in shake-error duration-500 text-white">
+                <p className="font-black text-sm uppercase tracking-tight">Confirm Deletion Protocol</p>
+                <p className="text-xs font-medium leading-relaxed opacity-90">
+                  This action is final. All listings, vaulted evidence, and communication nodes associated with this identity will be purged from the registry.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button 
                     variant="destructive" 
                     onClick={handleDeleteAccount}
                     disabled={isDeletingAccount}
+                    className="flex-1 h-11 bg-white text-risk hover:bg-white/90 font-black uppercase text-[10px] tracking-widest"
                   >
-                    {isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Yes, Delete My Account
+                    {isDeletingAccount && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Confirm Purge
                   </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={isDeletingAccount}
+                    className="flex-1 h-11 border-white/40 text-white hover:bg-white/10 font-black uppercase text-[10px] tracking-widest"
                   >
-                    Cancel
+                    Abort
                   </Button>
                 </div>
               </div>
@@ -694,11 +750,11 @@ export default function ProfilePage() {
 function calculateProfileCompleteness(profile: any): number {
   let completeness = 0;
   const fields = [
-    { field: 'displayName', required: true, weight: 20 },
-    { field: 'email', required: true, weight: 20 },
-    { field: 'phone', required: false, weight: 20 },
-    { field: 'bio', required: false, weight: 20 },
-    { field: 'photoURL', required: false, weight: 20 },
+    { field: 'displayName', weight: 20 },
+    { field: 'email', weight: 20 },
+    { field: 'phone', weight: 20 },
+    { field: 'bio', weight: 20 },
+    { field: 'photoURL', weight: 20 },
   ];
 
   fields.forEach(({ field, weight }) => {

@@ -41,6 +41,41 @@ export async function getAuthenticatedUser(): Promise<{uid: string, role: UserPr
 }
 
 /**
+ * Transition a user role from BUYER to SELLER.
+ * Formalizes the seller onboarding workflow.
+ */
+export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+  
+  if (authUser.role === 'ADMIN') {
+    throw new Error('Administrators cannot transition to seller accounts.');
+  }
+
+  const userRef = adminDb.collection('users').doc(authUser.uid);
+  
+  await userRef.update({
+    role: 'SELLER',
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  // Log the identity transition
+  await adminDb.collection('auditLogs').add({
+    adminId: authUser.uid,
+    action: 'ROLE_UPGRADE',
+    entityType: 'user',
+    entityId: authUser.uid,
+    changes: { role: { old: authUser.role, new: 'SELLER' } },
+    timestamp: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath('/profile');
+  revalidatePath('/dashboard');
+  
+  return { success: true };
+}
+
+/**
  * Increments the view count for a listing.
  */
 export async function recordListingViewAction(listingId: string) {
