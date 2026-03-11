@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { editListingAction, generateDescriptionAction } from '@/app/actions';
-import { Loader2, Sparkles, FileText } from 'lucide-react';
+import { Loader2, Sparkles, FileText, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
@@ -27,6 +27,8 @@ import Image from 'next/image';
 import { ListingLocationPicker } from '@/components/listing-location-picker';
 import { FileDragAndDrop } from '@/components/file-drag-and-drop';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { EnhancedInput } from '@/components/form/enhanced-input';
 
 const formSchema = z.object({
   title: z.string()
@@ -95,7 +97,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
     try {
       const parsed = JSON.parse(draftRaw);
       form.reset({ ...form.getValues(), ...parsed });
-      toast({ title: 'Draft restored', description: 'Recovered your unsaved edits.' });
+      toast({ title: 'Draft restored', description: 'Recovered your unsaved listing edits.' });
     } catch {
       // ignore invalid draft
     }
@@ -125,9 +127,9 @@ export function EditListingForm({ listing }: { listing: Listing }) {
     try {
         const result = await generateDescriptionAction(bulletPoints);
         setGeneratedDescription(result.description);
-        toast({ title: 'Description generated!', description: 'You can now review or apply the narrative below.' });
+        toast({ title: 'Narrative Generated', description: 'Review or apply the AI description below.' });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+        toast({ variant: 'destructive', title: 'AI Protocol Failure', description: e.message });
     } finally {
         setIsGenerating(false);
     }
@@ -170,9 +172,9 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       setUploadProgress(100);
       
       toast({
-        title: 'Listing Updated!',
-        description: 'Changes have been secured and queued for moderation.',
-        action: <ToastAction altText="View" onClick={() => router.push(`/listings/${id}`)}>View</ToastAction>
+        title: 'Listing Re-Vaulted!',
+        description: 'Changes secured. Listing reset to pending status for trust triage.',
+        action: <ToastAction altText="View" onClick={() => router.push(`/listings/${id}`)}>View Vault</ToastAction>
       });
 
       setTimeout(() => {
@@ -186,217 +188,215 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       setUploadProgress(0);
       toast({
         variant: 'destructive',
-        title: 'Update Failed',
-        description: error instanceof Error ? error.message : 'Could not update the listing. Please retry.',
+        title: 'Transmission Failed',
+        description: error instanceof Error ? error.message : 'Could not commit changes to the vault.',
       });
     }
   }
 
   return (
-    <Card className="border-none shadow-xl">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold">Edit Listing Identity</CardTitle>
-        <CardDescription>
-          Significant changes to location or documentation will reset your trust signal status.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-widest">Property Title</FormLabel>
-                    <Input placeholder="e.g., 5 Acres in Kitengela" {...field} className="h-12 font-bold" />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="space-y-8">
+      {listing.status === 'rejected' && (
+        <Alert variant="destructive" className="bg-risk-light border-risk/20 animate-shake">
+          <ShieldAlert className="h-5 w-5" />
+          <AlertTitle className="text-sm font-black uppercase tracking-tight">Listing Rejected: Correction Required</AlertTitle>
+          <AlertDescription className="mt-2 text-xs font-medium leading-relaxed">
+            <strong>Admin Pulse:</strong> "{listing.rejectionReason || 'Documentation inconsistencies detected. Please verify your title deed scan matches the location coordinates.'}"
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+        <div className="h-1.5 bg-accent/40 w-full" />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight">Registry Modification</CardTitle>
+                <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground mt-1">
+                    Signficant changes will reset your current trust signal status.
+                </CardDescription>
+            </div>
+            <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Completeness</p>
+                <p className="text-xl font-black text-accent">{completeness}%</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">Neighborhood</FormLabel>
-                      <Input placeholder="e.g., Isinya" {...field} />
+                      <EnhancedInput label="Registry Title" {...field} className="h-12 font-bold" />
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField
-                  control={form.control}
-                  name="county"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">County</FormLabel>
-                      <Input placeholder="e.g., Kajiado County" {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField
-                  control={form.control}
-                  name="area"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">Area (Acres)</FormLabel>
-                      <Input type="number" step="0.01" {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="size"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">Dimensions</FormLabel>
-                      <Input placeholder="e.g., 100x100 ft" {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <FormField
-                  control={form.control}
-                  name="landType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">Land Type</FormLabel>
-                      <Input placeholder="e.g., Residential" {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-widest">Price (Ksh)</FormLabel>
-                      <Input type="number" {...field} className="font-bold text-primary" />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4 rounded-xl border border-accent/20 bg-accent/5 p-6">
-                 <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-accent" />
-                    <Label className="text-xs font-bold uppercase tracking-widest text-accent">AI Content Assist</Label>
-                 </div>
-                 <Textarea 
-                    placeholder="Enter key features...&#10;- Prime volcanic soil&#10;- Near SGR station"
-                    className="min-h-[100px] border-accent/20"
-                    value={bulletPoints}
-                    onChange={(e) => setBulletPoints(e.target.value)}
-                 />
-                 <Button type="button" variant="outline" size="sm" onClick={handleGenerateDescription} disabled={isGenerating} className="border-accent/40 text-accent font-bold uppercase text-[10px] tracking-widest">
-                    {isGenerating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                    Regenerate Narrative
-                 </Button>
-                 {generatedDescription && (
-                    <Card className="bg-background border-accent/20">
-                        <CardContent className="pt-4">
-                            <p className="text-xs italic leading-relaxed text-muted-foreground">"{generatedDescription}"</p>
-                        </CardContent>
-                        <CardFooter>
-                            <Button type="button" size="sm" variant="ghost" className="text-accent font-bold text-[10px] uppercase tracking-widest" onClick={useGeneratedDescription}>Apply Narrative</Button>
-                        </CardFooter>
-                    </Card>
-                 )}
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-widest">Full Narrative</FormLabel>
-                    <Textarea placeholder="A detailed description of the property..." className="min-h-[150px]" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Separator />
-
-              <div className="rounded-md border bg-muted/30 p-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Map Triage</div>
-              <ListingLocationPicker initialPosition={{ lat: listing.latitude, lon: listing.longitude }} />
-
-              <Separator />
-
-              <div className="space-y-4">
-                <FormLabel className="text-xs font-bold uppercase tracking-widest">Active Assets</FormLabel>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {listing.images.map((image, index) => (
-                        <div key={index} className="relative aspect-video rounded-lg overflow-hidden border">
-                            <Image src={image.url} alt="" fill className="object-cover" />
-                        </div>
-                    ))}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <EnhancedInput label="Neighborhood Node" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="county"
+                    render={({ field }) => (
+                      <FormItem>
+                        <EnhancedInput label="County Signal" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
 
-              <FileDragAndDrop 
-                  name="images"
-                  label="Update Public Showcase"
-                  description="Replacing images will trigger a new visual authenticity analysis."
-                  accept="image/*"
-                  multiple
-              />
-
-              <div className="space-y-4">
-                <FormLabel className="text-xs font-bold uppercase tracking-widest">Evidence Vault</FormLabel>
-                 {listing.evidence.length > 0 ? (
-                    <div className="space-y-2 p-4 border rounded-lg bg-muted/10">
-                        <ul className="space-y-2">
-                            {listing.evidence.map(doc => (
-                                <li key={doc.id} className="flex items-center gap-2 text-xs font-medium">
-                                    <FileText className="h-3.5 w-3.5 text-accent" />
-                                    <span>{doc.name}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                 ) : (
-                    <p className="text-xs text-muted-foreground p-4 border border-dashed rounded-lg">No evidence provided yet.</p>
-                 )}
-              </div>
-
-              <FileDragAndDrop
-                name="evidence"
-                label="Add Verification Proof"
-                description="Securely upload title deeds or survey maps. Existing documents are preserved."
-                multiple
-                isEvidence
-              />
-
-              {isSubmitting && (
-                <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-accent">
-                      <span>Transmitting assets</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="h-1.5" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <FormField
+                    control={form.control}
+                    name="area"
+                    render={({ field }) => (
+                      <FormItem>
+                        <EnhancedInput type="number" step="0.01" label="Area Metric (Acres)" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="size"
+                    render={({ field }) => (
+                      <FormItem>
+                        <EnhancedInput label="Physical Dimensions" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
 
-              <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} variant="default" className="h-12 w-full md:w-auto font-black uppercase text-[10px] tracking-widest px-10">
-                {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Transmitting... </> ) : ( 'Commit Changes' )}
-              </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                <Separator />
+
+                <div className="space-y-4 rounded-2xl border border-accent/20 bg-accent/5 p-6 backdrop-blur-sm">
+                   <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-accent" />
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-accent">AI Content Synthesis</Label>
+                   </div>
+                   <Textarea 
+                      placeholder="Enter raw features (e.g., Near bypass, Red soil, Gated)..."
+                      className="min-h-[100px] border-accent/20 bg-background/50 resize-none"
+                      value={bulletPoints}
+                      onChange={(e) => setBulletPoints(e.target.value)}
+                   />
+                   <Button type="button" variant="outline" size="sm" onClick={handleGenerateDescription} disabled={isGenerating} className="h-10 border-accent/40 text-accent font-black uppercase text-[10px] tracking-widest px-6 shadow-sm">
+                      {isGenerating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                      Regenerate Narrative Pulse
+                   </Button>
+                   {generatedDescription && (
+                      <Card className="bg-background border-accent/20 shadow-lg animate-in slide-in-from-bottom-2">
+                          <CardContent className="pt-4">
+                              <p className="text-xs italic leading-relaxed text-muted-foreground font-medium">"{generatedDescription}"</p>
+                          </CardContent>
+                          <CardFooter>
+                              <Button type="button" size="sm" className="bg-accent text-white font-black text-[10px] uppercase tracking-widest px-6" onClick={useGeneratedDescription}>Apply to Registry</Button>
+                          </CardFooter>
+                      </Card>
+                   )}
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest">Listing Narrative</FormLabel>
+                      <Textarea placeholder="Detailed registry narrative..." className="min-h-[150px] resize-none" {...field} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Coordinate Triage</Label>
+                    <ListingLocationPicker initialPosition={{ lat: listing.latitude, lon: listing.longitude }} />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-6">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vaulted Visuals</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {listing.images.map((image, index) => (
+                          <div key={index} className="relative aspect-video rounded-xl overflow-hidden border border-border/40 shadow-sm group">
+                              <Image src={image.url} alt="" fill className="object-cover transition-transform group-hover:scale-110" />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                      ))}
+                  </div>
+                  <FileDragAndDrop 
+                      name="images"
+                      label="Sync New Assets"
+                      description="Replacing visuals will trigger fresh visual authenticity triage."
+                      accept="image/*"
+                      multiple
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-6">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Documentation Vault</Label>
+                   {listing.evidence.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 border border-border/40 rounded-2xl bg-muted/10">
+                          {listing.evidence.map(doc => (
+                              <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl bg-background border border-border/40">
+                                  <FileText className="h-4 w-4 text-accent" />
+                                  <span className="text-xs font-bold truncate flex-1">{doc.name}</span>
+                                  {doc.verified && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
+                              </div>
+                          ))}
+                      </div>
+                   ) : (
+                      <div className="p-10 border-2 border-dashed rounded-2xl text-center">
+                        <FileText className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No primary evidence vaulted</p>
+                      </div>
+                   )}
+                   <FileDragAndDrop
+                    name="evidence"
+                    label="Append Verified Proof"
+                    description="Securely sync new Title Deeds or Survey Maps. Existing documents are preserved."
+                    multiple
+                    isEvidence
+                  />
+                </div>
+
+                {isSubmitting && (
+                  <div className="space-y-3 p-6 bg-accent/5 rounded-2xl border border-accent/20">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-accent">
+                        <span className="flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Transmitting Protocol</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <Progress value={uploadProgress} className="h-2" />
+                  </div>
+                )}
+
+                <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} variant="default" className="h-14 w-full md:w-auto font-black uppercase text-[11px] tracking-widest px-12 shadow-glow active:scale-95 transition-all">
+                  {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Synchronizing... </> ) : ( 'Commit Registry Changes' )}
+                </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -69,7 +69,7 @@ export function ListingMapView({ listings }: ListingMapViewProps) {
                 <p class="text-xs text-muted-foreground">${listing.location}, ${listing.county}</p>
                 <div class="flex items-center justify-between pt-2">
                   <span class="font-black text-primary text-sm">KES ${listing.price.toLocaleString()}</span>
-                  <a href="/listings/${listing.id}" class="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">View Assets</a>
+                  <a href="/listings/${listing.id}" class="text-[10px] font-black uppercase tracking-widest text-accent hover:underline">View Details</a>
                 </div>
               </div>
             </div>
@@ -88,7 +88,7 @@ export function ListingMapView({ listings }: ListingMapViewProps) {
     }
 
     return () => {
-      // Cleanup happens only on full unmount, not on listings update
+      // Cleanup
     };
   }, [listings]);
 
@@ -106,7 +106,7 @@ export function ListingMapView({ listings }: ListingMapViewProps) {
             <p className="text-xs font-bold text-foreground">Verified Plot Markers</p>
           </div>
           <p className="text-[10px] leading-relaxed text-muted-foreground font-medium italic">
-            "Direct map discovery reduces travel risk by 60%. Zoom in to verify proximity to infrastructure."
+            "Map-based discovery reduces acquisition risk. Verify proximity to major roads and utilities instantly."
           </p>
         </div>
       </div>

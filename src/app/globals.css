@@ -54,7 +54,7 @@
     /* Radius Spec: 12px based lg */
     --radius: 0.75rem; 
     
-    /* Fluid Typography Scale using clamp() */
+    /* Fluid Typography Scale */
     --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.8rem);
     --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
     --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
@@ -72,49 +72,70 @@
     --sidebar-ring: var(--accent);
     --sidebar-accent: var(--accent);
     --sidebar-accent-foreground: 38 27% 98%;
+
+    /* SHADOW SYSTEM */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+    --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.06);
+    --shadow-2xl: 0 32px 64px rgba(0, 0, 0, 0.16), 0 12px 24px rgba(0, 0, 0, 0.08);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-primary: 0 4px 14px rgba(15, 61, 46, 0.25);
+    --shadow-accent: 0 4px 14px rgba(47, 111, 149, 0.25);
+
+    /* DURATION SCALE */
+    --duration-instant: 50ms;
+    --duration-fast: 100ms;
+    --duration-normal: 200ms;
+    --duration-moderate: 300ms;
+    --duration-slow: 500ms;
+    --duration-dramatic: 700ms;
+
+    /* EASING FUNCTIONS */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-bounce: cubic-bezier(0.34, 2.2, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .dark {
     --background: 161 30% 5%;
     --foreground: 38 27% 94%;
-    
     --card: 161 30% 8%;
     --card-foreground: 38 27% 94%;
-    
     --popover: 161 30% 5%;
     --popover-foreground: 38 27% 94%;
-    
     --primary: 38 27% 94%;
     --primary-foreground: 161 58% 15%;
-    
     --secondary: 161 30% 12%;
     --secondary-foreground: 38 27% 94%;
-    
     --muted: 161 30% 12%;
     --muted-foreground: 38 27% 70%;
-    
     --accent: 203 51% 48%;
     --accent-foreground: 38 27% 98%;
-    
     --destructive: 353 50% 47%;
     --destructive-foreground: 38 27% 98%;
-    
     --warning: 36 63% 58%;
     --warning-foreground: 38 27% 98%;
-    
     --success: 142 71% 55%;
     --success-foreground: 38 27% 98%;
-    
     --border: 161 30% 15%;
     --input: 161 30% 12%;
     --ring: 203 51% 48%;
+    
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.32);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.32);
+    --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.48);
+    --shadow-2xl: 0 32px 64px rgba(0, 0, 0, 0.56);
 
     --sidebar-background: 161 30% 10%;
     --sidebar-foreground: 38 27% 94%;
     --sidebar-border: 161 30% 15%;
     --sidebar-ring: 203 51% 48%;
-    --sidebar-accent: 203 51% 48%;
-    --sidebar-accent-foreground: 38 27% 98%;
   }
 }
 
@@ -125,57 +146,53 @@
   body {
     @apply bg-background text-foreground selection:bg-accent/20;
     font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  input[aria-invalid='true'],
-  textarea[aria-invalid='true'] {
-    @apply border-destructive ring-destructive/20;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-/* Accessibility Skip Link Support */
-.sr-only:focus {
-  @apply not-sr-only fixed left-4 top-4 z-[100] rounded-md bg-primary px-4 py-2 text-primary-foreground outline-none ring-2 ring-ring;
-}
-
-/* Reduced Motion Protocol */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Fluid Animation Classes */
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
-
-.shimmer-wrapper::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.2) 20%,
-    rgba(255, 255, 255, 0.5) 60%,
-    rgba(255, 255, 255, 0)
-  );
-  animation: shimmer 2s infinite;
-}
-
-/* Base Spacing & Rhythm Utilities */
 @layer utilities {
-  .container-tight {
-    @apply mx-auto w-full max-w-4xl px-4;
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
-  .section-padding {
-    @apply py-12 md:py-20 lg:py-32;
+  @keyframes stagger-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+  @keyframes badge-glow {
+    0%, 100% { box-shadow: 0 0 12px rgba(47, 111, 149, 0.2); }
+    50% { box-shadow: 0 0 24px rgba(47, 111, 149, 0.4); }
+  }
+  @keyframes slide-up {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-page-enter {
+    animation: page-enter var(--duration-slow) var(--ease-out);
+  }
+  .animate-stagger-in {
+    animation: stagger-in var(--duration-slow) var(--ease-out) forwards;
+  }
+  .animate-shake-error {
+    animation: shake var(--duration-moderate) var(--ease-out);
+  }
+  .animate-badge-glow {
+    animation: badge-glow var(--duration-dramatic) ease-in-out infinite;
+  }
+  .animate-slide-up {
+    animation: slide-up var(--duration-slow) var(--ease-out);
+  }
+
+  .focus-ring {
+    @apply outline-none ring-2 ring-offset-2 ring-accent;
+  }
+  .skeleton {
+    @apply rounded-md bg-muted animate-pulse;
   }
 }

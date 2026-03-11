@@ -2,71 +2,87 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Circle, ListPlus, User } from 'lucide-react';
+import { CheckCircle2, User, ListPlus, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageWrapper } from '@/components/page-wrapper';
 
 export default function OnboardingPage() {
     const { userProfile, loading } = useAuth();
 
     if (loading) {
         return (
-            <div className="container mx-auto max-w-2xl py-10">
-                <Skeleton className="h-96 w-full" />
-            </div>
-        )
+            <PageWrapper maxWidth="md">
+                <Skeleton className="h-[500px] w-full rounded-2xl" />
+            </PageWrapper>
+        );
     }
 
     const isSeller = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
 
     return (
-        <div className="container mx-auto max-w-2xl py-10">
-            <Card className="border-2 border-primary/20 shadow-lg">
-                <CardHeader className="text-center">
-                    <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                      <Circle className="h-3.5 w-3.5" />
-                      Step 1 of 3 · Set up your buyer account
+        <PageWrapper maxWidth="md" padding="spacious">
+            <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-primary via-accent to-emerald-500" />
+                <CardHeader className="text-center pt-10">
+                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 animate-bounce-in">
+                      <ShieldCheck className="h-8 w-8" />
                     </div>
-                    <CardTitle className="text-3xl">Welcome to Kenya Land Trust, {userProfile?.displayName || 'User'}!</CardTitle>
-                    <CardDescription className="text-base">Your account has been successfully created. Here are a few things you can do next.</CardDescription>
+                    <CardTitle className="text-3xl font-black uppercase tracking-tighter">Identity Verified</CardTitle>
+                    <CardDescription className="text-base font-medium mt-2">
+                        Welcome to the registry, {userProfile?.displayName?.split(' ')[0] || 'Member'}. Your secure vault is ready.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8 pt-6">
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Recommended Next Steps:</h3>
-                        <div className="space-y-3">
-                           <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/50">
-                                <User className="h-6 w-6 text-accent mt-1" />
-                                <div>
-                                    <h4 className="font-semibold">Complete Your Profile</h4>
-                                    <p className="text-sm text-muted-foreground">Add a phone number or update your display name to build trust.</p>
-                                    <Button asChild size="sm" className="mt-2">
-                                        <Link href="/profile">Go to Profile</Link>
-                                    </Button>
+                <CardContent className="space-y-8 px-8 pb-12 pt-6">
+                    <div className="space-y-6">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Protocol Initialization: Recommended Paths</h3>
+                        
+                        <div className="grid gap-4">
+                           <Link href="/profile" className="group flex items-start gap-4 p-5 rounded-2xl bg-background border border-border/40 hover:border-primary/30 transition-all hover:shadow-md">
+                                <div className="p-3 rounded-xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <User className="h-6 w-6" />
                                 </div>
-                            </div>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-sm uppercase tracking-tight">Finalize Profile Protocol</h4>
+                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Add your contact nodes and bio to build verified seller/buyer trust.</p>
+                                </div>
+                                <ArrowRight className="h-4 w-4 mt-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                            </Link>
+
                              {isSeller && (
-                                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/50">
-                                    <ListPlus className="h-6 w-6 text-accent mt-1" />
-                                    <div>
-                                        <h4 className="font-semibold">Create Your First Listing</h4>
-                                        <p className="text-sm text-muted-foreground">Ready to sell? Start by creating a listing for your property.</p>
-                                        <Button asChild size="sm" variant="default" className="mt-2">
-                                            <Link href="/listings/new">Create Listing</Link>
-                                        </Button>
+                                <Link href="/listings/new" className="group flex items-start gap-4 p-5 rounded-2xl bg-background border border-border/40 hover:border-accent/30 transition-all hover:shadow-md">
+                                    <div className="p-3 rounded-xl bg-accent/5 text-accent group-hover:bg-accent group-hover:text-white transition-colors">
+                                        <ListPlus className="h-6 w-6" />
                                     </div>
-                                </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-sm uppercase tracking-tight">Vault Your First Property</h4>
+                                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Ready to sell? Transmit your first listing to the moderation team.</p>
+                                    </div>
+                                    <ArrowRight className="h-4 w-4 mt-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                                </Link>
                             )}
+
+                            <Link href="/explore" className="group flex items-start gap-4 p-5 rounded-2xl bg-background border border-border/40 hover:border-emerald-500/30 transition-all hover:shadow-md">
+                                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                    <ShieldCheck className="h-6 w-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-sm uppercase tracking-tight">Enter Discovery Pulse</h4>
+                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Browse the high-trust registry and find verified land opportunities.</p>
+                                </div>
+                                <ArrowRight className="h-4 w-4 mt-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                            </Link>
                         </div>
                     </div>
-                    <div className="text-center">
-                        <p className="text-muted-foreground">Or, you can start exploring properties right away.</p>
-                        <Button asChild variant="link" className="mt-2">
-                            <Link href="/">Browse Listings</Link>
+                    
+                    <div className="pt-6 border-t border-border/40 text-center">
+                        <Button asChild variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">
+                            <Link href="/buyer/dashboard">Skip to Dashboard</Link>
                         </Button>
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </PageWrapper>
     );
 }

@@ -31,18 +31,21 @@ export default async function MessagesLayout({
 
   return (
     <BuyerPage
-      title="Messages"
-      description="Communicate with sellers about listings."
+      title="Communication Hub"
+      description="Secure end-to-end messaging with verified sellers and buyers."
     >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-220px)]">
-        <div className="lg:col-span-1 h-full">
-          <Card className="h-full">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-[calc(100vh-220px)]">
+        {/* Inbox Sidebar */}
+        <div className="md:col-span-4 lg:col-span-3 h-full overflow-hidden">
+          <Card className="h-full border-none shadow-xl bg-card/50 backdrop-blur-sm">
             <CardContent className="p-0 h-full">
               <ConversationsList />
             </CardContent>
           </Card>
         </div>
-        <div className="lg:col-span-3 h-full">
+        
+        {/* Conversation View */}
+        <div className="md:col-span-8 lg:col-span-9 h-full overflow-hidden">
           {children}
         </div>
       </div>
