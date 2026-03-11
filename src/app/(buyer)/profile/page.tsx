@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfileAction, deleteUserAccountAction, sendEmailVerificationAction, changeUserPasswordAction, requestSellerRoleAction } from '@/app/actions';
 import { Loader2, Upload, CheckCircle2, AlertCircle, Mail, Phone, Shield, LogOut, Trash2, Eye, EyeOff, Briefcase } from 'lucide-react';
@@ -48,6 +49,7 @@ export default function ProfilePage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isUpgradingRole, setIsUpgradingRole] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRoleUpgradeConfirm, setShowRoleUpgradeConfirm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -115,10 +117,8 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRoleUpgrade = async () => {
-    // Idempotency check: Don't trigger if already in progress or already a seller
-    if (isUpgradingRole || userProfile?.role === 'SELLER') return;
-
+  const handleRoleUpgradeConfirm = async () => {
+    setShowRoleUpgradeConfirm(false);
     setIsUpgradingRole(true);
     try {
       await requestSellerRoleAction();
@@ -246,7 +246,11 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return (
+      <BuyerPage title="Profile">
+        <ProfileSkeleton />
+      </BuyerPage>
+    );
   }
   
   if (!userProfile) {
@@ -372,7 +376,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <Button 
-                onClick={handleRoleUpgrade} 
+                onClick={() => setShowRoleUpgradeConfirm(true)} 
                 disabled={isUpgradingRole}
                 className="bg-accent text-white font-black uppercase text-[10px] tracking-widest h-11 px-8 shadow-glow"
               >
@@ -382,6 +386,37 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Role Upgrade Confirmation Dialog */}
+        <AlertDialog open={showRoleUpgradeConfirm} onOpenChange={setShowRoleUpgradeConfirm}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-lg font-black uppercase tracking-tight">Confirm Role Transition</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm font-medium leading-relaxed mt-3">
+                You are about to transition from Buyer to Seller. This grants access to the seller dashboard where you can create listings and upload evidence documents for verification. This action can be reversed through admin support if needed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="rounded-lg bg-muted/30 border border-border/40 p-4 mt-4">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">You will:</p>
+              <ul className="space-y-2 text-xs text-muted-foreground font-medium">
+                <li className="flex items-start gap-2"><span className="text-accent font-black mt-0.5">•</span> Access the seller workspace at /dashboard</li>
+                <li className="flex items-start gap-2"><span className="text-accent font-black mt-0.5">•</span> Create and manage property listings</li>
+                <li className="flex items-start gap-2"><span className="text-accent font-black mt-0.5">•</span> Upload evidence documentation for trust badges</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <AlertDialogCancel className="h-10 px-6 font-black uppercase text-[10px] tracking-widest">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleRoleUpgradeConfirm}
+                disabled={isUpgradingRole}
+                className="h-10 px-6 bg-accent text-white font-black uppercase text-[10px] tracking-widest hover:bg-accent/90"
+              >
+                {isUpgradingRole ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                Confirm Transition
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Personal Information Card */}
         <Card>
@@ -771,73 +806,71 @@ function calculateProfileCompleteness(profile: any): number {
 
 
 function ProfileSkeleton() {
-    return (
-        <BuyerPage title="Profile">
-          <div className="max-w-4xl space-y-6">
-            
-            {/* Profile Header Skeleton */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-6">
-                    <Skeleton className="w-32 h-32 rounded-full" />
-                    <div className="flex-1 pt-2 space-y-3">
-                      <Skeleton className="h-8 w-48" />
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                  </div>
-                  <div className="text-right space-y-2">
-                    <Skeleton className="h-6 w-20" />
-                    <Skeleton className="w-24 h-2" />
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Personal Info Skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-64 mt-2" />
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-20 w-full" />
-                </div>
-                <Skeleton className="h-10 w-32" />
-              </CardContent>
-            </Card>
-
-            {/* Security Skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-20 w-full rounded-lg" />
-                <Skeleton className="h-20 w-full rounded-lg" />
-              </CardContent>
-            </Card>
-
-            {/* Danger Zone Skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-24 w-full rounded-lg" />
-              </CardContent>
+  return (
+    <div className="max-w-4xl space-y-6">
+      {/* Profile Header Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-6">
+              <Skeleton className="w-32 h-32 rounded-full" />
+              <div className="flex-1 pt-2 space-y-3">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-40" />
+              </div>
             </div>
-        </BuyerPage>
-    )
+            <div className="text-right space-y-2">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="w-24 h-2" />
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Personal Info Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </CardContent>
+      </Card>
+
+      {/* Security Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

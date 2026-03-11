@@ -42,7 +42,7 @@ export async function getAuthenticatedUser(): Promise<{uid: string, role: UserPr
 
 /**
  * Transition a user role from BUYER to SELLER.
- * Formalizes the seller onboarding workflow.
+ * Formalizes the seller onboarding workflow with audit logging and notification.
  */
 export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
   const authUser = await getAuthenticatedUser();
@@ -73,6 +73,31 @@ export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
     changes: { role: { old: authUser.role, new: 'SELLER' } },
     timestamp: FieldValue.serverTimestamp(),
   });
+
+  // Send email notification of role upgrade
+  try {
+    await sendBrandedEmail({
+      to: authUser.email || '',
+      subject: 'Role Upgrade Confirmed - Welcome to Seller Network',
+      htmlBody: `
+        <h2>Welcome to Kenya Land Trust Seller Network</h2>
+        <p>Hello ${authUser.displayName},</p>
+        <p>Your account has been successfully upgraded to Seller role. You now have access to:</p>
+        <ul>
+          <li>Seller Dashboard - Manage your listings and analytics</li>
+          <li>Listing Creation - Add properties to the verified marketplace</li>
+          <li>Evidence Uploads - Submit documentation for trust badge review</li>
+          <li>Buyer Communications - Respond to inquiries through our messaging system</li>
+        </ul>
+        <p><a href="https://kenyalandtrust.com/dashboard">Access Your Seller Dashboard</a></p>
+        <p>If you didn't request this upgrade, please contact support immediately.</p>
+        <p>Best regards,<br/>Kenya Land Trust Team</p>
+      `
+    });
+  } catch (emailError) {
+    console.error('Failed to send role upgrade notification email:', emailError);
+    // Don't throw - email failure shouldn't block role transition
+  }
 
   revalidatePath('/profile');
   revalidatePath('/dashboard');

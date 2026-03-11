@@ -12,16 +12,27 @@ import { PageWrapper } from '@/components/page-wrapper';
 
 /**
  * OnboardingPage - Guided post-signup experience strictly for Buyers.
- * Features auto-redirection for established users to prevent redundant cycles.
+ * Features role-based redirection for non-buyers and auto-redirection for established users.
  */
 export default function OnboardingPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        // Redirection Protocol: If the user is already established, move them to the dashboard.
-        if (!loading && userProfile && userProfile.bio) {
+        // Role-based Redirection Protocol: If the user is not a buyer, redirect to appropriate dashboard
+        if (!loading && userProfile) {
+          if (userProfile.role === 'SELLER') {
+            router.replace('/dashboard');
+            return;
+          }
+          if (userProfile.role === 'ADMIN') {
+            router.replace('/admin');
+            return;
+          }
+          // Established user redirection: If buyer has completed profile, move them to dashboard
+          if (userProfile.bio || userProfile.phone) {
             router.replace('/buyer/dashboard');
+          }
         }
     }, [userProfile, loading, router]);
 
