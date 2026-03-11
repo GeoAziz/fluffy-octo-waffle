@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -170,7 +171,7 @@ export function BuyerHeader() {
                 <Button variant="ghost" asChild className="font-bold">
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button asChild variant="accent" className="font-black uppercase text-[10px] tracking-widest">
+                <Button asChild variant="default" className="font-black uppercase text-[10px] tracking-widest">
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </>
@@ -210,7 +211,7 @@ export function BuyerHeader() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-base font-black tracking-tight">{userProfile?.displayName}</p>
                           <p className="truncate text-xs text-muted-foreground">{userProfile?.email}</p>
-                          <Badge variant="accent" className="mt-2 h-5 text-[9px] font-black uppercase tracking-widest border-none">
+                          <Badge variant="secondary" className="mt-2 h-5 text-[9px] font-black uppercase tracking-widest border-none">
                             {userProfile?.role}
                           </Badge>
                         </div>

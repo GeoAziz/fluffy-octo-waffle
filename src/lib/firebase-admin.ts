@@ -49,6 +49,7 @@ if (!getApps().length) {
   } else {
     // Fallback for local development if serviceAccountKey.json exists
     // Note: We use dynamic require here to prevent the Edge Runtime from seeing 'fs'/'path' during static analysis
+    let localInitialized = false;
     if (process.env.NODE_ENV === 'development') {
         try {
             const fs = require('fs');
@@ -60,10 +61,20 @@ if (!getApps().length) {
                     credential: admin.credential.cert(keyFile),
                     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${keyFile.project_id}.appspot.com`,
                 });
+                localInitialized = true;
             }
         } catch (e) {
             console.warn('Firebase Admin: Local key fallback skipped.', e);
         }
+    }
+    if (!localInitialized) {
+      // No credentials found. Initialize with minimal config so module-level
+      // exports (admin.auth(), etc.) don't throw at import time during build.
+      // Actual service calls will fail at runtime with a clearer error.
+      console.warn('Firebase Admin: No credentials found. Initializing with minimal config (project ID only).');
+      admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'unset-project-id',
+      });
     }
   }
 }

@@ -5,7 +5,16 @@ import { Resend } from 'resend';
  * Handles templating and delivery via Resend with professional branding and responsive layouts.
  */
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazily instantiated so the module can be imported at build time without an API key.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error('Missing RESEND_API_KEY environment variable.');
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
 
 const BRAND_COLORS = {
   primary: '#0F3D2E',
@@ -170,7 +179,7 @@ export async function sendBrandedEmail(options: {
       return { success: false, error: 'Config missing' };
     }
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: 'Kenya Land Trust <notifications@kenyalandtrust.com>',
       to: [to],
       subject: subject,

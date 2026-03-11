@@ -400,7 +400,7 @@ export default function NewListingPage() {
                       Continue <ChevronRight className="ml-2 h-4 w-4"/>
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting} variant="accent" className="h-11 px-10 font-black uppercase text-[10px] tracking-widest shadow-glow">
+                    <Button type="submit" disabled={isSubmitting} variant="default" className="h-11 px-10 font-black uppercase text-[10px] tracking-widest shadow-glow">
                       {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Transmitting Assets...</> : 'Commit Listing to Review'}
                     </Button>
                   )}

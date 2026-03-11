@@ -149,12 +149,18 @@ export function ListingsContent() {
       limit: 12,
     };
     
-    searchListingsAction(params).then(result => {
-      setListings(result.listings);
-      setLastVisibleId(result.lastVisibleId);
-      setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
-      setLoading(false);
-    });
+    searchListingsAction(params)
+      .then(result => {
+        setListings(result.listings);
+        setLastVisibleId(result.lastVisibleId);
+        setHasMore(result.listings.length > 0 && !!result.lastVisibleId);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Failed to load listings:', error);
+        setListings([]);
+        setLoading(false);
+      });
   }, [currentFilters]);
 
   const handleLoadMore = async () => {

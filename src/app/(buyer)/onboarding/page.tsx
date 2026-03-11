@@ -51,7 +51,7 @@ export default function OnboardingPage() {
                                     <div>
                                         <h4 className="font-semibold">Create Your First Listing</h4>
                                         <p className="text-sm text-muted-foreground">Ready to sell? Start by creating a listing for your property.</p>
-                                        <Button asChild size="sm" variant="accent" className="mt-2">
+                                        <Button asChild size="sm" variant="default" className="mt-2">
                                             <Link href="/listings/new">Create Listing</Link>
                                         </Button>
                                     </div>

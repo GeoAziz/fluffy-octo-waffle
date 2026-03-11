@@ -1,5 +1,3 @@
-'use client';
-
 import { BuyerHomePage } from '@/components/buyer/buyer-home-page';
 
 /**

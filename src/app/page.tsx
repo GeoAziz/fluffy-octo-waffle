@@ -1,10 +1,9 @@
-/**
- * Redundant root entry neutralized.
- * Landing logic is definitively managed in src/app/(buyer)/page.tsx 
- * to inherit group layouts and resolve route collisions.
- */
-import { redirect } from 'next/navigation';
+import { BuyerHomePage } from '@/components/buyer/buyer-home-page';
 
+/**
+ * Root entry point — renders the main landing page.
+ * Content is provided by BuyerHomePage; layout comes from src/app/(buyer)/layout.tsx.
+ */
 export default function RootPage() {
-  return null;
+  return <BuyerHomePage />;
 }

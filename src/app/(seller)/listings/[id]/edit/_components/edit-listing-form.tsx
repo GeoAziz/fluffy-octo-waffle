@@ -391,7 +391,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                 </div>
               )}
 
-              <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} variant="accent" className="h-12 w-full md:w-auto font-black uppercase text-[10px] tracking-widest px-10">
+              <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} variant="default" className="h-12 w-full md:w-auto font-black uppercase text-[10px] tracking-widest px-10">
                 {isSubmitting ? ( <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Transmitting... </> ) : ( 'Commit Changes' )}
               </Button>
           </form>

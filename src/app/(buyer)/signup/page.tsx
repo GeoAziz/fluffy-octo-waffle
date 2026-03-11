@@ -261,7 +261,7 @@ export default function SignupPage() {
                       </FormItem>
                     )}
                   />
-                  <Button variant="accent" type="submit" className="w-full h-12 font-black uppercase text-[10px] tracking-widest" disabled={isSubmitting || isGoogleSubmitting}>
+                  <Button variant="default" type="submit" className="w-full h-12 font-black uppercase text-[10px] tracking-widest" disabled={isSubmitting || isGoogleSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Commit Identity
                   </Button>

@@ -190,7 +190,7 @@ export function Header() {
                   <Button variant="ghost" asChild className="hidden md:inline-flex">
                     <Link href="/login">Log in</Link>
                   </Button>
-                  <Button variant="accent" asChild className="hidden md:inline-flex">
+                  <Button variant="default" asChild className="hidden md:inline-flex">
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
@@ -252,7 +252,7 @@ export function Header() {
                         ) : (
                             <div className="flex flex-col gap-4">
                                 <SheetClose asChild><Button asChild variant="outline" className="w-full"><Link href="/login">Log In</Link></Button></SheetClose>
-                                <SheetClose asChild><Button asChild variant="accent" className="w-full"><Link href="/signup">Sign Up</Link></Button></SheetClose>
+                                <SheetClose asChild><Button asChild variant="default" className="w-full"><Link href="/signup">Sign Up</Link></Button></SheetClose>
                             </div>
                         )}
                     </div>
