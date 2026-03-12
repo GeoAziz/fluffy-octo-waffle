@@ -68,6 +68,7 @@ async function main() {
                 photoURL: `https://i.pravatar.cc/150?u=${uid}`,
                 phone: faker.phone.number(),
                 verified: true,
+                bio: faker.person.bio(),
             };
 
             await adminDb.collection('users').doc(uid).set(userProfile, { merge: true });
@@ -128,13 +129,13 @@ async function main() {
             description: faker.lorem.paragraphs(3),
             status: status,
             images: images,
-            badge: status === 'approved' ? randomPick<BadgeValue>(['Gold', 'Silver', 'Bronze', 'None']) : null,
+            badge: status === 'approved' ? randomPick<BadgeValue>(['TrustedSignal', 'EvidenceReviewed', 'EvidenceSubmitted', 'None']) : null,
             seller: {
                 name: owner.displayName,
                 avatarUrl: owner.photoURL,
             },
             badgeSuggestion: {
-                badge: randomPick<BadgeValue>(['Gold', 'Silver', 'Bronze']),
+                badge: randomPick<BadgeValue>(['TrustedSignal', 'EvidenceReviewed', 'EvidenceSubmitted']),
                 reason: faker.lorem.sentence(),
             },
             imageAnalysis: {

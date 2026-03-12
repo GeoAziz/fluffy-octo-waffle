@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx src/lib/seed.ts",
     "seed:settings": "tsx src/lib/seed-settings.ts",
+    "seed:all": "tsx src/lib/mock/seed-all.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

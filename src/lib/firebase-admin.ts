@@ -50,23 +50,23 @@ if (!getApps().length) {
     // Fallback for local development if serviceAccountKey.json exists
     // Note: We use dynamic require here to prevent the Edge Runtime from seeing 'fs'/'path' during static analysis
     let localInitialized = false;
-    if (process.env.NODE_ENV === 'development') {
-        try {
-            const fs = require('fs');
-            const path = require('path');
-            const keyPath = path.join(process.cwd(), 'serviceAccountKey.json');
-            if (fs.existsSync(keyPath)) {
-                const keyFile = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-                admin.initializeApp({
-                    credential: admin.credential.cert(keyFile),
-                    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${keyFile.project_id}.appspot.com`,
-                });
-                localInitialized = true;
-            }
-        } catch (e) {
-            console.warn('Firebase Admin: Local key fallback skipped.', e);
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const keyPath = path.join(process.cwd(), 'serviceAccountKey.json');
+        if (fs.existsSync(keyPath)) {
+            const keyFile = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            admin.initializeApp({
+                credential: admin.credential.cert(keyFile),
+                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${keyFile.project_id}.appspot.com`,
+            });
+            localInitialized = true;
+            console.log('Firebase Admin: Initialized from serviceAccountKey.json');
         }
+    } catch (e) {
+        // Silently skip if file not found
     }
+    
     if (!localInitialized) {
       // No credentials found. Initialize with minimal config so module-level
       // exports (admin.auth(), etc.) don't throw at import time during build.
