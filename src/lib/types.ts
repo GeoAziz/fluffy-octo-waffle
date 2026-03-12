@@ -1,3 +1,4 @@
+
 export type ListingStatus = 'pending' | 'approved' | 'rejected';
 
 export type BadgeValue = 'TrustedSignal' | 'EvidenceReviewed' | 'EvidenceSubmitted' | 'Suspicious' | 'None';
@@ -88,6 +89,19 @@ export type Listing = {
   imageHint?: string;
 };
 
+export type UserPreferences = {
+  counties: string[];
+  budgetRange: {
+    min: number;
+    max: number;
+  };
+  landTypes: string[];
+  notifications: {
+    email: boolean;
+    inApp: boolean;
+  };
+};
+
 export type UserProfile = {
   uid: string;
   email: string;
@@ -98,6 +112,18 @@ export type UserProfile = {
   role: 'BUYER' | 'SELLER' | 'ADMIN';
   createdAt: any; // Firestore timestamp
   verified: boolean;
+  preferences?: UserPreferences;
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'inquiry' | 'badge_update' | 'flag' | 'system';
+  link?: string;
+  read: boolean;
+  createdAt: any;
 };
 
 export type Conversation = {
@@ -161,4 +187,5 @@ export type AuditLog = {
   entityId?: string;
   changes: Record<string, any>;
   timestamp?: any; // Firestore timestamp
+  reason?: string; // Explicit reason pulse
 };

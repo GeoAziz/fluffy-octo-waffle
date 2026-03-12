@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -18,7 +19,6 @@ export function RiskScoreBadge({
   className,
   showLabel = true,
 }: RiskScoreBadgeProps) {
-  // Determine risk level and visual styling
   const getRiskLevel = (score: number) => {
     if (score >= 70) return { level: 'Critical', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-950/30', icon: AlertTriangle, glow: 'shadow-[0_0_12px_rgba(220,38,38,0.2)]' };
     if (score >= 50) return { level: 'High', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-950/30', icon: TrendingDown, glow: 'shadow-[0_0_12px_rgba(234,88,12,0.15)]' };
@@ -64,40 +64,37 @@ interface ListingQueueItemProps {
   };
   onSelect?: (id: string) => void;
   isSelected?: boolean;
+  className?: string;
 }
 
 /**
  * ListingQueueItem - Single listing in admin review queue with risk scoring.
- * Displays all relevant information with hover animations and visual hierarchy.
  */
 export function ListingQueueItem({
   listing,
   onSelect,
   isSelected = false,
+  className,
 }: ListingQueueItemProps) {
   return (
     <button
       onClick={() => onSelect?.(listing.id)}
       className={cn(
-        'w-full group relative p-4 rounded-lg border transition-all duration-300',
+        'group relative p-4 rounded-xl border transition-all duration-300',
         'hover:bg-accent/5 dark:hover:bg-accent/10',
         'hover:border-accent/40 hover:shadow-md',
-        'focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-slate-950',
-        isSelected && 'bg-accent/10 border-accent/40 shadow-md'
+        'focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2',
+        isSelected ? 'bg-accent/5 border-accent/40 shadow-sm' : 'bg-card',
+        className
       )}
     >
-      {/* Selection indicator */}
-      {isSelected && (
-        <div className="absolute inset-0 left-0 top-0 bottom-0 w-1 bg-accent rounded-l-lg" />
-      )}
-
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 text-left">
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-1">
+          <h3 className="font-bold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-1 uppercase text-sm tracking-tight">
             {listing.title}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            by {listing.owner}
+          <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">
+            Seller Node: {listing.owner}
           </p>
         </div>
 
@@ -108,19 +105,20 @@ export function ListingQueueItem({
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-3 gap-2 text-xs text-muted-foreground">
-        <span>
-          {new Date(listing.createdAt).toLocaleDateString()}
-        </span>
-        <span className={cn(
-          'px-2.5 py-1 rounded-full font-medium uppercase tracking-wide',
-          listing.status === 'pending' && 'bg-warning/10 text-warning dark:text-warning',
-          listing.status === 'reviewing' && 'bg-accent/10 text-accent dark:text-accent',
-          listing.status === 'approved' && 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-          listing.status === 'rejected' && 'bg-destructive/10 text-destructive dark:text-red-400',
+      <div className="flex items-center justify-between mt-4 gap-2 text-[9px] font-bold text-muted-foreground uppercase tracking-[0.1em]">
+        <div className="flex items-center gap-2">
+          <span>Vaulted: {new Date(listing.createdAt).toLocaleDateString()}</span>
+          <span className="opacity-30">•</span>
+          <span className="font-mono">{listing.id}</span>
+        </div>
+        <Badge variant="outline" className={cn(
+          'text-[9px] font-black uppercase tracking-widest border-none h-5 px-2',
+          listing.status === 'pending' && 'bg-warning/10 text-warning',
+          listing.status === 'approved' && 'bg-emerald-500 text-white',
+          listing.status === 'rejected' && 'bg-risk text-white',
         )}>
           {listing.status}
-        </span>
+        </Badge>
       </div>
     </button>
   );

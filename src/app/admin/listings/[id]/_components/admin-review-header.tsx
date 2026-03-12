@@ -38,6 +38,18 @@ const statusOptions: { value: ListingStatus; label: string }[] = [
 
 const badgeOptions: BadgeValue[] = ['TrustedSignal', 'EvidenceReviewed', 'EvidenceSubmitted', 'Suspicious', 'None'];
 
+const REASON_TEMPLATES = [
+  "Title deed verified with Land Registry (Ref: #123). Image metadata matches location.",
+  "EvidenceReviewed assigned: Ownership confirmed, but survey map requires updated beacons.",
+  "Rejected: Documentation mismatch. PIN provided does not correspond to the listed owner.",
+  "Rejected: Low-quality asset scans. Please provide high-resolution PDF proof.",
+  "TrustedSignal: All 4 key documents vaulted and verified authentic."
+];
+
+/**
+ * AdminReviewActions - Critical moderation interface for updating trust signals.
+ * Now requires mandatory reasoning and provides templates for velocity.
+ */
 export function AdminReviewActions({ listing }: { listing: Listing }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -184,7 +196,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
               Confirm High-Stakes Action
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4 pt-2">
-              <p>You are about to modify the trust signal for this listing. This impacts buyer confidence and visibility.</p>
+              <p className="text-sm">You are about to modify the trust signal for this listing. This impacts buyer confidence and search visibility.</p>
               
               <div className="space-y-2">
                 <Label htmlFor="review-reason" className="text-foreground font-bold text-xs uppercase tracking-wider">
@@ -192,14 +204,29 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
                 </Label>
                 <Textarea
                   id="review-reason"
-                  placeholder="e.g., Title deed verified with Land Registry (Ref: #123). Image metadata matches location."
+                  placeholder="Summarize your verification findings..."
                   value={adminReason}
                   onChange={(e) => setAdminReason(e.target.value)}
-                  className="min-h-[100px] text-sm"
+                  className="min-h-[100px] text-sm bg-muted/20"
                 />
                 <p className="text-[10px] text-muted-foreground italic">
-                  * This reason will be logged in the audit trail and shared with the seller if the status is "Rejected".
+                  * This reason will be logged in the audit trail and shared with the seller.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Standard Templates</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {REASON_TEMPLATES.map((tmpl, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => setAdminReason(tmpl)}
+                      className="text-[9px] font-bold px-2 py-1 bg-muted rounded border hover:bg-accent/10 hover:border-accent/30 transition-all truncate max-w-[180px]"
+                    >
+                      {tmpl}
+                    </button>
+                  ))}
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -210,7 +237,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
               disabled={!adminReason.trim() || isSaving}
               className="bg-accent text-white hover:bg-accent/90"
             >
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm Signal Change'}
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Commit Review Pulse'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -235,13 +262,13 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
               Irreversible Deletion
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This listing and all associated verification documents will be purged from the system. This cannot be undone.
+              This listing and all associated verification documents will be purged from the registry. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-risk text-white hover:bg-risk/90">
-              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm Permanent Deletion'}
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Execute Permanent Deletion'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

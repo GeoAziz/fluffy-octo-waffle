@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, use } from 'react';
 import { useAuth } from '@/components/providers';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy, doc, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import type { Message, Conversation } from '@/lib/types';
+import { collection, query, onSnapshot, orderBy, doc, addDoc, serverTimestamp, updateDoc, where, limit, getDocs } from 'firebase/firestore';
+import type { Message, Conversation, Listing } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, Sparkles, MapPin, LandPlot, ArrowRight } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -48,12 +48,6 @@ const ChatSkeleton = () => (
                      <Skeleton className="h-4 w-56" />
                 </div>
             </div>
-            <div className="flex items-end gap-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                 <div className="p-3 rounded-lg bg-secondary space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                </div>
-            </div>
         </CardContent>
         <CardFooter className="border-t p-4">
             <div className="w-full flex items-center gap-2">
@@ -65,7 +59,8 @@ const ChatSkeleton = () => (
 );
 
 
-export default function ConversationPage({ params }: { params: { id: string } }) {
+export default function ConversationPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+    const params = use(paramsPromise);
     const { user } = useAuth();
     const { toast } = useToast();
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -75,7 +70,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     const [newMessage, setNewMessage] = useState('');
     const [status, setStatus] = useState<ConversationStatus>('new');
     const [composerState, setComposerState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
-    const [failedDraft, setFailedDraft] = useState('');
+    const [similarListings, setSimilarListings] = useState<Listing[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -91,20 +86,21 @@ export default function ConversationPage({ params }: { params: { id: string } })
             if (doc.exists()) {
                 const convoData = { id: doc.id, ...doc.data() } as Conversation;
                 if (!convoData.participantIds.includes(user.uid)) {
-                    // unauthorized
                     setConversation(null);
                     return;
                 }
                 setConversation(convoData);
                 setStatus(getConversationStatus(convoData, user.uid));
+                
+                // Load similar properties (Strategic Enhancement)
+                if (convoData.listingId) {
+                  fetchSimilarProperties(convoData.listingId);
+                }
             } else {
                 setConversation(null);
             }
         }, async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: convoRef.path,
-                operation: 'get',
-            }, error);
+            const permissionError = new FirestorePermissionError({ path: convoRef.path, operation: 'get' }, error);
             errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
@@ -112,17 +108,11 @@ export default function ConversationPage({ params }: { params: { id: string } })
         const messagesColRef = collection(db, 'conversations', params.id, 'messages');
         const messagesQuery = query(messagesColRef, orderBy('timestamp', 'asc'));
         const messagesUnsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Message));
+            const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
             setMessages(msgs);
             setLoading(false);
         }, async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: messagesColRef.path,
-                operation: 'list',
-            }, error);
+            const permissionError = new FirestorePermissionError({ path: messagesColRef.path, operation: 'list' }, error);
             errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
@@ -133,115 +123,93 @@ export default function ConversationPage({ params }: { params: { id: string } })
         };
     }, [params.id, user]);
 
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !user || !conversation) return;
+    const fetchSimilarProperties = async (listingId: string) => {
+      try {
+        const listingDoc = await getDocs(query(collection(db, 'listings'), where('__name__', '==', listingId)));
+        if (!listingDoc.empty) {
+          const data = listingDoc.docs[0].data();
+          const q = query(
+            collection(db, 'listings'), 
+            where('county', '==', data.county),
+            where('status', '==', 'approved'),
+            limit(2)
+          );
+          const similar = await getDocs(q);
+          setSimilarListings(similar.docs.map(d => ({ id: d.id, ...d.data() } as Listing)).filter(l => l.id !== listingId));
+        }
+      } catch (e) { console.warn('Similar properties lookup failed.'); }
+    };
 
-        const text = newMessage.trim();
+    const handleSendMessage = async (e?: React.FormEvent, presetText?: string) => {
+        if (e) e.preventDefault();
+        const text = presetText || newMessage.trim();
+        if (!text || !user || !conversation) return;
+
         setSending(true);
         setComposerState('sending');
         setNewMessage('');
 
         const messagesColRef = collection(db, 'conversations', params.id, 'messages');
-        const messageData = {
-            senderId: user.uid,
-            text,
-            timestamp: serverTimestamp(),
-        };
-
+        const messageData = { senderId: user.uid, text, timestamp: serverTimestamp() };
         const convoRef = doc(db, 'conversations', params.id);
-        const convoData = {
-            lastMessage: {
-                text,
-                senderId: user.uid,
-                timestamp: serverTimestamp(),
-            },
-            updatedAt: serverTimestamp(),
-            status: 'responded',
+        const convoUpdate = { 
+          lastMessage: { text, senderId: user.uid, timestamp: serverTimestamp() },
+          updatedAt: serverTimestamp(),
+          status: 'responded'
         };
 
         try {
             await addDoc(messagesColRef, messageData);
-            await updateDoc(convoRef, convoData);
+            await updateDoc(convoRef, convoUpdate);
             setStatus('responded');
             setComposerState('sent');
-            setFailedDraft('');
         } catch (error) {
-            const normalizedError = error instanceof Error ? error : new Error('Unknown messaging error');
-            const permissionError = new FirestorePermissionError({
-                path: messagesColRef.path,
-                operation: 'create',
-                requestResourceData: messageData,
-            }, normalizedError);
-            errorEmitter.emit('permission-error', permissionError);
-            setFailedDraft(text);
-            setNewMessage(text);
             setComposerState('failed');
-            toast({ variant: 'destructive', title: 'Send failed', description: 'Message could not be sent. Retry when ready.' });
-        } finally {
-            setSending(false);
-        }
+            setNewMessage(text);
+            toast({ variant: 'destructive', title: 'Send failed' });
+        } finally { setSending(false); }
     };
 
-    const handleStatusChange = (nextStatus: ConversationStatus) => {
-        if (!conversation) return;
-        setStatus(nextStatus);
-        const convoRef = doc(db, 'conversations', params.id);
-        updateDoc(convoRef, { status: nextStatus }).catch(async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: convoRef.path,
-                operation: 'update',
-                requestResourceData: { status: nextStatus },
-            }, error);
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update conversation status.' });
-        });
-    };
-
-    if (loading) {
-        return <ChatSkeleton />;
-    }
-
-    if (!conversation) {
-        return <Card className="h-full flex items-center justify-center"><p>Conversation not found or you do not have access.</p></Card>
-    }
+    if (loading) return <ChatSkeleton />;
+    if (!conversation) return <Card className="h-full flex items-center justify-center p-8 text-center"><p>Secure conversation link expired or unauthorized.</p></Card>
     
     const otherParticipantId = conversation.participantIds.find(id => id !== user?.uid);
     const otherParticipant = otherParticipantId ? conversation.participants[otherParticipantId] : null;
+    const isSeller = user?.uid === Object.keys(conversation.participants).find(id => id !== user?.uid); // simplified check
 
     return (
-        <div className="h-full grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-4">
-            <Card className="h-full flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
+        <div className="h-full grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4">
+            <Card className="h-full flex flex-col border-none shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between gap-4 border-b bg-muted/10">
                     <Link href={`/listings/${conversation.listingId}`} className="flex items-center gap-3 overflow-hidden group">
                         <div className="relative h-12 w-12 flex-shrink-0">
                             <Image
                                 src={conversation.listingImage || 'https://picsum.photos/seed/conversation/100/100'}
                                 alt={conversation.listingTitle}
                                 fill
-                                className="rounded-md object-cover"
+                                className="rounded-md object-cover shadow-sm"
                             />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="truncate font-semibold group-hover:underline">{conversation.listingTitle}</p>
-                            <p className="text-sm text-muted-foreground truncate">
-                                Conversation with {otherParticipant?.displayName}
+                            <p className="truncate font-black uppercase tracking-tight text-xs group-hover:text-accent transition-colors">{conversation.listingTitle}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
+                                Secure Protocol with {otherParticipant?.displayName}
                             </p>
                         </div>
                     </Link>
                     {otherParticipant && (
                         <Avatar className="h-10 w-10 border hidden sm:flex">
-                            <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
+                            <AvatarImage src={otherParticipant.photoURL} />
                             <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                     )}
                 </CardHeader>
                 <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
-                    <Alert variant="default" className="border-warning/50 bg-warning/10 text-warning [&>svg]:text-warning">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle className="text-warning font-bold">Safety Tip</AlertTitle>
-                        <AlertDescription className="text-warning/90">
-                            For your safety, never share personal financial details (like bank accounts) or make payments outside of the platform. Report any suspicious requests.
+                    <Alert variant="default" className="border-accent/30 bg-accent/5">
+                        <Sparkles className="h-4 w-4 text-accent" />
+                        <AlertTitle className="text-accent font-black uppercase text-[10px] tracking-widest">Protocol Reminder</AlertTitle>
+                        <AlertDescription className="text-accent/80 text-[11px] font-medium leading-relaxed">
+                            Verify documentation signals before finalizing site visits. Never make payments without independent legal audit.
                         </AlertDescription>
                     </Alert>
 
@@ -252,18 +220,18 @@ export default function ConversationPage({ params }: { params: { id: string } })
                         return (
                             <div key={msg.id} className={cn("flex items-end gap-2", isSender && "justify-end")}>
                                 {!isSender && participant && (
-                                    <Avatar className="h-8 w-8 border self-start">
+                                    <Avatar className="h-8 w-8 border self-start shadow-sm">
                                         <AvatarImage src={participant.photoURL} />
                                         <AvatarFallback>{participant.displayName.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                 )}
                                 <div className={cn(
-                                    "max-w-xs md:max-w-md lg:max-w-xl p-3 rounded-lg",
-                                    isSender ? "bg-primary text-primary-foreground" : "bg-secondary"
+                                    "max-w-xs md:max-w-md lg:max-w-xl p-4 rounded-2xl shadow-sm",
+                                    isSender ? "bg-primary text-white rounded-tr-none" : "bg-white border rounded-tl-none"
                                 )}>
-                                    <p className="text-sm" style={{whiteSpace: 'pre-wrap'}}>{msg.text}</p>
+                                    <p className="text-sm font-medium" style={{whiteSpace: 'pre-wrap'}}>{msg.text}</p>
                                     {msg.timestamp && (
-                                        <p className={cn("text-xs mt-1 text-right", isSender ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        <p className={cn("text-[9px] font-black uppercase mt-2 text-right opacity-60")}>
                                             {format(msg.timestamp.toDate(), 'p')}
                                         </p>
                                     )}
@@ -273,84 +241,94 @@ export default function ConversationPage({ params }: { params: { id: string } })
                     })}
                     <div ref={messagesEndRef} />
                 </CardContent>
-                <CardFooter className="border-t p-4">
-                    <div className="w-full space-y-2">
-                        <form onSubmit={handleSendMessage} className="w-full flex items-center gap-2">
+                <CardFooter className="border-t p-4 bg-muted/5">
+                    <div className="w-full space-y-4">
+                        {/* Suggested Follow-ups (Strategic Enhancement) */}
+                        {!isSeller && messages.length > 0 && messages[messages.length - 1].senderId !== user?.uid && (
+                          <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
+                            {["I'd like to schedule a visit.", "Are documents ready?", "Is price negotiable?"].map(preset => (
+                              <button key={preset} onClick={() => handleSendMessage(undefined, preset)} className="px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent/20 transition-all">
+                                {preset}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <form onSubmit={handleSendMessage} className="w-full flex items-center gap-3">
                             <Input 
                                 value={newMessage}
-                                onChange={(e) => {
-                                    setNewMessage(e.target.value);
-                                    if (composerState !== 'sending') setComposerState('idle');
-                                }}
-                                placeholder="Type a message..."
+                                onChange={(e) => { setNewMessage(e.target.value); setComposerState('idle'); }}
+                                placeholder="Type your message pulse..."
                                 disabled={sending}
+                                className="h-12 bg-background font-medium rounded-xl shadow-inner"
                                 autoComplete="off"
                             />
-                            <Button type="submit" size="icon" aria-label="Send message" disabled={sending || !newMessage.trim()}>
-                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            <Button type="submit" size="icon" className="h-12 w-12 rounded-xl bg-primary shadow-glow shrink-0" disabled={sending || !newMessage.trim()}>
+                                {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                             </Button>
                         </form>
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                            <span>
-                                {composerState === 'sending' && 'Status: sending...'}
-                                {composerState === 'sent' && 'Status: sent'}
-                                {composerState === 'failed' && 'Status: failed to send'}
-                                {composerState === 'idle' && 'Status: ready'}
-                            </span>
-                            {composerState === 'failed' && failedDraft && (
-                                <Button size="sm" variant="outline" onClick={() => setNewMessage(failedDraft)}>
-                                    Retry draft
-                                </Button>
-                            )}
-                        </div>
                     </div>
                 </CardFooter>
             </Card>
 
-            <Card className="h-full">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold">Conversation Details</p>
-                        <Badge variant="secondary">{conversationStatusLabel[status]}</Badge>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <p className="text-xs text-muted-foreground uppercase">Listing</p>
-                        <Link href={`/listings/${conversation.listingId}`} className="text-sm font-medium hover:underline">
-                            {conversation.listingTitle}
-                        </Link>
-                    </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground uppercase">Buyer</p>
-                        <p className="text-sm font-medium">{otherParticipant?.displayName || 'Unknown'}</p>
-                    </div>
-                    <div className="rounded-md border bg-muted/40 p-3">
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Seller response expectation</p>
-                        <p className="mt-1 text-sm">Most sellers reply within 24 hours. If no reply after 48 hours, follow up or explore similar verified listings.</p>
-                    </div>
-                    <div className="rounded-md border bg-muted/40 p-3">
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Trust reminder</p>
-                        <p className="mt-1 text-sm">Share only listing-related details in first contact. Avoid sending deposits before independent verification.</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground uppercase mb-2">Status</p>
-                        <Select value={status} onValueChange={(value: ConversationStatus) => handleStatusChange(value)}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="responded">Responded</SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Button asChild variant="outline" className="w-full">
-                        <Link href={`/listings/${conversation.listingId}`}>View Listing</Link>
-                    </Button>
-                </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <Card className="border-none shadow-xl">
+                  <CardHeader>
+                      <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Registry Status</p>
+                          <Badge variant="outline" className="text-[9px]">{conversationStatusLabel[status]}</Badge>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Target Resource</p>
+                          <Link href={`/listings/${conversation.listingId}`} className="text-xs font-black uppercase hover:underline text-primary">
+                              {conversation.listingTitle}
+                          </Link>
+                      </div>
+                      <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Trust SLA</p>
+                          <p className="text-[11px] font-medium text-foreground/80 leading-relaxed italic">Most sellers acknowledge pulses within 24h. Maintain identity transparency.</p>
+                      </div>
+                      <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Protocol Status</p>
+                          <Select value={status} onValueChange={(v: ConversationStatus) => {
+                            const ref = doc(db, 'conversations', params.id);
+                            updateDoc(ref, { status: v });
+                          }}>
+                              <SelectTrigger className="w-full h-10 font-bold text-xs uppercase"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="new" className="text-xs font-bold uppercase">NEW</SelectItem>
+                                  <SelectItem value="responded" className="text-xs font-bold uppercase">ACTIVE</SelectItem>
+                                  <SelectItem value="closed" className="text-xs font-bold uppercase">ARCHIVED</SelectItem>
+                              </SelectContent>
+                          </Select>
+                      </div>
+                  </CardContent>
+              </Card>
+
+              {/* Similar Properties (Strategic Enhancement) */}
+              {similarListings.length > 0 && (
+                <div className="space-y-3 animate-in fade-in duration-700">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground pl-1">Related Assets</h3>
+                  {similarListings.map(listing => (
+                    <Link key={listing.id} href={`/listings/${listing.id}`} className="block group">
+                      <Card className="border-none shadow-md overflow-hidden bg-background/50 hover:shadow-lg transition-all">
+                        <CardContent className="p-0 flex items-center">
+                          <div className="relative h-16 w-16 flex-shrink-0">
+                            <Image src={listing.images[0]?.url} alt="" fill className="object-cover" />
+                          </div>
+                          <div className="p-3 overflow-hidden">
+                            <p className="text-[10px] font-black uppercase truncate group-hover:text-accent transition-colors">{listing.title}</p>
+                            <p className="text-[10px] font-bold text-primary">KES {listing.price.toLocaleString()}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
         </div>
     );
 }

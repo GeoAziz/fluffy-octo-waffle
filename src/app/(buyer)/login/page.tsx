@@ -1,16 +1,19 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, type User, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, type User, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LandPlot } from 'lucide-react';
+import { Loader2, LandPlot, ShieldCheck, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import type { UserProfile } from '@/lib/types';
 import { validateRedirect } from '@/lib/utils';
 
@@ -18,6 +21,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [serverError, setServerError] = useState<string | undefined>(undefined);
 
   const loginFields: AuthFormField[] = [
@@ -53,11 +57,9 @@ export default function LoginPage() {
       
       toast({ title: 'Welcome Back', description: "Security handshake complete." });
       
-      // Authoritative role fetch for intelligent routing
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const role = (userDoc.data() as UserProfile)?.role || 'BUYER';
 
-      // 1. Check for validated redirect param (security: prevents open redirects)
       const requestedRedirect = searchParams.get('redirect');
       const safeRedirect = validateRedirect(requestedRedirect, role);
       if (safeRedirect) {
@@ -65,7 +67,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Fallback to default role-based landing registry
       if (role === 'ADMIN') {
         window.location.assign('/admin');
       } else if (role === 'SELLER') {
@@ -82,7 +83,8 @@ export default function LoginPage() {
     setServerError(undefined);
     setIsLoading(true);
     try {
-      await setPersistence(auth, browserLocalPersistence);
+      // Explicit Persistence Control
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       await handleLoginSuccess(userCredential.user);
     } catch (error: any) {
@@ -96,13 +98,13 @@ export default function LoginPage() {
     setIsLoading(true);
     setServerError(undefined);
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      // Idempotent Identity Provisioning: Preserves existing role
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
           uid: user.uid, 
@@ -110,7 +112,7 @@ export default function LoginPage() {
           displayName: user.displayName,
           photoURL: user.photoURL, 
           phone: user.phoneNumber || null,
-          role: 'BUYER', // Default for direct login
+          role: 'BUYER',
           verified: false, 
           createdAt: serverTimestamp(),
         });
@@ -151,6 +153,17 @@ export default function LoginPage() {
               isLoading={isLoading}
               serverError={serverError}
             />
+
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="remember" 
+                checked={rememberMe} 
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <Label htmlFor="remember" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer">
+                Maintain Identity Pulse (Stay Logged In)
+              </Label>
+            </div>
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>

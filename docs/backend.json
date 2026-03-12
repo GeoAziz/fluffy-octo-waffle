@@ -1,0 +1,502 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user within the Kenya Land Trust application, encompassing both sellers and administrators. This entity stores core user information without authentication credentials.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The primary email address of the user.",
+          "format": "email"
+        },
+        "userRole": {
+          "type": "string",
+          "description": "The role of the user within the application (e.g., 'Seller', 'Admin')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "userRole",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Listing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Listing",
+      "type": "object",
+      "description": "Represents a piece of land listed for sale or trust, including details about its location, price, and current status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Listing entity."
+        },
+        "sellerId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the seller who created this listing. (Relationship: UserProfile 1:N Listing)"
+        },
+        "title": {
+          "type": "string",
+          "description": "A concise title for the land listing."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the land, including features and specifics."
+        },
+        "price": {
+          "type": "number",
+          "description": "The asking price for the land."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency in which the price is denominated (e.g., KES, USD)."
+        },
+        "locationDescription": {
+          "type": "string",
+          "description": "A textual description of the land's general location."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "The geographical latitude coordinate of the land."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "The geographical longitude coordinate of the land."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the listing (e.g., 'Draft', 'Pending Review', 'Active', 'Sold', 'Archived')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the listing was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the listing was last updated.",
+          "format": "date-time"
+        },
+        "isSuspicious": {
+          "type": "boolean",
+          "description": "A flag indicating if the listing has been marked as suspicious, possibly by AI or admin."
+        }
+      },
+      "required": [
+        "id",
+        "sellerId",
+        "title",
+        "description",
+        "price",
+        "currency",
+        "locationDescription",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "isSuspicious"
+      ]
+    },
+    "EvidenceDocument": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EvidenceDocument",
+      "type": "object",
+      "description": "Represents a supporting document uploaded by a seller for a land listing to provide evidence of ownership or other claims.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EvidenceDocument entity."
+        },
+        "listingId": {
+          "type": "string",
+          "description": "Reference to the Listing this document supports. (Relationship: Listing 1:N EvidenceDocument)"
+        },
+        "documentType": {
+          "type": "string",
+          "description": "The type of document uploaded (e.g., 'Title Deed', 'Survey Plan', 'Sale Agreement', 'ID Copy')."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original name of the uploaded file."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "The URL or path where the document file is stored.",
+          "format": "uri"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "description": "Timestamp when the document was uploaded.",
+          "format": "date-time"
+        },
+        "uploadedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who uploaded this document. (Relationship: UserProfile 1:N EvidenceDocument)"
+        },
+        "adminReviewStatus": {
+          "type": "string",
+          "description": "The current review status of the document by an admin (e.g., 'Pending', 'Approved', 'Rejected')."
+        },
+        "adminReviewNotes": {
+          "type": "string",
+          "description": "Optional notes from the administrator's review."
+        },
+        "reviewedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the administrator who reviewed this document. (Relationship: UserProfile 1:N EvidenceDocument)"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "description": "Timestamp when the document was last reviewed by an admin.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "listingId",
+        "documentType",
+        "fileName",
+        "fileUrl",
+        "uploadedAt",
+        "uploadedByUserId",
+        "adminReviewStatus"
+      ]
+    },
+    "TrustBadge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TrustBadge",
+      "type": "object",
+      "description": "Represents a trust badge assigned to a listing, indicating certain verification or status levels.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TrustBadge entity."
+        },
+        "listingId": {
+          "type": "string",
+          "description": "Reference to the Listing to which this badge is assigned. (Relationship: Listing 1:N TrustBadge)"
+        },
+        "badgeType": {
+          "type": "string",
+          "description": "The specific type of trust badge (e.g., 'EvidenceSubmitted', 'EvidenceReviewed', 'TrustedSignal', 'Suspicious')."
+        },
+        "assignedAt": {
+          "type": "string",
+          "description": "Timestamp when the badge was assigned to the listing.",
+          "format": "date-time"
+        },
+        "assignedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (typically an admin) who assigned this badge, if manually assigned. (Relationship: UserProfile 1:N TrustBadge)"
+        },
+        "reason": {
+          "type": "string",
+          "description": "An optional description or reason for assigning the badge, especially for 'Suspicious' badges."
+        }
+      },
+      "required": [
+        "id",
+        "listingId",
+        "badgeType",
+        "assignedAt"
+      ]
+    },
+    "SuspiciousSignal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SuspiciousSignal",
+      "type": "object",
+      "description": "Records details about a suspicious pattern detected in a listing or its associated evidence, either automatically by AI or manually flagged by an admin.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SuspiciousSignal entity."
+        },
+        "listingId": {
+          "type": "string",
+          "description": "Reference to the Listing associated with this signal. (Relationship: Listing 1:N SuspiciousSignal)"
+        },
+        "evidenceDocumentId": {
+          "type": "string",
+          "description": "Optional reference to the EvidenceDocument if the signal pertains to a specific document. (Relationship: EvidenceDocument 1:N SuspiciousSignal)"
+        },
+        "signalType": {
+          "type": "string",
+          "description": "The classification of the suspicious pattern (e.g., 'AI_Flagged_Pattern', 'Manual_Report', 'Inconsistent_Data')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed explanation of why the pattern is considered suspicious."
+        },
+        "severity": {
+          "type": "string",
+          "description": "The perceived severity of the suspicious signal (e.g., 'Low', 'Medium', 'High')."
+        },
+        "detectedAt": {
+          "type": "string",
+          "description": "Timestamp when the suspicious pattern was detected or reported.",
+          "format": "date-time"
+        },
+        "detectedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who manually reported the signal, if applicable. (Relationship: UserProfile 1:N SuspiciousSignal)"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "description": "Timestamp when the suspicious signal was resolved.",
+          "format": "date-time"
+        },
+        "resolvedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile (admin) who resolved the signal. (Relationship: UserProfile 1:N SuspiciousSignal)"
+        },
+        "resolutionNotes": {
+          "type": "string",
+          "description": "Notes from the administrator regarding the resolution of the signal."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the suspicious signal is currently active and unresolved."
+        }
+      },
+      "required": [
+        "id",
+        "listingId",
+        "signalType",
+        "description",
+        "severity",
+        "detectedAt",
+        "isActive"
+      ]
+    },
+    "EvidenceSummary": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EvidenceSummary",
+      "type": "object",
+      "description": "Stores AI-generated factual summaries of uploaded evidence documents for quicker administrative review.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EvidenceSummary entity."
+        },
+        "evidenceDocumentId": {
+          "type": "string",
+          "description": "Reference to the EvidenceDocument that this summary pertains to. (Relationship: EvidenceDocument 1:N EvidenceSummary)"
+        },
+        "summaryText": {
+          "type": "string",
+          "description": "The AI-generated factual summary of the evidence document's content."
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "Timestamp when the summary was generated.",
+          "format": "date-time"
+        },
+        "generatedByModel": {
+          "type": "string",
+          "description": "The identifier or version of the AI model that generated the summary."
+        },
+        "lastModifiedAt": {
+          "type": "string",
+          "description": "Timestamp when the summary was last modified, potentially by a human reviewer.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "evidenceDocumentId",
+        "summaryText",
+        "generatedAt",
+        "generatedByModel"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/userProfiles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profile data. Each document's `id` field must match its `{userId}` in the path for strict ownership. Users can manage their own profile; administrators have full access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/adminRoles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "A dedicated collection adhering to the DBAC principle ('existence over content') for global roles. The mere existence of a document at `/adminRoles/{userId}` (which can be an empty document or contain minimal administrative metadata) grants administrative privileges to the `{userId}`. This simplifies security rules for administrator checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who holds an administrative role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/userProfiles/{userId}/draftListings/{listingId}",
+        "definition": {
+          "entityName": "Listing",
+          "schema": {
+            "$ref": "#/backend/entities/Listing"
+          },
+          "description": "Stores listings that are in 'Draft' status. These are strictly private to the creating seller (`{userId}`) and administrators. Each document contains a `sellerId` field which must match the `{userId}` in the path for authorization independence and clarity. The `status` field for documents in this collection will always be 'Draft'.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the seller who owns this draft listing."
+            },
+            {
+              "name": "listingId",
+              "description": "The unique identifier for the specific draft listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/listings/{listingId}",
+        "definition": {
+          "entityName": "Listing",
+          "schema": {
+            "$ref": "#/backend/entities/Listing"
+          },
+          "description": "Stores listings that are beyond the 'Draft' stage (e.g., 'Pending Review', 'Active', 'Sold', 'Archived'). These listings are accessible by the seller (`resource.data.sellerId`), administrators, and are publicly viewable if `status` is 'Active' and `isSuspicious` is false. Each document includes a denormalized `sellerId` for authorization independence, removing the need for `get()` calls in rules to check ownership.",
+          "params": [
+            {
+              "name": "listingId",
+              "description": "The unique identifier for the listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/listings/{listingId}/evidenceDocuments/{evidenceDocumentId}",
+        "definition": {
+          "entityName": "EvidenceDocument",
+          "schema": {
+            "$ref": "#/backend/entities/EvidenceDocument"
+          },
+          "description": "Stores supporting evidence documents for a given listing. Each document includes a denormalized `listingSellerId` (copied from the parent `Listing`) for authorization independence. Sellers can upload documents for their own listings, and administrators can review all documents. The `uploadedByUserId` field must match the `listingSellerId` in the document for seller-created documents.",
+          "params": [
+            {
+              "name": "listingId",
+              "description": "The unique identifier of the parent listing."
+            },
+            {
+              "name": "evidenceDocumentId",
+              "description": "The unique identifier for the evidence document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/listings/{listingId}/trustBadges/{badgeId}",
+        "definition": {
+          "entityName": "TrustBadge",
+          "schema": {
+            "$ref": "#/backend/entities/TrustBadge"
+          },
+          "description": "Stores trust badges assigned to a listing. Each badge document includes a denormalized `listingSellerId` (copied from the parent `Listing`) for authorization independence. Only administrators can assign badges; public users can view them alongside the listing.",
+          "params": [
+            {
+              "name": "listingId",
+              "description": "The unique identifier of the parent listing."
+            },
+            {
+              "name": "badgeId",
+              "description": "The unique identifier for the trust badge."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/listings/{listingId}/suspiciousSignals/{signalId}",
+        "definition": {
+          "entityName": "SuspiciousSignal",
+          "schema": {
+            "$ref": "#/backend/entities/SuspiciousSignal"
+          },
+          "description": "Records suspicious patterns detected for a listing. Each signal document includes a denormalized `listingSellerId` (copied from the parent `Listing`) for authorization independence. Administrators can view and resolve signals; sellers can view signals related to their own listings.",
+          "params": [
+            {
+              "name": "listingId",
+              "description": "The unique identifier of the parent listing."
+            },
+            {
+              "name": "signalId",
+              "description": "The unique identifier for the suspicious signal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/listings/{listingId}/evidenceDocuments/{evidenceDocumentId}/evidenceSummaries/{summaryId}",
+        "definition": {
+          "entityName": "EvidenceSummary",
+          "schema": {
+            "$ref": "#/backend/entities/EvidenceSummary"
+          },
+          "description": "Stores AI-generated summaries of evidence documents. Each summary document includes denormalized `listingId`, `listingSellerId` (from the grandparent `Listing`), and `evidenceDocumentUploadedByUserId` (from the parent `EvidenceDocument`) for complete authorization independence. Accessible by administrators and the seller who owns the listing/document.",
+          "params": [
+            {
+              "name": "listingId",
+              "description": "The unique identifier of the grandparent listing."
+            },
+            {
+              "name": "evidenceDocumentId",
+              "description": "The unique identifier of the parent evidence document."
+            },
+            {
+              "name": "summaryId",
+              "description": "The unique identifier for the evidence summary."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure for the Kenya Land Trust application is designed following the principles of Authorization Independence, Structural Segregation, and DBAC. This approach minimizes security rule complexity, enhances debuggability, and ensures scalability.\n\n**Authorization Independence & Denormalization:**\n\n1.  **Denormalized Ownership:** For all subcollections (e.g., \"evidenceDocuments\", \"trustBadges\", \"suspiciousSignals\", \"evidenceSummaries\"), the `sellerId` of the parent `Listing` (or grandparent `Listing` in the case of `evidenceSummaries`) is denormalized directly into the document. This is critical because it eliminates the need for `get()` calls in security rules to check parent ownership, thereby preventing breaking of atomic operations and simplifying rule logic. For `EvidenceSummary`, both `listingSellerId` and `evidenceDocumentUploadedByUserId` are denormalized to ensure full independence from parent documents.\n2.  **Path-Based Ownership:** For user-specific data like `userProfiles/{userId}` and `userProfiles/{userId}/draftListings`, the `userId` in the path explicitly grants ownership access to `request.auth.uid`, making rules straightforward.\n\n**Structural Segregation & QAPs (Queryable Access Patterns):**\n\n1.  **User Profiles & Roles:**\n    *   `/userProfiles/{userId}`: Stores general user data. Access is controlled by the path, with `{userId}` having R/W access to their own profile, and administrators having full access. This collection is for individual user profile management.\n    *   `/adminRoles/{userId}`: A dedicated collection using the \"existence over content\" DBAC strategy. The mere presence of a document for a `userId` here signifies administrative privileges. This provides a clear, simple, and efficient way to check admin status in security rules without requiring custom claims.\n\n2.  **Listing Segregation for Security Posture:**\n    *   `/userProfiles/{userId}/draftListings/{listingId}`: This collection is strictly for listings in 'Draft' status. Access is highly restricted to the creating seller (`{userId}`) and administrators. This segregation ensures that private, incomplete data is never accidentally exposed. Since it's a subcollection under a user, it explicitly enforces owner-based authorization efficiently.\n    *   `/listings/{listingId}`: This top-level collection holds listings that are ready for public viewing or administrative review (statuses like 'Pending Review', 'Active', 'Sold', 'Archived'). This segregation is crucial for enabling robust QAPs.\n        *   **For public users**, security rules can efficiently filter and allow `list` and `get` operations *only* for documents where `status == 'Active'` and `isSuspicious == false`. This adheres to the QAP principle by ensuring that rules are not filters that apply after data retrieval, but rather pre-conditions for retrieval. Firestore's query rules can enforce these conditions effectively.\n        *   **For sellers**, they can access their own non-draft listings by checking `resource.data.sellerId == request.auth.uid`. The `sellerId` is denormalized in each listing document for authorization independence.\n        *   **For administrators**, full R/W access is granted via the `/adminRoles` collection check.\n\n3.  **Nested Data Segregation:** Subcollections like `evidenceDocuments`, `trustBadges`, `suspiciousSignals` are nested under `/listings/{listingId}`. This logical grouping maintains data relationships while ensuring that authorization rules for these sub-entities are independent of their parent `Listing` through the denormalization of `listingSellerId`. The `evidenceSummaries` are further nested under `evidenceDocuments`, also with necessary denormalization of grandparent and parent `sellerId` and `uploadedByUserId` to ensure complete independence.\n\nThis structure prioritizes security and simplifies rule writing by clearly separating data based on its access requirements and denormalizing necessary authorization contexts into each document."
+  }
+}

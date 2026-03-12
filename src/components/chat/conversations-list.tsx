@@ -15,6 +15,10 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { Badge } from '@/components/ui/badge';
 import { conversationStatusLabel, getConversationStatus } from '@/lib/conversation-status';
 
+/**
+ * ConversationsList - Enhanced Inbox Sidebar
+ * Features "Awaiting response" badges and sender-aware snippets.
+ */
 export function ConversationsList() {
     const { user, loading: authLoading } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -53,7 +57,7 @@ export function ConversationsList() {
     if (loading || authLoading) {
         return (
             <div className="p-4 space-y-4">
-                {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+                {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
             </div>
         )
     }
@@ -65,9 +69,11 @@ export function ConversationsList() {
 
     return (
         <div className="h-full overflow-y-auto">
-            <h2 className="p-4 text-lg font-semibold border-b">Chats</h2>
+            <div className="p-4 border-b bg-muted/30">
+              <h2 className="text-sm font-black uppercase tracking-widest text-primary">Secure Inboxes</h2>
+            </div>
             {conversations.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">No conversations yet. Buyer messages will appear here.</p>
+                <p className="p-8 text-center text-xs font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">No active signals yet. Start a conversation from any listing.</p>
             ) : (
                 <nav className="flex flex-col">
                     {conversations.map(convo => {
@@ -75,40 +81,48 @@ export function ConversationsList() {
                         if (!otherParticipant) return null;
                         const isActive = pathname.includes(convo.id);
                         const status = getConversationStatus(convo, user?.uid);
+                        const lastMsgFromMe = convo.lastMessage?.senderId === user?.uid;
+                        const needsAction = !lastMsgFromMe && status !== 'closed';
+
                         return (
                             <Link href={`/messages/${convo.id}`} key={convo.id} className={cn(
-                                "flex items-center gap-3 p-4 border-b transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                                isActive && "bg-secondary"
+                                "flex items-center gap-3 p-4 border-b transition-all hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+                                isActive && "bg-accent/5 border-l-4 border-l-accent pl-3"
                             )}>
                                 <div className="relative h-12 w-12 flex-shrink-0">
                                     <Image
                                         src={convo.listingImage || 'https://picsum.photos/seed/property/100/100'}
                                         alt={convo.listingTitle}
                                         fill
-                                        className="rounded-md object-cover"
+                                        className="rounded-lg object-cover shadow-sm"
                                     />
+                                    {needsAction && (
+                                      <span className="absolute -top-1 -right-1 h-3 w-3 bg-risk rounded-full border-2 border-background animate-pulse" />
+                                    )}
                                 </div>
                                 <div className="flex-1 overflow-hidden">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <p className="font-semibold truncate">{convo.listingTitle}</p>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                                                {conversationStatusLabel[status]}
-                                            </Badge>
-                                            {convo.lastMessage?.timestamp && (
-                                                <p className="text-xs text-muted-foreground flex-shrink-0">
-                                                    {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true })}
-                                                </p>
-                                            )}
-                                        </div>
+                                    <div className="flex justify-between items-start gap-2 mb-0.5">
+                                        <p className="font-bold text-sm truncate leading-tight">{convo.listingTitle}</p>
+                                        {convo.lastMessage?.timestamp && (
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground flex-shrink-0">
+                                                {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: false })}
+                                            </p>
+                                        )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground truncate">
-                                        With: {otherParticipant.displayName}
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight mb-1">
+                                        Agent: {otherParticipant.displayName}
                                     </p>
-                                    <p className="text-sm text-muted-foreground truncate mt-1">
-                                        {convo.lastMessage?.senderId === user?.uid && 'You: '}
-                                        {convo.lastMessage?.text}
-                                    </p>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="text-xs text-foreground/70 truncate italic flex-1">
+                                          {lastMsgFromMe && <span className="font-black text-[9px] uppercase not-italic mr-1 opacity-60">You:</span>}
+                                          {convo.lastMessage?.text || 'Identity pulse initiated...'}
+                                      </p>
+                                      {needsAction && (
+                                        <Badge variant="risk" className="h-4 px-1.5 text-[8px] font-black uppercase tracking-tighter shrink-0">
+                                          Awaiting You
+                                        </Badge>
+                                      )}
+                                    </div>
                                 </div>
                             </Link>
                         )

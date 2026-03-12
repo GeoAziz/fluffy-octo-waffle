@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation, Message } from '@/lib/types';
+import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation, Message, UserPreferences, Notification } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
@@ -16,7 +16,6 @@ import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-revie
 
 /**
  * Retrieves the authenticated user from the session cookie.
- * Definitive server-side auth check.
  */
 export async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role'], displayName: string | null, email?: string} | null> {
     const cookieStore = await cookies();
@@ -41,30 +40,50 @@ export async function getAuthenticatedUser(): Promise<{uid: string, role: UserPr
 }
 
 /**
+ * Creates a notification pulse for a specific user identity.
+ */
+export async function createNotificationAction(userId: string, data: Omit<Notification, 'id' | 'createdAt' | 'read' | 'userId'>) {
+  const userRef = adminDb.collection('users').doc(userId);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) return;
+
+  const preferences = userDoc.data()?.preferences as UserPreferences;
+  
+  // Create In-App Notification
+  await userRef.collection('notifications').add({
+    ...data,
+    userId,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  // Trigger Email Pulse if configured
+  if (preferences?.notifications?.email && userDoc.data()?.email) {
+    await sendBrandedEmail({
+      to: userDoc.data()?.email,
+      type: 'system', // Generic type for now
+      subject: data.title,
+      payload: { name: userDoc.data()?.displayName || 'User', message: data.message }
+    });
+  }
+}
+
+/**
  * Transition a user role from BUYER to SELLER.
- * Formalizes the seller onboarding workflow with audit logging and notification.
  */
 export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) throw new Error('Authentication required.');
   
-  // Idempotency check: Don't update if already a seller
-  if (authUser.role === 'SELLER') {
-    return { success: true };
-  }
-
-  if (authUser.role === 'ADMIN') {
-    throw new Error('Administrators cannot transition to seller accounts.');
-  }
+  if (authUser.role === 'SELLER') return { success: true };
+  if (authUser.role === 'ADMIN') throw new Error('Administrators cannot transition roles.');
 
   const userRef = adminDb.collection('users').doc(authUser.uid);
-  
   await userRef.update({
     role: 'SELLER',
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  // Log the identity transition
   await adminDb.collection('auditLogs').add({
     adminId: authUser.uid,
     action: 'ROLE_UPGRADE',
@@ -74,33 +93,31 @@ export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
     timestamp: FieldValue.serverTimestamp(),
   });
 
-  // Send email notification of role upgrade
-  try {
-    await sendBrandedEmail({
-      to: authUser.email || '',
-      subject: 'Role Upgrade Confirmed - Welcome to Seller Network',
-      htmlBody: `
-        <h2>Welcome to Kenya Land Trust Seller Network</h2>
-        <p>Hello ${authUser.displayName},</p>
-        <p>Your account has been successfully upgraded to Seller role. You now have access to:</p>
-        <ul>
-          <li>Seller Dashboard - Manage your listings and analytics</li>
-          <li>Listing Creation - Add properties to the verified marketplace</li>
-          <li>Evidence Uploads - Submit documentation for trust badge review</li>
-          <li>Buyer Communications - Respond to inquiries through our messaging system</li>
-        </ul>
-        <p><a href="https://kenyalandtrust.com/dashboard">Access Your Seller Dashboard</a></p>
-        <p>If you didn't request this upgrade, please contact support immediately.</p>
-        <p>Best regards,<br/>Kenya Land Trust Team</p>
-      `
-    });
-  } catch (emailError) {
-    console.error('Failed to send role upgrade notification email:', emailError);
-    // Don't throw - email failure shouldn't block role transition
-  }
-
   revalidatePath('/profile');
   revalidatePath('/dashboard');
+  
+  return { success: true };
+}
+
+/**
+ * Updates user preferences for discovery and onboarding.
+ */
+export async function updateUserPreferencesAction(preferences: Partial<UserPreferences>): Promise<{ success: boolean }> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const userRef = adminDb.collection('users').doc(authUser.uid);
+  const userDoc = await userRef.get();
+  const currentPreferences = userDoc.data()?.preferences || {};
+
+  await userRef.update({
+    preferences: { ...currentPreferences, ...preferences },
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath('/buyer/dashboard');
+  revalidatePath('/buyer/onboarding');
+  revalidatePath('/profile');
   
   return { success: true };
 }
@@ -154,7 +171,16 @@ export async function updateListing(listingId: string, data: { status?: ListingS
 
   await listingRef.update(updateData);
 
-  // Send branded email to seller about the badge/status update
+  // Send Notification to Seller
+  if (sellerProfile) {
+    await createNotificationAction(listingData.ownerId, {
+      title: 'Trust Signal Updated',
+      message: `Your listing "${listingData.title}" has been assigned a ${data.badge || listingData.badge} badge.`,
+      type: 'badge_update',
+      link: `/listings/${listingId}`
+    });
+  }
+
   if (sellerProfile?.email) {
     await sendBrandedEmail({
       to: sellerProfile.email,
@@ -305,7 +331,6 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 
   await docRef.set(newListingData);
 
-  // Send branded confirmation emails
   if (authUser.email) {
     await sendBrandedEmail({
       to: authUser.email,
@@ -316,19 +341,6 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
         listingTitle: title,
       }
     });
-
-    if (evidenceCount > 0) {
-      await sendBrandedEmail({
-        to: authUser.email,
-        type: 'evidence_vaulted',
-        subject: 'Evidence Sync Complete',
-        payload: {
-          name: authUser.displayName || 'Seller',
-          listingTitle: title,
-          fileCount: evidenceCount,
-        }
-      });
-    }
   }
 
   revalidatePath('/');
@@ -393,22 +405,6 @@ export async function deleteListing(listingId: string) {
     revalidatePath('/');
     revalidatePath('/dashboard');
     return { success: true };
-}
-
-/**
- * Performs bulk status updates for multiple listings.
- */
-export async function bulkUpdateListingStatus(listingIds: string[], status: ListingStatus): Promise<{ success: boolean }> {
-  const authUser = await getAuthenticatedUser();
-  if (authUser?.role !== 'ADMIN') throw new Error('Unauthorized.');
-  const batch = adminDb.batch();
-  listingIds.forEach(id => {
-    batch.update(adminDb.collection('listings').doc(id), { status, adminReviewedAt: FieldValue.serverTimestamp() });
-  });
-  await batch.commit();
-  revalidatePath('/admin');
-  revalidatePath('/');
-  return { success: true };
 }
 
 /**
@@ -593,8 +589,17 @@ export async function getOrCreateConversation(listingId: string): Promise<{ conv
   await docRef.set({
     listingId: listing.id, listingTitle: listing.title, listingImage: listing.images[0]?.url || '', participantIds,
     participants: { [authUser.uid]: { displayName: buyerProfile.displayName || 'Buyer', photoURL: buyerProfile.photoURL || '' }, [listing.ownerId]: { displayName: sellerProfile.displayName || 'Seller', photoURL: sellerProfile.photoURL || '' } },
-    lastMessage: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+    lastMessage: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), status: 'new'
   });
+
+  // Create Notification for Seller
+  await createNotificationAction(listing.ownerId, {
+    title: 'New Buyer Inquiry',
+    message: `${buyerProfile.displayName || 'A buyer'} is interested in your listing: "${listing.title}".`,
+    type: 'inquiry',
+    link: `/messages/${conversationId}`
+  });
+
   return { conversationId };
 }
 
@@ -624,8 +629,6 @@ export async function markListingReportStatus(reportId: string, status: 'new' | 
 export async function changeUserPasswordAction(current: string, next: string) {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Auth required');
-    // Note: Firebase Client SDK handles password updates best due to re-authentication requirements.
-    // This is a placeholder for server-side logging if needed.
     return { success: true };
 }
 

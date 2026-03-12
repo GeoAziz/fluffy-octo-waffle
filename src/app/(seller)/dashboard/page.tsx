@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
-import type { Conversation, Listing, UserProfile, Evidence } from '@/lib/types';
-import { AlertTriangle, Eye, ListChecks, MessageSquareText, PlusCircle, FileText, ShieldCheck, Clock, Activity, Target, CheckCircle2 } from 'lucide-react';
+import type { Conversation, Listing, UserProfile, Evidence, BadgeValue } from '@/lib/types';
+import { AlertTriangle, Eye, ListChecks, MessageSquareText, PlusCircle, FileText, ShieldCheck, Clock, Activity, Target, CheckCircle2, TrendingUp, Sparkles, ArrowUpRight } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
@@ -35,6 +35,10 @@ const statusStyles: Record<ReturnType<typeof getConversationStatus>, string> = {
   closed: 'bg-muted text-muted-foreground',
 };
 
+/**
+ * SellerDashboard - High-trust analytical command center for property owners.
+ * Features specialized Evidence Feedback loops and signal optimization paths.
+ */
 export default async function SellerDashboard() {
   const user = await getAuthenticatedUser();
 
@@ -71,17 +75,40 @@ export default async function SellerDashboard() {
   const evidenceStats = {
     pending: evidence.filter(e => !e.verified).length,
     verified: evidence.filter(e => e.verified).length,
-    total: evidence.length
+    total: evidence.length,
+    types: Array.from(new Set(evidence.map(e => e.type)))
   };
 
   const needsAttentionItems = listings.filter(l => l.status === 'rejected');
+
+  // Badge upgrade logic (Strategic Enhancement)
+  const getBadgeUpgradePath = (listing: Listing) => {
+    const currentBadge = listing.badge;
+    const listingEvidence = evidence.filter(e => e.listingId === listing.id);
+    const hasTitleDeed = listingEvidence.some(e => e.type === 'title_deed');
+    const hasSurveyMap = listingEvidence.some(e => e.type === 'survey_map');
+    const hasID = listingEvidence.some(e => e.type === 'id_document');
+
+    if (currentBadge === 'TrustedSignal') return null;
+    
+    if (currentBadge === 'EvidenceReviewed') {
+      if (!hasID) return { target: 'TrustedSignal', missing: 'Identity Proof (ID/PIN)', action: 'Upload ID document to reach Gold tier.' };
+      if (!hasSurveyMap) return { target: 'TrustedSignal', missing: 'Certified Survey Map', action: 'Add a survey map to optimize signal.' };
+    }
+
+    if (currentBadge === 'EvidenceSubmitted' || !currentBadge) {
+      if (!hasTitleDeed) return { target: 'EvidenceReviewed', missing: 'Primary Title Deed', action: 'Vault your title deed to start review.' };
+    }
+
+    return null;
+  };
 
   return (
     <SellerPage
       title="Dashboard"
       description={`Welcome back${userProfile.displayName ? `, ${userProfile.displayName}` : ''}. Review your property vault status below.`}
       actions={(
-        <Button asChild className="shadow-glow font-bold uppercase text-[10px] tracking-widest">
+        <Button asChild className="shadow-glow font-bold uppercase text-[10px] tracking-widest h-11 px-6">
           <Link href="/listings/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Listing
@@ -90,33 +117,63 @@ export default async function SellerDashboard() {
       )}
     >
 
-      {needsAttentionItems.length > 0 && (
-        <Card className="mb-8 border-warning/40 bg-warning/5 animate-shake">
+      {/* Strategic Enhancement: Signal Optimization Loop */}
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {needsAttentionItems.length > 0 && (
+          <Card className="border-warning/40 bg-warning/5 animate-shake-error">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-warning">
+                <AlertTriangle className="h-4 w-4" />
+                Action Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {needsAttentionItems.map((item) => (
+                <div key={item.id} className="p-3 bg-background/80 border border-warning/20 rounded-xl space-y-2">
+                  <p className="text-xs font-bold">{item.title}</p>
+                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">Admin: "{item.rejectionReason}"</p>
+                  <Button asChild size="sm" variant="outline" className="h-8 text-[9px] font-black uppercase w-full">
+                    <Link href={`/listings/${item.id}/edit`}>Re-Vault Listing</Link>
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="border-accent/20 bg-accent/5">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-warning">
-              <AlertTriangle className="h-4 w-4" />
-              Action Required
+            <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-accent">
+              <Sparkles className="h-4 w-4" />
+              Signal Optimization
             </CardTitle>
-            <CardDescription className="text-xs font-medium text-warning/80">
-              One or more properties were rejected during the moderation sweep. Correct the documentation to resubmit.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {needsAttentionItems.map((item) => (
-              <Alert key={item.id} variant="default" className="bg-background/80 border-warning/20">
-                <AlertTriangle className="h-4 w-4 !text-warning" />
-                <AlertTitle className="text-xs font-bold">{item.title}</AlertTitle>
-                <AlertDescription className="mt-2 space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground italic">Admin Feedback: &quot;{item.rejectionReason || 'No reason provided.'}&quot;</p>
-                  <Button asChild size="sm" variant="outline" className="h-8 text-[10px] font-bold uppercase tracking-wider">
-                    <Link href={`/listings/${item.id}/edit`}>Edit & Resubmit</Link>
+            {listings.filter(l => l.status === 'approved' && l.badge !== 'TrustedSignal').slice(0, 2).map(listing => {
+              const upgrade = getBadgeUpgradePath(listing);
+              if (!upgrade) return null;
+              return (
+                <div key={listing.id} className="p-3 bg-background/80 border border-accent/20 rounded-xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-bold truncate max-w-[150px]">{listing.title}</p>
+                    <Badge variant="outline" className="text-[8px] h-4">Goal: {upgrade.target}</Badge>
+                  </div>
+                  <p className="text-[10px] text-accent font-bold uppercase">{upgrade.action}</p>
+                  <Button asChild size="sm" variant="ghost" className="h-8 text-[9px] font-black uppercase w-full text-accent hover:bg-accent/10">
+                    <Link href={`/listings/${listing.id}/edit`}>Optimize Vault</Link>
                   </Button>
-                </AlertDescription>
-              </Alert>
-            ))}
+                </div>
+              );
+            })}
+            {listings.every(l => l.badge === 'TrustedSignal') && listings.length > 0 && (
+              <div className="text-center py-4">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                <p className="text-xs font-black uppercase tracking-widest text-emerald-600">All Nodes Optimized</p>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+      </div>
 
       {/* Trust & Performance Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -146,7 +203,7 @@ export default async function SellerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg bg-background overflow-hidden relative">
+        <Card className="border-none shadow-lg bg-background overflow-hidden relative border border-border/40">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               <Target className="h-3 w-3 text-emerald-500" /> Conversion
@@ -158,7 +215,7 @@ export default async function SellerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg bg-background overflow-hidden relative">
+        <Card className="border-none shadow-lg bg-background overflow-hidden relative border border-border/40">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               <FileText className="h-3 w-3 text-accent" /> Evidence Progress
@@ -186,7 +243,7 @@ export default async function SellerDashboard() {
               <ListChecks className="h-5 w-5 text-primary" /> Active Registry
             </h2>
             <Button asChild variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary">
-              <Link href="/dashboard/listings">View Archive</Link>
+              <Link href="/dashboard/listings">View Full Archive</Link>
             </Button>
           </div>
 
@@ -280,9 +337,9 @@ export default async function SellerDashboard() {
                     <TableHeader className="bg-muted/30">
                       <TableRow>
                         <TableHead className="text-[10px] font-black uppercase tracking-widest pl-6">Document</TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Listing</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Listing Node</TableHead>
                         <TableHead className="text-[10px] font-black uppercase tracking-widest">Status</TableHead>
-                        <TableHead className="text-right pr-6 text-[10px] font-black uppercase tracking-widest">Sync</TableHead>
+                        <TableHead className="text-right pr-6 text-[10px] font-black uppercase tracking-widest">Sync Time</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -298,7 +355,7 @@ export default async function SellerDashboard() {
                             </TableCell>
                             <TableCell>
                               <span className="text-[10px] font-medium text-muted-foreground uppercase truncate max-w-[150px] block">
-                                {parentListing?.title || 'Unknown'}
+                                {parentListing?.title || 'Unknown Resource'}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -347,12 +404,20 @@ export default async function SellerDashboard() {
                 recentConversations.map((convo) => {
                   const status = getConversationStatus(convo, user.uid);
                   const updatedAt = convo.updatedAt?.toDate?.() ?? new Date();
+                  const needsAction = convo.lastMessage?.senderId !== user.uid && status !== 'closed';
+
                   return (
                     <Link
                       key={convo.id}
                       href={`/messages/${convo.id}`}
-                      className="block rounded-xl border border-border/60 bg-card p-4 transition-all hover:shadow-md hover:border-primary/20 group"
+                      className={cn(
+                        "block rounded-xl border border-border/60 bg-card p-4 transition-all hover:shadow-md hover:border-primary/20 group relative overflow-hidden",
+                        needsAction && "border-risk/30 bg-risk-light/30"
+                      )}
                     >
+                      {needsAction && (
+                        <div className="absolute top-0 left-0 w-1 h-full bg-risk" />
+                      )}
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <p className="font-bold text-sm truncate group-hover:text-primary transition-colors">{convo.listingTitle}</p>
                         <Badge className={cn("text-[9px] font-black uppercase tracking-widest", statusStyles[status])}>
@@ -360,7 +425,9 @@ export default async function SellerDashboard() {
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                        <span>{convo.participants[Object.keys(convo.participants).find(id => id !== user.uid) || '']?.displayName}</span>
+                        <span className={cn(needsAction && "text-risk font-black")}>
+                          {needsAction ? 'AWAITING REPLY' : convo.participants[Object.keys(convo.participants).find(id => id !== user.uid) || '']?.displayName}
+                        </span>
                         <span>{formatDistanceToNow(updatedAt, { addSuffix: true })}</span>
                       </div>
                     </Link>
