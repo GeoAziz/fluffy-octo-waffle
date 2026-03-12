@@ -59,8 +59,8 @@ const ChatSkeleton = () => (
 );
 
 
-export default function ConversationPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-    const params = use(paramsPromise);
+export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const { user } = useAuth();
     const { toast } = useToast();
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -81,7 +81,7 @@ export default function ConversationPage({ params: paramsPromise }: { params: Pr
         if (!user) return;
         setLoading(true);
 
-        const convoRef = doc(db, 'conversations', params.id);
+        const convoRef = doc(db, 'conversations', id);
         const convoUnsubscribe = onSnapshot(convoRef, (doc) => {
             if (doc.exists()) {
                 const convoData = { id: doc.id, ...doc.data() } as Conversation;
@@ -105,7 +105,7 @@ export default function ConversationPage({ params: paramsPromise }: { params: Pr
             setLoading(false);
         });
 
-        const messagesColRef = collection(db, 'conversations', params.id, 'messages');
+        const messagesColRef = collection(db, 'conversations', id, 'messages');
         const messagesQuery = query(messagesColRef, orderBy('timestamp', 'asc'));
         const messagesUnsubscribe = onSnapshot(messagesQuery, (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
@@ -121,53 +121,75 @@ export default function ConversationPage({ params: paramsPromise }: { params: Pr
             convoUnsubscribe();
             messagesUnsubscribe();
         };
-    }, [params.id, user]);
+    }, [id, user]);
 
-    const fetchSimilarProperties = async (listingId: string) => {
-      try {
-        const listingDoc = await getDocs(query(collection(db, 'listings'), where('__name__', '==', listingId)));
-        if (!listingDoc.empty) {
-          const data = listingDoc.docs[0].data();
-          const q = query(
-            collection(db, 'listings'), 
-            where('county', '==', data.county),
-            where('status', '==', 'approved'),
-            limit(2)
-          );
-          const similar = await getDocs(q);
-          setSimilarListings(similar.docs.map(d => ({ id: d.id, ...d.data() } as Listing)).filter(l => l.id !== listingId));
-        }
-      } catch (e) { console.warn('Similar properties lookup failed.'); }
-    };
-
-    const handleSendMessage = async (e?: React.FormEvent, presetText?: string) => {
-        if (e) e.preventDefault();
-        const text = presetText || newMessage.trim();
-        if (!text || !user || !conversation) return;
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !user || !conversation) return;
 
         setSending(true);
         setComposerState('sending');
         setNewMessage('');
 
-        const messagesColRef = collection(db, 'conversations', params.id, 'messages');
-        const messageData = { senderId: user.uid, text, timestamp: serverTimestamp() };
-        const convoRef = doc(db, 'conversations', params.id);
-        const convoUpdate = { 
-          lastMessage: { text, senderId: user.uid, timestamp: serverTimestamp() },
-          updatedAt: serverTimestamp(),
-          status: 'responded'
+        const messagesColRef = collection(db, 'conversations', id, 'messages');
+        const messageData = {
+            senderId: user.uid,
+            text: newMessage,
+            timestamp: serverTimestamp(),
+        };
+
+        const convoRef = doc(db, 'conversations', id);
+        const convoData = {
+            lastMessage: {
+                text: newMessage,
+                senderId: user.uid,
+                timestamp: serverTimestamp(),
+            },
+            updatedAt: serverTimestamp(),
+            status: 'responded',
         };
 
         try {
             await addDoc(messagesColRef, messageData);
-            await updateDoc(convoRef, convoUpdate);
+            await updateDoc(convoRef, convoData);
             setStatus('responded');
             setComposerState('sent');
         } catch (error) {
             setComposerState('failed');
-            setNewMessage(text);
-            toast({ variant: 'destructive', title: 'Send failed' });
-        } finally { setSending(false); }
+            toast({ variant: 'destructive', title: 'Send failed', description: 'Message could not be sent. Retry when ready.' });
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const fetchSimilarProperties = async (listingId: string) => {
+        try {
+            const listingsRef = collection(db, 'listings');
+            const listingsQuery = query(listingsRef, limit(3));
+            const snapshot = await getDocs(listingsQuery);
+            const listings = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as Listing))
+                .filter(listing => listing.id !== listingId)
+                .slice(0, 2);
+            setSimilarListings(listings);
+        } catch (error) {
+            console.error('Error fetching similar properties:', error);
+        }
+    };
+
+    const handleStatusChange = (nextStatus: ConversationStatus) => {
+        if (!conversation) return;
+        setStatus(nextStatus);
+        const convoRef = doc(db, 'conversations', id);
+        updateDoc(convoRef, { status: nextStatus }).catch(async (error) => {
+            const permissionError = new FirestorePermissionError({
+                path: convoRef.path,
+                operation: 'update',
+                requestResourceData: { status: nextStatus },
+            }, error);
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not update conversation status.' });
+        });
     };
 
     if (loading) return <ChatSkeleton />;
@@ -247,7 +269,7 @@ export default function ConversationPage({ params: paramsPromise }: { params: Pr
                         {!isSeller && messages.length > 0 && messages[messages.length - 1].senderId !== user?.uid && (
                           <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
                             {["I'd like to schedule a visit.", "Are documents ready?", "Is price negotiable?"].map(preset => (
-                              <button key={preset} onClick={() => handleSendMessage(undefined, preset)} className="px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent/20 transition-all">
+                              <button key={preset} onClick={() => { setNewMessage(preset); }} className="px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent/20 transition-all">
                                 {preset}
                               </button>
                             ))}
@@ -293,7 +315,7 @@ export default function ConversationPage({ params: paramsPromise }: { params: Pr
                       <div>
                           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Protocol Status</p>
                           <Select value={status} onValueChange={(v: ConversationStatus) => {
-                            const ref = doc(db, 'conversations', params.id);
+                            const ref = doc(db, 'conversations', id);
                             updateDoc(ref, { status: v });
                           }}>
                               <SelectTrigger className="w-full h-10 font-bold text-xs uppercase"><SelectValue /></SelectTrigger>
