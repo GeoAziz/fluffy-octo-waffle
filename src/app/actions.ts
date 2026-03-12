@@ -69,6 +69,75 @@ export async function createNotificationAction(userId: string, data: Omit<Notifi
 }
 
 /**
+ * Fetch all notifications for the authenticated user
+ */
+export async function getNotificationsForUser(): Promise<Notification[]> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const notificationsRef = adminDb.collection('users').doc(authUser.uid).collection('notifications');
+  const snapshot = await notificationsRef.orderBy('createdAt', 'desc').get();
+  
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Notification));
+}
+
+/**
+ * Get count of unread notifications for the authenticated user
+ */
+export async function getUnreadNotificationsCount(): Promise<number> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const notificationsRef = adminDb.collection('users').doc(authUser.uid).collection('notifications');
+  const snapshot = await notificationsRef.where('read', '==', false).get();
+  
+  return snapshot.size;
+}
+
+/**
+ * Mark a specific notification as read
+ */
+export async function markNotificationAsReadAction(notificationId: string): Promise<void> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const notificationRef = adminDb.collection('users').doc(authUser.uid).collection('notifications').doc(notificationId);
+  await notificationRef.update({ read: true });
+}
+
+/**
+ * Mark all notifications as read for the authenticated user
+ */
+export async function markAllNotificationsAsReadAction(): Promise<void> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const notificationsRef = adminDb.collection('users').doc(authUser.uid).collection('notifications');
+  const snapshot = await notificationsRef.where('read', '==', false).get();
+  
+  const batch = adminDb.batch();
+  snapshot.docs.forEach(doc => {
+    batch.update(doc.ref, { read: true });
+  });
+  
+  await batch.commit();
+}
+
+/**
+ * Delete a notification
+ */
+export async function deleteNotificationAction(notificationId: string): Promise<void> {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) throw new Error('Authentication required.');
+
+  const notificationRef = adminDb.collection('users').doc(authUser.uid).collection('notifications').doc(notificationId);
+  await notificationRef.delete();
+}
+
+/**
  * Transition a user role from BUYER to SELLER.
  */
 export async function requestSellerRoleAction(): Promise<{ success: boolean }> {
@@ -491,12 +560,48 @@ export async function getSavedSearchesForUser(userId: string): Promise<SavedSear
 }
 
 /**
- * Updates user profile details including photo.
+ * Updates user profile details including photo and onboarding data.
  */
 export async function updateUserProfileAction(formData: FormData) {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Auth required');
-    const updateData: any = { displayName: formData.get('displayName'), phone: formData.get('phone') || null, bio: formData.get('bio') || null, updatedAt: FieldValue.serverTimestamp() };
+    
+    const updateData: any = {
+        updatedAt: FieldValue.serverTimestamp()
+    };
+
+    // Handle onboarding data
+    const onboardingDataStr = formData.get('onboardingData');
+    if (onboardingDataStr) {
+        const onboardingData = JSON.parse(onboardingDataStr as string);
+        updateData.hasCompletedOnboarding = onboardingData.hasCompletedOnboarding;
+        updateData.onboardingCompletedAt = FieldValue.serverTimestamp();
+        updateData.preferredCounties = onboardingData.preferredCounties;
+        updateData.propertyPreferences = onboardingData.propertyPreferences;
+        updateData.budgetRange = onboardingData.budgetRange;
+        
+        // Revalidate explore route to show new preferences
+        revalidatePath('/explore');
+    }
+
+    // Handle profile updates
+    const displayName = formData.get('displayName');
+    if (displayName) updateData.displayName = displayName;
+    
+    const phone = formData.get('phone');
+    if (phone !== undefined) updateData.phone = phone || null;
+    
+    const bio = formData.get('bio');
+    if (bio !== undefined) updateData.bio = bio || null;
+
+    // Handle seller-specific data
+    const enabledForSelling = formData.get('enabledForSelling');
+    if (enabledForSelling) {
+        updateData.enabledForSelling = enabledForSelling === 'true';
+        updateData.sellerAgreementAcceptedAt = FieldValue.serverTimestamp();
+    }
+
+    // Handle photo upload
     const photo = formData.get('photo') as File | null;
     if (photo && photo.size > 0) {
         const buffer = Buffer.from(await photo.arrayBuffer());
@@ -504,8 +609,27 @@ export async function updateUserProfileAction(formData: FormData) {
         await adminStorage.bucket().file(path).save(buffer, { metadata: { contentType: photo.type } });
         updateData.photoURL = `https://storage.googleapis.com/${adminStorage.bucket().name}/${path}`;
     }
+
+    // Calculate profile completeness
+    const userDoc = await adminDb.collection('users').doc(authUser.uid).get();
+    const currentProfile = userDoc.data();
+    const mergedProfile = { ...currentProfile, ...updateData };
+    
+    const completeness = calculateProfileCompleteness(mergedProfile);
+    updateData.profileCompleteness = completeness;
+
     await adminDb.collection('users').doc(authUser.uid).update(updateData);
     revalidatePath('/profile');
+}
+
+function calculateProfileCompleteness(profile: any): number {
+    let score = 0;
+    if (profile.displayName) score += 20;
+    if (profile.phone) score += 20;
+    if (profile.bio) score += 20;
+    if (profile.photoURL) score += 20;
+    if (profile.role === 'SELLER' && profile.serviceArea) score += 20;
+    return Math.min(score, 100);
 }
 
 /**

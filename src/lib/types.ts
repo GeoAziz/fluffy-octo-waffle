@@ -113,6 +113,32 @@ export type UserProfile = {
   createdAt: any; // Firestore timestamp
   verified: boolean;
   preferences?: UserPreferences;
+  // Onboarding tracking
+  hasCompletedOnboarding?: boolean;
+  onboardingCompletedAt?: any;
+  // Profile completeness (0-100)
+  profileCompleteness?: number;
+  // Seller-specific fields
+  serviceArea?: string[];
+  enabledForSelling?: boolean;
+  sellerAgreementAcceptedAt?: any;
+  // Notification preferences
+  notificationPreferences?: {
+    email: boolean;
+    inApp: boolean;
+    inquiries: boolean;
+    messages: boolean;
+    badges: boolean;
+  };
+  // Last activity tracking
+  lastActiveAt?: any;
+  // Buyer preferences (for onboarding)
+  preferredCounties?: string[];
+  budgetRange?: {
+    min: number;
+    max: number;
+  };
+  propertyPreferences?: string[];
 };
 
 export type Notification = {

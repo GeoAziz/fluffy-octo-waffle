@@ -15,6 +15,7 @@ import {
   PlusCircle,
   ShieldCheck,
   User,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { ThemeToggle } from '@/components/theme-toggle-advanced';
+import { BecomeSellerModal } from './become-seller-modal';
+import { NotificationBadge } from '@/components/notification-badge';
 
 export function BuyerHeader() {
   const pathname = usePathname();
@@ -43,6 +46,7 @@ export function BuyerHeader() {
   const [isMounted, setIsMounted] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [showBecomeSellerModal, setShowBecomeSellerModal] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -64,6 +68,7 @@ export function BuyerHeader() {
 
   const isSeller = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
   const isAdmin = userProfile?.role === 'ADMIN';
+  const isBuyer = userProfile?.role === 'BUYER';
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -109,6 +114,8 @@ export function BuyerHeader() {
               <Skeleton className="h-8 w-24" />
             ) : user && userProfile ? (
               <>
+                <NotificationBadge variant="buyer" />
+
                 <Link href="/messages" className="relative group" aria-label={`You have ${unreadMessages} unread messages`}>
                   <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-accent/10">
                     <MessageSquare className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -146,6 +153,16 @@ export function BuyerHeader() {
                         Buyer Dashboard
                       </Link>
                     </DropdownMenuItem>
+
+                    {isBuyer && (
+                      <DropdownMenuItem
+                        onClick={() => setShowBecomeSellerModal(true)}
+                        className="rounded-lg h-11 bg-primary/5 hover:bg-primary/10 text-primary focus:bg-primary/10 cursor-pointer"
+                      >
+                        <Briefcase className="mr-3 h-4 w-4" />
+                        <span className="font-semibold">Become a Seller</span>
+                      </DropdownMenuItem>
+                    )}
 
                     {isSeller && (
                       <DropdownMenuItem asChild className="rounded-lg h-11 bg-accent/5 text-accent focus:bg-accent/10">
@@ -295,6 +312,8 @@ export function BuyerHeader() {
           )}
         </div>
       </div>
+
+      <BecomeSellerModal open={showBecomeSellerModal} onOpenChange={setShowBecomeSellerModal} />
     </header>
   );
 }

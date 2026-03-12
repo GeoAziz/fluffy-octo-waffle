@@ -9,6 +9,7 @@ import { getAdminStatsAction } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnalyticsChart } from './_components/analytics-chart';
 import { AdminPage } from './_components/admin-page';
+import { AdminTriageList } from '@/components/admin/admin-triage-list';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';

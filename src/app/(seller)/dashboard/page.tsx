@@ -15,6 +15,7 @@ import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile, Evidence, BadgeValue } from '@/lib/types';
 import { AlertTriangle, Eye, ListChecks, MessageSquareText, PlusCircle, FileText, ShieldCheck, Clock, Activity, Target, CheckCircle2, TrendingUp, Sparkles, ArrowUpRight } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
+import { SellerOnboardingWizard } from '@/components/seller/seller-onboarding-wizard';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
 import { getAuthenticatedUser } from './_lib/auth';
 import {
@@ -104,18 +105,24 @@ export default async function SellerDashboard() {
   };
 
   return (
-    <SellerPage
-      title="Dashboard"
-      description={`Welcome back${userProfile.displayName ? `, ${userProfile.displayName}` : ''}. Review your property vault status below.`}
-      actions={(
-        <Button asChild className="shadow-glow font-bold uppercase text-[10px] tracking-widest h-11 px-6">
-          <Link href="/listings/new">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Listing
-          </Link>
-        </Button>
-      )}
-    >
+    <>
+      {/* Show onboarding wizard if this is first-time seller with no listings */}
+      {listings.length === 0 && <SellerOnboardingWizard />}
+
+      {/* Main Dashboard - only show if not onboarding or if user has listings */}
+      {listings.length > 0 && (
+        <SellerPage
+          title="Dashboard"
+          description={`Welcome back${userProfile.displayName ? `, ${userProfile.displayName}` : ''}. Review your property vault status below.`}
+          actions={(
+            <Button asChild className="shadow-glow font-bold uppercase text-[10px] tracking-widest h-11 px-6">
+              <Link href="/listings/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Listing
+              </Link>
+            </Button>
+          )}
+        >
 
       {/* Strategic Enhancement: Signal Optimization Loop */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -454,6 +461,8 @@ export default async function SellerDashboard() {
           </Card>
         </div>
       </div>
-    </SellerPage>
+        </SellerPage>
+      )}
+    </>
   );
 }
