@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import type { PropsWithChildren } from 'react';
-import { BuyerHeader } from '@/components/buyer/buyer-header';
+import { PublicHeader } from '@/components/public-header';
 import { BuyerFooter } from '@/components/buyer/buyer-footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
-import { OnboardingGuard } from '@/components/buyer/onboarding-guard';
 
 export const metadata: Metadata = {
   title: 'Kenya Land Trust - Verified Land Listings',
@@ -12,18 +11,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * BuyerLayout - Layout for buyer experience
- * Provides header, footer, and mobile bottom navigation
+ * PublicLayout — Shell for public-facing and shared authenticated routes.
+ * Uses the role-aware PublicHeader so each role sees its own navigation,
+ * with no buyer-specific chrome leaking to ADMIN or SELLER users.
  */
-export default function BuyerLayout({ children }: PropsWithChildren) {
+export default function PublicLayout({ children }: PropsWithChildren) {
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <BuyerHeader />
-      <OnboardingGuard>
-        <main className="flex-1 w-full pb-16 md:pb-0 animate-page-enter">
-          {children}
-        </main>
-      </OnboardingGuard>
+      <PublicHeader />
+      <main className="flex-1 w-full pb-16 md:pb-0 animate-page-enter">
+        {children}
+      </main>
       <BuyerFooter />
       <MobileBottomNav />
     </div>

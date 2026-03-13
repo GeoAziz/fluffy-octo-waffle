@@ -28,8 +28,8 @@ export function validateRedirect(path: string | null, role: string): string | nu
     return null;
   }
 
-  // Buyer isolation: Only buyers/admins can redirect to /buyer paths
-  if (path.startsWith('/buyer') && role !== 'BUYER' && role !== 'ADMIN') {
+  // Buyer isolation: Only buyers can redirect to /buyer paths
+  if (path.startsWith('/buyer') && role !== 'BUYER') {
     return null;
   }
 
