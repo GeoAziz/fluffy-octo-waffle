@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition, useMemo, useRef } from 'react';
+import { useEffect, useState, useTransition, useMemo, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import Image from 'next/image';
@@ -37,16 +37,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { TrustBadge } from '@/components/trust-badge';
+import { BadgeTooltip } from './badge-tooltip';
+import { ComparisonTray } from './comparison-tray';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { EmptyState } from '@/components/empty-state';
 import { StaggerContainer } from '@/components/animations/stagger-container';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2, RotateCcw, ShieldCheck, MapPin } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2, RotateCcw, ShieldCheck, MapPin, Check } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
 import { cn } from '@/lib/utils';
 import { useFavorites } from '@/hooks/use-favorites';
+import { useToast } from '@/hooks/use-toast';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const KENYA_COUNTIES = [
@@ -98,9 +101,27 @@ function useSwipeToSave(listingId: string, isFav: boolean, addFav: (id: string) 
 /**
  * Sub-component for individual listings to handle hooks correctly.
  */
-function ListingRegistryCard({ listing, index }: { listing: Listing; index: number }) {
+function ListingRegistryCard({ 
+  listing, 
+  index,
+  onAddToComparison,
+  isInComparison 
+}: { 
+  listing: Listing
+  index: number
+  onAddToComparison: (listing: Listing) => void
+  isInComparison: boolean
+}) {
   const { addFavorite, isFavorite } = useFavorites();
-  const swipeHandlers = useSwipeToSave(listing.id, isFavorite(listing.id), addFavorite);
+  const { toast } = useToast();
+  const swipeHandlers = useSwipeToSave(listing.id, isFavorite(listing.id), () => {
+    addFavorite(listing.id);
+    toast({
+      title: 'Saved to Favorites',
+      description: `${listing.title} added to your favorites.`,
+      duration: 2000,
+    });
+  });
 
   return (
     <Card 
@@ -108,7 +129,8 @@ function ListingRegistryCard({ listing, index }: { listing: Listing; index: numb
       className={cn(
         "group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col border-border/40 bg-card/50 backdrop-blur-sm rounded-2xl relative",
         listing.badge === 'TrustedSignal' && "trust-glow-gold",
-        listing.badge === 'EvidenceReviewed' && "trust-border-silver"
+        listing.badge === 'EvidenceReviewed' && "trust-border-silver",
+        listing.badge === 'EvidenceSubmitted' && "trust-border-bronze"
       )}
     >
       <Link href={`/listings/${listing.id}`} className="block relative aspect-[4/3] overflow-hidden bg-muted" aria-label={`View details for ${listing.title} in ${listing.location}`}>
@@ -128,8 +150,9 @@ function ListingRegistryCard({ listing, index }: { listing: Listing; index: numb
           </div>
         )}
         
-        <div className="absolute top-4 left-4 z-10 scale-110 md:scale-100 origin-top-left">
+        <div className="absolute top-4 left-4 z-10 scale-110 md:scale-100 origin-top-left flex items-center gap-2">
           <TrustBadge badge={listing.badge} animated={true} />
+          <BadgeTooltip badge={listing.badge} className="scale-90" />
         </div>
         
         <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
@@ -184,12 +207,23 @@ function ListingRegistryCard({ listing, index }: { listing: Listing; index: numb
         )}
       </CardContent>
 
-      <CardFooter className="p-6 pt-0">
-        <Button asChild className="w-full h-12 bg-primary hover:bg-primary-mid text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg hover:shadow-emerald-900/20 transition-all duration-300 group/btn">
+      <CardFooter className="p-6 pt-0 flex gap-2">
+        <Button asChild className="flex-1 h-12 bg-primary hover:bg-primary-mid text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg hover:shadow-emerald-900/20 transition-all duration-300 group/btn">
           <Link href={`/listings/${listing.id}`} className="flex items-center justify-center gap-2">
             Inspect Vault Record
             <ChevronDown className="h-4 w-4 -rotate-90 group-hover/btn:translate-x-1 transition-transform" aria-hidden="true" />
           </Link>
+        </Button>
+        <Button
+          onClick={() => onAddToComparison(listing)}
+          variant={isInComparison ? 'default' : 'outline'}
+          className={cn(
+            'h-12 px-4 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all duration-300',
+            isInComparison && 'bg-accent text-white'
+          )}
+          aria-label={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+        >
+          {isInComparison ? <Check className="h-4 w-4" /> : <span>Compare</span>}
         </Button>
       </CardFooter>
     </Card>
@@ -203,6 +237,7 @@ function ListingRegistryCard({ listing, index }: { listing: Listing; index: numb
 export function ListingsContent() {
   const pathname = usePathname();
   const [, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [lastVisibleId, setLastVisibleId] = useState<string | null>(null);
@@ -219,6 +254,10 @@ export function ListingsContent() {
   const [badges, setBadges] = useState<BadgeValue[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Comparison tray state
+  const [comparisonListings, setComparisonListings] = useState<Listing[]>([]);
+  const [isComparingOpen, setIsComparingOpen] = useState(false);
 
   const activeFilters = useMemo(() => {
     const filters = [];
@@ -251,6 +290,40 @@ export function ListingsContent() {
     if (sortBy === 'areaHigh') return next.sort((a, b) => b.area - a.area);
     return next;
   }, [listings, sortBy]);
+
+  // Comparison tray handlers
+  const addToComparison = useCallback((listing: Listing) => {
+    setComparisonListings(prev => {
+      if (prev.some(l => l.id === listing.id)) {
+        return prev.filter(l => l.id !== listing.id);
+      }
+      if (prev.length < 4) {
+        setIsComparingOpen(true);
+        toast({
+          title: 'Added to Comparison',
+          description: `${listing.title} added to comparison tray.`,
+          duration: 2000,
+        });
+        return [...prev, listing];
+      } else {
+        toast({
+          title: 'Limit Reached',
+          description: 'You can compare up to 4 properties. Remove one to add another.',
+          duration: 2000,
+        });
+        return prev;
+      }
+    });
+  }, [toast]);
+
+  const removeFromComparison = useCallback((id: string) => {
+    setComparisonListings(prev => prev.filter(l => l.id !== id));
+  }, []);
+
+  const clearComparison = useCallback(() => {
+    setComparisonListings([]);
+    setIsComparingOpen(false);
+  }, []);
 
   const updateUrlParams = useDebouncedCallback(() => {
     const params = new URLSearchParams(window.location.search);
@@ -547,6 +620,8 @@ export function ListingsContent() {
                   key={listing.id}
                   listing={listing}
                   index={index}
+                  onAddToComparison={addToComparison}
+                  isInComparison={comparisonListings.some(l => l.id === listing.id)}
                 />
               ))}
             </StaggerContainer>
@@ -619,6 +694,19 @@ export function ListingsContent() {
           </EmptyState>
         </div>
       )}
+
+      {/* Comparison Tray */}
+      <ComparisonTray
+        listings={comparisonListings}
+        onRemove={removeFromComparison}
+        onClear={clearComparison}
+        isOpen={isComparingOpen}
+        onCompare={() => {
+          // Navigate to comparison page or open modal
+          const ids = comparisonListings.map(l => l.id).join(',');
+          window.location.href = `/listings/compare?ids=${ids}`;
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import {
   SidebarContent,
   SidebarHeader,
@@ -12,11 +13,16 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCircle, LogOut } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCircle, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { Button } from '@/components/ui/button';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { calculateSellerTier, getTierProgress, getTierDescription, type SellerTier } from '@/lib/seller-tier';
 
 const workspaceItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Overview & analytics' },
@@ -33,6 +39,37 @@ export function SellerNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { userProfile } = useAuth();
+  const [sellerTier, setSellerTier] = useState<SellerTier>('Unverified');
+  const [tierDescription, setTierDescription] = useState('');
+  const [tierProgress, setTierProgress] = useState(0);
+
+  // Fetch and calculate seller tier from listings
+  useEffect(() => {
+    if (!userProfile?.uid) return;
+
+    const listingsQuery = query(
+      collection(db, 'listings'),
+      where('ownerId', '==', userProfile.uid),
+      where('status', '==', 'approved')
+    );
+
+    const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
+      const badges = snapshot.docs
+        .map(doc => doc.data().badge)
+        .filter((badge): badge is string => badge !== null && badge !== undefined);
+      
+      const tier = calculateSellerTier(badges);
+      const progress = getTierProgress(tier);
+      const description = getTierDescription(tier);
+
+      setSellerTier(tier);
+      setTierProgress(progress);
+      setTierDescription(description);
+    });
+
+    return () => unsubscribe();
+  }, [userProfile?.uid]);
+
   const isListingsActive =
     pathname === '/dashboard/listings' ||
     pathname.startsWith('/dashboard/listings/') ||
@@ -56,6 +93,22 @@ export function SellerNav() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="flex flex-col gap-6">
+        {/* Badge Progress Widget */}
+        <div className="px-2 mb-2 group-data-[collapsible=icon]:hidden">
+          <Card className="bg-gradient-to-br from-primary/10 to-accent/5 border-primary/20 shadow-sm">
+            <CardHeader className="pb-3 pt-4"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2"><Shield className="h-3.5 w-3.5" />Trust Badge Progress</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="font-bold">Verification Tier</span>
+                  <span className="text-primary font-black">{sellerTier}</span>
+                </div>
+                <Progress value={tierProgress} className="h-1.5" />
+              </div>
+              <p className="text-[9px] text-muted-foreground font-medium">{tierDescription}</p>
+            </CardContent>
+          </Card>
+        </div>
         {/* Workspace Section */}
         <div className="px-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 group-data-[collapsible=icon]:hidden">

@@ -30,6 +30,7 @@ import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 
 
 export function Header() {
@@ -39,8 +40,6 @@ export function Header() {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [inboxCount, setInboxCount] = useState(0);
-
-  const isSellerOrAdmin = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
 
   useEffect(() => {
     if (userProfile?.role !== 'ADMIN') {
@@ -143,37 +142,39 @@ export function Header() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {userProfile.role === 'ADMIN' && (
+                        <PermissionGuard allowedRoles={['ADMIN']} fallback={null}>
                             <DropdownMenuItem asChild>
                                 <Link href="/admin" className="flex items-center justify-between">
                                   <span><LayoutDashboard className="mr-2 h-4 w-4 inline-block align-middle"/>Admin Panel</span>
                                   {pendingCount > 0 && <Badge variant="warning">{pendingCount}</Badge>}
                                 </Link>
                             </DropdownMenuItem>
-                        )}
-                        {isSellerOrAdmin && (
+                        </PermissionGuard>
+                        <PermissionGuard allowedRoles={['SELLER', 'ADMIN']} fallback={null}>
                           <DropdownMenuItem asChild>
                                <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link>
                           </DropdownMenuItem>
-                        )}
-                        {isSellerOrAdmin && (
+                        </PermissionGuard>
+                        <PermissionGuard allowedRoles={['SELLER', 'ADMIN']} fallback={null}>
                             <DropdownMenuItem asChild>
                                 <Link href="/listings/new"><PlusCircle className="mr-2 h-4 w-4" />New Listing</Link>
                             </DropdownMenuItem>
-                        )}
+                        </PermissionGuard>
                         <DropdownMenuItem asChild>
                              <Link href="/favorites"><Heart className="mr-2 h-4 w-4" />Favorites</Link>
                         </DropdownMenuItem>
-                         <DropdownMenuItem asChild>
-                              {userProfile.role === 'ADMIN' ? (
-                                <Link href="/admin/inbox" className="flex items-center justify-between">
-                                    <span><Inbox className="mr-2 h-4 w-4 inline-block align-middle"/>Inbox</span>
-                                    {inboxCount > 0 && <Badge variant="warning">{inboxCount}</Badge>}
-                                </Link>
-                              ) : (
-                                <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />Messages</Link>
-                              )}
-                        </DropdownMenuItem>
+                        <PermissionGuard allowedRoles={['ADMIN']} fallback={
+                          <DropdownMenuItem asChild>
+                            <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />Messages</Link>
+                          </DropdownMenuItem>
+                        }>
+                          <DropdownMenuItem asChild>
+                            <Link href="/admin/inbox" className="flex items-center justify-between">
+                              <span><Inbox className="mr-2 h-4 w-4 inline-block align-middle"/>Inbox</span>
+                              {inboxCount > 0 && <Badge variant="warning">{inboxCount}</Badge>}
+                            </Link>
+                          </DropdownMenuItem>
+                        </PermissionGuard>
                         <DropdownMenuItem asChild>
                              <Link href="/profile"><UserCircle className="mr-2 h-4 w-4" />Manage Profile</Link>
                         </DropdownMenuItem>
@@ -213,31 +214,33 @@ export function Header() {
 
                         {user && userProfile ? (
                         <>
-                            {userProfile.role === 'ADMIN' && (
+                            <PermissionGuard allowedRoles={['ADMIN']} fallback={null}>
                                 <SheetClose asChild>
                                     <Link href="/admin" className={cn('text-sm font-medium flex items-center justify-between', pathname.startsWith('/admin') ? 'text-foreground' : 'text-muted-foreground')}>
                                         <span><LayoutDashboard className="mr-2 h-4 w-4 inline"/> Admin Panel</span>
                                         {pendingCount > 0 && <Badge variant="warning">{pendingCount}</Badge>}
                                     </Link>
                                 </SheetClose>
-                            )}
-                            {isSellerOrAdmin && (
+                            </PermissionGuard>
+                            <PermissionGuard allowedRoles={['SELLER', 'ADMIN']} fallback={null}>
                                 <>
                                     <SheetClose asChild><Link href="/dashboard" className={cn('text-sm font-medium flex items-center', pathname === '/dashboard' ? 'text-foreground' : 'text-muted-foreground')}><LayoutDashboard className="mr-2 h-4 w-4"/>Dashboard</Link></SheetClose>
                                     <SheetClose asChild><Link href="/listings/new" className={cn('text-sm font-medium flex items-center', pathname === '/listings/new' ? 'text-foreground' : 'text-muted-foreground')}><PlusCircle className="mr-2 h-4 w-4"/>New Listing</Link></SheetClose>
                                 </>
-                            )}
+                            </PermissionGuard>
                             <SheetClose asChild><Link href="/favorites" className={cn('text-sm font-medium flex items-center', pathname === '/favorites' ? 'text-foreground' : 'text-muted-foreground')}><Heart className="mr-2 h-4 w-4"/>Favorites</Link></SheetClose>
-                            <SheetClose asChild>
-                                {userProfile.role === 'ADMIN' ? (
-                                    <Link href="/admin/inbox" className={cn('text-sm font-medium flex items-center justify-between', pathname.startsWith('/admin/inbox') ? 'text-foreground' : 'text-muted-foreground')}>
-                                        <span><Inbox className="mr-2 h-4 w-4 inline"/> Inbox</span>
-                                        {inboxCount > 0 && <Badge variant="warning">{inboxCount}</Badge>}
-                                    </Link>
-                                ) : (
-                                    <Link href="/messages" className={cn('text-sm font-medium flex items-center', pathname.startsWith('/messages') ? 'text-foreground' : 'text-muted-foreground')}><MessageSquare className="mr-2 h-4 w-4"/>Messages</Link>
-                                )}
-                            </SheetClose>
+                            <PermissionGuard allowedRoles={['ADMIN']} fallback={
+                              <SheetClose asChild>
+                                <Link href="/messages" className={cn('text-sm font-medium flex items-center', pathname.startsWith('/messages') ? 'text-foreground' : 'text-muted-foreground')}><MessageSquare className="mr-2 h-4 w-4"/>Messages</Link>
+                              </SheetClose>
+                            }>
+                              <SheetClose asChild>
+                                <Link href="/admin/inbox" className={cn('text-sm font-medium flex items-center justify-between', pathname.startsWith('/admin/inbox') ? 'text-foreground' : 'text-muted-foreground')}>
+                                  <span><Inbox className="mr-2 h-4 w-4 inline"/> Inbox</span>
+                                  {inboxCount > 0 && <Badge variant="warning">{inboxCount}</Badge>}
+                                </Link>
+                              </SheetClose>
+                            </PermissionGuard>
                             <SheetClose asChild><Link href="/profile" className={cn('text-sm font-medium flex items-center', pathname === '/profile' ? 'text-foreground' : 'text-muted-foreground')}><UserCircle className="mr-2 h-4 w-4"/>Manage Profile</Link></SheetClose>
                         </>
                         ) : null}

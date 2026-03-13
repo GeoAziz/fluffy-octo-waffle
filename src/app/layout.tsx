@@ -8,6 +8,7 @@ import { WebVitals } from '@/components/web-vitals';
 import { GlobalErrorBoundary } from '@/components/resilience/global-error-boundary';
 import { NetworkStatusProvider } from '@/components/resilience/network-status-provider';
 import { OfflineNotice } from '@/components/resilience/offline-notice';
+import { RoleThemeProvider } from '@/components/role-theme-provider';
 
 export const metadata: Metadata = {
   title: 'Kenya Land Trust - High-Trust Land Marketplace',
@@ -35,11 +36,13 @@ export default function RootLayout({
           <NetworkStatusProvider>
             <AuthProvider>
               <GlobalErrorBoundary>
-                <main id="main-content" className="min-h-screen w-full flex flex-col" role="main" aria-label="Kenya Land Trust Application Registry">
-                  <OfflineNotice />
-                  {children}
-                </main>
-                <Toaster />
+                <RoleThemeProvider>
+                  <main id="main-content" className="min-h-screen w-full flex flex-col" role="main" aria-label="Kenya Land Trust Application Registry">
+                    <OfflineNotice />
+                    {children}
+                  </main>
+                  <Toaster />
+                </RoleThemeProvider>
               </GlobalErrorBoundary>
             </AuthProvider>
           </NetworkStatusProvider>

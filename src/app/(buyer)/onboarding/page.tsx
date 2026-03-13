@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/components/providers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { updateUserProfileAction } from '@/app/actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, MapPin, DollarSign, Home, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronRight, MapPin, DollarSign, Home, CheckCircle2, Sparkles, Loader2, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BuyerPage } from '@/components/buyer/buyer-page';
 
@@ -368,8 +369,20 @@ export default function OnboardingPage() {
               </div>
               <h1 className="text-3xl font-black uppercase tracking-tight">All Set!</h1>
               <p className="text-lg text-muted-foreground">Your profile is ready. Let's find your perfect property.</p>
+              <Card className="bg-card/50 backdrop-blur border-accent/30 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="w-5 h-5 text-accent" />Pro Tip: Save Your First Search</CardTitle>
+                  <CardDescription>Stay updated with new listings matching your preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Once you browse listings, you can save searches and receive email alerts for new properties that match your criteria.</p>
+                  <Button asChild className="w-full h-11 font-bold uppercase tracking-wider">
+                    <Link href="/explore">Explore Listings & Save Searches</Link>
+                  </Button>
+                </CardContent>
+              </Card>
               <div className="text-sm text-muted-foreground">
-                Redirecting to Browse Listings...
+                Redirecting in 3 seconds...
               </div>
             </div>
           )}

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatRelative } from 'date-fns';
+import { formatRelative, formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { ListingStatus, UserProfile } from '@/lib/types';
 import { Edit, ListChecks, PlusCircle, Search } from 'lucide-react';
@@ -183,6 +183,6 @@ export default async function SellerListingsPage({
           )}
         </CardContent>
       </Card>
-    </AdminPage>
+    </SellerPage>
   );
 }

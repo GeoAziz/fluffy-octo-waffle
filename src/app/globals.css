@@ -228,13 +228,31 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* P2: Trust Ambient Language */
+  /* P2: Trust Ambient Language - Badge Tier Visual Indicators */
   .trust-glow-gold {
-    box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.3);
-    border-color: hsl(var(--warning) / 0.4) !important;
+    box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.4), inset 0 0 10px -5px hsl(var(--warning) / 0.1);
+    border-color: hsl(var(--warning) / 0.5) !important;
+    transition: all var(--duration-normal) var(--ease-smooth);
   }
+  .trust-glow-gold:hover {
+    box-shadow: 0 0 28px -2px hsl(var(--warning) / 0.6), inset 0 0 15px -3px hsl(var(--warning) / 0.15);
+  }
+  
   .trust-border-silver {
-    border-color: hsl(var(--accent) / 0.4) !important;
-    box-shadow: 0 0 15px -5px hsl(var(--accent) / 0.2);
+    border-color: hsl(var(--accent) / 0.45) !important;
+    box-shadow: 0 0 18px -5px hsl(var(--accent) / 0.25), inset 0 0 8px -5px hsl(var(--accent) / 0.08);
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+  .trust-border-silver:hover {
+    box-shadow: 0 0 24px -2px hsl(var(--accent) / 0.4), inset 0 0 12px -3px hsl(var(--accent) / 0.12);
+  }
+  
+  .trust-border-bronze {
+    border-color: hsl(37 62% 48% / 0.35) !important;
+    box-shadow: 0 0 15px -5px hsl(37 62% 48% / 0.2), inset 0 0 6px -5px hsl(37 62% 48% / 0.08);
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+  .trust-border-bronze:hover {
+    box-shadow: 0 0 20px -2px hsl(37 62% 48% / 0.35), inset 0 0 10px -3px hsl(37 62% 48% / 0.12);
   }
 }
