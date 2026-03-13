@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition, useMemo } from 'react';
+import { useEffect, useState, useTransition, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import Image from 'next/image';
@@ -46,6 +46,7 @@ import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
 import { cn } from '@/lib/utils';
+import { useFavorites } from '@/hooks/use-favorites';
 
 const LAND_TYPES = ["Agricultural", "Residential", "Commercial", "Industrial", "Mixed-Use"];
 const KENYA_COUNTIES = [
@@ -63,6 +64,137 @@ const badgeLabelMap: Record<BadgeValue, string> = {
 };
 
 type SortOption = "newest" | "priceLow" | "priceHigh" | "areaHigh";
+
+/**
+ * Custom hook for swipe detection, now called at the component level.
+ */
+function useSwipeToSave(listingId: string, isFav: boolean, addFav: (id: string) => void) {
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    const distance = touchStart.current - touchEnd.current;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isRightSwipe && !isFav) {
+      addFav(listingId);
+    }
+  };
+
+  return { onTouchStart, onTouchMove, onTouchEnd };
+}
+
+/**
+ * Sub-component for individual listings to handle hooks correctly.
+ */
+function ListingRegistryCard({ listing, index }: { listing: Listing; index: number }) {
+  const { addFavorite, isFavorite } = useFavorites();
+  const swipeHandlers = useSwipeToSave(listing.id, isFavorite(listing.id), addFavorite);
+
+  return (
+    <Card 
+      {...swipeHandlers}
+      className={cn(
+        "group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col border-border/40 bg-card/50 backdrop-blur-sm rounded-2xl relative",
+        listing.badge === 'TrustedSignal' && "trust-glow-gold",
+        listing.badge === 'EvidenceReviewed' && "trust-border-silver"
+      )}
+    >
+      <Link href={`/listings/${listing.id}`} className="block relative aspect-[4/3] overflow-hidden bg-muted" aria-label={`View details for ${listing.title} in ${listing.location}`}>
+        {listing.images && listing.images.length > 0 ? (
+          <Image
+            src={listing.images[0].url}
+            alt={`Property Photo - ${listing.title}`}
+            fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-[2s] group-hover:scale-110"
+            data-ai-hint={listing.images[0].hint}
+            priority={index < 4}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <LandPlot className="h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
+          </div>
+        )}
+        
+        <div className="absolute top-4 left-4 z-10 scale-110 md:scale-100 origin-top-left">
+          <TrustBadge badge={listing.badge} animated={true} />
+        </div>
+        
+        <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
+          <FavoriteButton listingId={listing.id} className="h-11 w-11 md:h-10 md:w-10 bg-white/95 shadow-xl border-none" />
+        </div>
+        
+        <div className="absolute bottom-4 left-4 z-10">
+          <StatusBadge status={listing.status} className="bg-white/95 text-[9px] py-1 px-3 shadow-md font-black border-none" />
+        </div>
+      </Link>
+
+      <CardHeader className="p-6 pb-2">
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-background/50 border-none px-0">
+            {listing.landType} • {listing.county}
+          </Badge>
+        </div>
+        <Link href={`/listings/${listing.id}`}>
+          <CardTitle className="text-lg font-black leading-[1.3] group-hover:text-accent transition-colors line-clamp-2 min-h-[3rem]">
+            {listing.title}
+          </CardTitle>
+        </Link>
+        <CardDescription className="text-xs flex items-center gap-2 mt-2 font-bold text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+          {listing.location}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="p-6 pt-2 flex-1 flex flex-col justify-end">
+        <div className="flex items-center gap-4 mb-6" role="group" aria-label="Property specifications">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-accent/5 border border-accent/10">
+              <LandPlot className="h-4.5 w-4.5 text-accent" aria-hidden="true" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black">{listing.area}</span>
+              <span className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Acres</span>
+            </div>
+          </div>
+          <div className="flex-1 h-10 border-l border-dashed border-border/60 mx-2" aria-hidden="true" />
+          <div className="text-right">
+            <span className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground block mb-1 opacity-60">Handshake Value</span>
+            <span className="text-xl font-black text-primary tracking-tighter">KES {listing.price.toLocaleString()}</span>
+          </div>
+        </div>
+        
+        {listing.badge === 'TrustedSignal' && (
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] text-emerald-700 font-black mb-2 animate-soft-fade-scale uppercase tracking-wide" aria-label="This property is fully verified">
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            Elite Registry Protocol
+          </div>
+        )}
+      </CardContent>
+
+      <CardFooter className="p-6 pt-0">
+        <Button asChild className="w-full h-12 bg-primary hover:bg-primary-mid text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg hover:shadow-emerald-900/20 transition-all duration-300 group/btn">
+          <Link href={`/listings/${listing.id}`} className="flex items-center justify-center gap-2">
+            Inspect Vault Record
+            <ChevronDown className="h-4 w-4 -rotate-90 group-hover/btn:translate-x-1 transition-transform" aria-hidden="true" />
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
 
 /**
  * ListingsContent - Premier property discovery engine.
@@ -411,92 +543,11 @@ export function ListingsContent() {
           <div id="listings-section" role="feed" aria-busy="false">
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {sortedListings.map((listing, index) => (
-              <Card 
-                key={listing.id}
-                className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col border-border/40 bg-card/50 backdrop-blur-sm rounded-2xl relative"
-              >
-                <Link href={`/listings/${listing.id}`} className="block relative aspect-[4/3] overflow-hidden bg-muted" aria-label={`View details for ${listing.title} in ${listing.location}`}>
-                  {listing.images && listing.images.length > 0 ? (
-                    <Image
-                      src={listing.images[0].url}
-                      alt={`Property Photo - ${listing.title}`}
-                      fill
-                      sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover transition-transform duration-[2s] group-hover:scale-110"
-                      data-ai-hint={listing.images[0].hint}
-                      priority={index < 4}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <LandPlot className="h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
-                    </div>
-                  )}
-                  
-                  <div className="absolute top-4 left-4 z-10 scale-110 md:scale-100 origin-top-left">
-                    <TrustBadge badge={listing.badge} animated={true} />
-                  </div>
-                  
-                  <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
-                    <FavoriteButton listingId={listing.id} className="h-11 w-11 md:h-10 md:w-10 bg-white/95 shadow-xl border-none" />
-                  </div>
-                  
-                  <div className="absolute bottom-4 left-4 z-10">
-                    <StatusBadge status={listing.status} className="bg-white/95 text-[9px] py-1 px-3 shadow-md font-black border-none" />
-                  </div>
-                </Link>
-
-                <CardHeader className="p-6 pb-2">
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-background/50 border-none px-0">
-                      {listing.landType} • {listing.county}
-                    </Badge>
-                  </div>
-                  <Link href={`/listings/${listing.id}`}>
-                    <CardTitle className="text-lg font-black leading-[1.3] group-hover:text-accent transition-colors line-clamp-2 min-h-[3rem]">
-                      {listing.title}
-                    </CardTitle>
-                  </Link>
-                  <CardDescription className="text-xs flex items-center gap-2 mt-2 font-bold text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-                    {listing.location}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="p-6 pt-2 flex-1 flex flex-col justify-end">
-                  <div className="flex items-center gap-4 mb-6" role="group" aria-label="Property specifications">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-xl bg-accent/5 border border-accent/10">
-                        <LandPlot className="h-4.5 w-4.5 text-accent" aria-hidden="true" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-black">{listing.area}</span>
-                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Acres</span>
-                      </div>
-                    </div>
-                    <div className="flex-1 h-10 border-l border-dashed border-border/60 mx-2" aria-hidden="true" />
-                    <div className="text-right">
-                      <span className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground block mb-1 opacity-60">Handshake Value</span>
-                      <span className="text-xl font-black text-primary tracking-tighter">KES {listing.price.toLocaleString()}</span>
-                    </div>
-                  </div>
-                  
-                  {listing.badge === 'TrustedSignal' && (
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] text-emerald-700 font-black mb-2 animate-soft-fade-scale uppercase tracking-wide" aria-label="This property is fully verified">
-                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                      Elite Registry Protocol
-                    </div>
-                  )}
-                </CardContent>
-
-                <CardFooter className="p-6 pt-0">
-                  <Button asChild className="w-full h-12 bg-primary hover:bg-primary-mid text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg hover:shadow-emerald-900/20 transition-all duration-300 group/btn">
-                    <Link href={`/listings/${listing.id}`} className="flex items-center justify-center gap-2">
-                      Inspect Vault Record
-                      <ChevronDown className="h-4 w-4 -rotate-90 group-hover/btn:translate-x-1 transition-transform" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+                <ListingRegistryCard 
+                  key={listing.id}
+                  listing={listing}
+                  index={index}
+                />
               ))}
             </StaggerContainer>
           </div>

@@ -35,7 +35,7 @@ export default async function SellerLayout({ children }: PropsWithChildren) {
       <Sidebar>
         <SellerNav />
       </Sidebar>
-      <SidebarInset className="flex flex-col overflow-hidden animate-page-enter">
+      <SidebarInset data-role="seller" className="flex flex-col overflow-hidden animate-page-enter">
         <main className="flex-1 overflow-auto">
           {children}
         </main>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LandPlot, ShieldCheck, Lock } from 'lucide-react';
+import { Loader2, LandPlot } from 'lucide-react';
 import Link from 'next/link';
 import { AuthForm, type AuthFormField } from '@/components/form/auth-form';
 import { PageWrapper } from '@/components/page-wrapper';
@@ -47,6 +46,12 @@ export default function LoginPage() {
   const handleLoginSuccess = async (user: User) => {
     try {
       const idToken = await user.getIdToken();
+      
+      // Set role hint cookie before continuing
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const profile = userDoc.data() as UserProfile;
+      const role = profile?.role || 'BUYER';
+
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,22 +62,24 @@ export default function LoginPage() {
       
       toast({ title: 'Welcome Back', description: "Security handshake complete." });
       
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const role = (userDoc.data() as UserProfile)?.role || 'BUYER';
-
+      // Role-Aware Landing Protocol
       const requestedRedirect = searchParams.get('redirect');
       const safeRedirect = validateRedirect(requestedRedirect, role);
+      
       if (safeRedirect) {
         window.location.assign(safeRedirect);
         return;
       }
 
+      // Canonical Dashboard Redirects
       if (role === 'ADMIN') {
         window.location.assign('/admin');
       } else if (role === 'SELLER') {
         window.location.assign('/dashboard');
       } else {
-        window.location.assign('/buyer/dashboard');
+        // Direct buyers to dashboard if onboarded, else onboarding
+        const target = profile?.hasCompletedOnboarding ? '/buyer/dashboard' : '/buyer/onboarding';
+        window.location.assign(target);
       }
     } catch (err: any) {
       setServerError(err.message);
@@ -83,7 +90,6 @@ export default function LoginPage() {
     setServerError(undefined);
     setIsLoading(true);
     try {
-      // Explicit Persistence Control
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       await handleLoginSuccess(userCredential.user);

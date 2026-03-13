@@ -100,6 +100,20 @@
     --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
+  /* P2: Role-Specific Theme Injection */
+  [data-role="admin"] {
+    --primary: 353 50% 37%;
+    --ring: var(--risk);
+  }
+  [data-role="seller"] {
+    --primary: 203 52% 38%;
+    --ring: var(--accent);
+  }
+  [data-role="buyer"] {
+    --primary: 161 61% 15%;
+    --ring: var(--accent);
+  }
+
   .dark {
     --background: 161 30% 5%;
     --foreground: 38 27% 94%;
@@ -212,5 +226,15 @@
   
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* P2: Trust Ambient Language */
+  .trust-glow-gold {
+    box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.3);
+    border-color: hsl(var(--warning) / 0.4) !important;
+  }
+  .trust-border-silver {
+    border-color: hsl(var(--accent) / 0.4) !important;
+    box-shadow: 0 0 15px -5px hsl(var(--accent) / 0.2);
   }
 }

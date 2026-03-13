@@ -47,7 +47,7 @@ export default async function BuyerSectionLayout({ children }: PropsWithChildren
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col" data-role="buyer">
       <BuyerHeader />
       <OnboardingGuard>
         <main className="flex-1 w-full pb-16 md:pb-0 animate-page-enter">

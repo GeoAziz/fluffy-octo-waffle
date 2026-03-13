@@ -36,52 +36,36 @@ interface SellerOnboardingStep {
 /**
  * SellerOnboardingWizard - First-time seller onboarding flow
  * Guides new sellers through platform features, listing setup, and success tips
- * 
- * Features:
- * - 5-step guided flow (Welcome → Features → First Listing → Evidence → Complete)
- * - Visual progress tracking
- * - Feature highlights with benefits
- * - Direct links to actionable next steps
- * - Hypercraft styling with animations
  */
 export function SellerOnboardingWizard() {
   const router = useRouter();
-  const { user, userProfile } = useAuth();
+  const { userProfile } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSkipping, setIsSkipping] = useState(false);
-
-  // Only show for users who just became sellers
-  useEffect(() => {
-    if (!userProfile?.enabledForSelling) {
-      router.push('/dashboard');
-    }
-  }, [userProfile, router]);
 
   const steps: SellerOnboardingStep[] = [
     {
       id: 'welcome',
       title: 'Welcome to Seller Workspace',
       subtitle: 'Ready to list your land?',
-      description: 'You\'ve successfully upgraded to a seller account. Let\'s get you started with creating your first listing and connecting with buyers.',
+      description: 'You\'ve successfully established your identity vault. Let\'s get you started with creating your first listing and building buyer trust through documentation.',
       icon: <Briefcase className="h-16 w-16 text-primary" />,
       action: (
         <Button size="lg" onClick={() => setCurrentStep(1)} className="h-11 px-8 font-bold uppercase text-xs tracking-widest">
-          Get Started <ArrowRight className="ml-2 h-4 w-4" />
+          Start Triage <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       ),
     },
     {
       id: 'features',
-      title: 'Explore Your Tools',
-      subtitle: 'Powerful features await',
-      description: 'As a seller, you have access to tools designed to showcase your properties and reach qualified buyers.',
-      icon: <TrendingUp className="h-16 w-16 text-accent" />,
+      title: 'Unlock Trust Signals',
+      subtitle: 'Documentation is your asset',
+      description: 'The key to success on Kenya Land Trust is the Badge Protocol. High-quality documentation attracts 4x more serious inquiries.',
+      icon: <Shield className="h-16 w-16 text-accent" />,
       benefits: [
-        'Create and manage multiple listings with detailed descriptions',
-        'Upload evidence documents (title deeds, survey maps) for buyer confidence',
-        'Message buyers directly and respond to inquiries instantly',
-        'View analytics on listing views, inquiries, and buyer engagement',
-        'Build your seller reputation with trust badges',
+        'Bronze Badge: Basic documentation vaulted',
+        'Silver Badge: Primary title deed verified',
+        'Gold Badge: Full registry alignment complete',
       ],
       action: (
         <div className="flex gap-2">
@@ -96,72 +80,13 @@ export function SellerOnboardingWizard() {
     },
     {
       id: 'listing',
-      title: 'Create Your First Listing',
+      title: 'Initialize Your Registry',
       subtitle: 'Start with the essentials',
-      description: 'Your first listing is the foundation of your seller presence. Add details, photos, and location to attract interested buyers.',
+      description: 'Your first listing is the foundation of your seller presence. Our 4-step wizard will guide you through Identity, Specs, Triage, and Evidence.',
       icon: <FileText className="h-16 w-16 text-emerald-500" />,
-      benefits: [
-        'Set title, location, and price details',
-        'Add photos and description of your property',
-        'Specify land type, size, and other features',
-        'Set your asking price competitively',
-        'Submit for admin review and approval',
-      ],
       action: (
-        <div className="flex gap-2">
-          <Button size="lg" asChild className="h-11 px-6 font-bold uppercase text-xs tracking-widest">
-            <Link href="/listings/new">Create Listing <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-          <Button size="lg" variant="outline" onClick={() => setCurrentStep(3)} className="h-11 px-6 font-bold uppercase text-xs tracking-widest">
-            Next
-          </Button>
-        </div>
-      ),
-    },
-    {
-      id: 'evidence',
-      title: 'Upload Evidence Documents',
-      subtitle: 'Build buyer trust',
-      description: 'Evidence documents like title deeds and survey maps significantly increase buyer confidence and listing visibility.',
-      icon: <Shield className="h-16 w-16 text-blue-500" />,
-      benefits: [
-        'Upload title deeds to prove ownership',
-        'Add survey maps for boundary clarity',
-        'Include ID documents for verification',
-        'Get trust badges based on document quality',
-        'Increase listing visibility in searches',
-      ],
-      action: (
-        <div className="flex gap-2">
-          <Button size="lg" variant="outline" onClick={() => setCurrentStep(4)} className="h-11 px-6 font-bold uppercase text-xs tracking-widest">
-            Next Step <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-          <Button size="lg" variant="ghost" onClick={() => setIsSkipping(true)} className="h-11 px-6 font-bold uppercase text-xs tracking-widest">
-            Skip
-          </Button>
-        </div>
-      ),
-    },
-    {
-      id: 'complete',
-      title: 'You\'re All Set!',
-      subtitle: 'Your journey begins',
-      description: 'Congratulations! You\'re ready to start connecting with buyers. Monitor your messages, respond to inquiries, and manage your listings from the dashboard.',
-      icon: <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-pulse" />,
-      benefits: [
-        'Check your dashboard regularly for new inquiries',
-        'Respond to buyer messages within 24 hours for better ratings',
-        'Update listings as properties sell or become unavailable',
-        'Track your seller rating and performance metrics',
-        'Adjust prices or add details to improve visibility',
-      ],
-      action: (
-        <Button
-          size="lg"
-          asChild
-          className="h-11 px-8 font-bold uppercase text-xs tracking-widest shadow-glow"
-        >
-          <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
+        <Button size="lg" asChild className="h-11 px-8 font-bold uppercase text-xs tracking-widest shadow-glow">
+          <Link href="/listings/new">Provision First Listing <ArrowRight className="ml-2 h-4 w-4" /></Link>
         </Button>
       ),
     },
@@ -170,100 +95,50 @@ export function SellerOnboardingWizard() {
   const step = steps[currentStep];
   const progressPercent = ((currentStep + 1) / steps.length) * 100;
 
-  if (isSkipping) {
-    return (
-      <div className="container mx-auto max-w-2xl px-4 py-12 md:py-24">
-        <Card className="border-none shadow-xl bg-gradient-to-br from-accent/10 to-primary/5">
-          <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-            <Clock className="h-16 w-16 text-accent mb-6" />
-            <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Tutorial Skipped</h2>
-            <p className="text-muted-foreground text-lg mb-8 max-w-md">
-              No problem! You can explore the features at your own pace or visit these resources anytime.
-            </p>
-            <div className="flex flex-col gap-2 w-full">
-              <Button size="lg" asChild className="h-11 font-bold uppercase text-xs tracking-widest">
-                <Link href="/listings/new">Create Your First Listing</Link>
-              </Button>
-              <Button size="lg" asChild variant="outline" className="h-11 font-bold uppercase text-xs tracking-widest">
-                <Link href="/dashboard">Go to Dashboard</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (isSkipping) return null;
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-12 md:py-24">
-      {/* Progress Bar */}
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Seller Onboarding</p>
-            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter">
-              {step.title}
-            </h1>
-            <p className="text-lg text-muted-foreground mt-2">{step.subtitle}</p>
-          </div>
-          <Badge variant="secondary" className="text-xs font-black uppercase tracking-widest flex-shrink-0">
-            {currentStep + 1} of {steps.length}
-          </Badge>
-        </div>
-        <Progress value={progressPercent} className="h-2 bg-muted" />
+    <div className="mb-10">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Onboarding Protocol</p>
+        <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+          {currentStep + 1} of {steps.length}
+        </Badge>
       </div>
-
-      {/* Step Display */}
-      <Card className="border-none shadow-xl bg-gradient-to-br from-background to-muted/20 animate-in fade-in slide-in-from-bottom-4">
-        <CardHeader className="flex flex-row items-start gap-6 pb-6">
-          <div className="flex-shrink-0">{step.icon}</div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-              {step.description}
-            </p>
+      
+      <Card className="border-none shadow-xl bg-gradient-to-br from-background to-muted/20 overflow-hidden">
+        <div className="h-1 bg-muted">
+          <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <CardHeader className="flex flex-row items-center gap-6 pb-6">
+          <div className="flex-shrink-0 bg-white/50 p-4 rounded-2xl shadow-sm">{step.icon}</div>
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-black uppercase tracking-tight">{step.title}</CardTitle>
+            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{step.subtitle}</p>
           </div>
         </CardHeader>
 
-        {step.benefits && (
-          <CardContent className="pb-6 border-t border-border/30 pt-6">
-            <div className="space-y-3">
+        <CardContent className="pb-6">
+          <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-2xl mb-6">
+            {step.description}
+          </p>
+
+          {step.benefits && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {step.benefits.map((benefit, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium leading-relaxed">{benefit}</p>
+                <div key={idx} className="flex items-center gap-2 p-3 rounded-xl bg-background/50 border border-border/40">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <p className="text-[10px] font-black uppercase tracking-tight">{benefit}</p>
                 </div>
               ))}
             </div>
-          </CardContent>
-        )}
+          )}
 
-        {/* Action Buttons */}
-        <CardContent className="flex justify-between items-center pt-6 border-t border-border/30">
-          <div className="flex gap-2">
-            {currentStep > 0 && (
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => setCurrentStep(currentStep - 1)}
-                className="h-11 px-6 font-bold uppercase text-xs tracking-widest"
-              >
-                Back
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border/40">
             {step.action}
           </div>
         </CardContent>
       </Card>
-
-      {/* Helpful Tips */}
-      <Alert className="mt-8 border-accent/30 bg-accent/5">
-        <AlertCircle className="h-4 w-4 text-accent" />
-        <AlertDescription className="text-xs font-medium text-muted-foreground mt-2">
-          💡 <strong>Pro Tip:</strong> Quality photos and complete evidence documents significantly increase your chances of getting a trust badge and attracting serious buyers.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 }

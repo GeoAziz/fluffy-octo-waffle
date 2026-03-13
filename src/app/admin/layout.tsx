@@ -36,7 +36,7 @@ export default async function AdminLayout({ children }: PropsWithChildren) {
       <Sidebar>
         <AdminNav />
       </Sidebar>
-      <SidebarInset className="flex flex-col overflow-hidden animate-page-enter">
+      <SidebarInset data-role="admin" className="flex flex-col overflow-hidden animate-page-enter">
         <main className="flex-1 overflow-auto">
           {children}
         </main>

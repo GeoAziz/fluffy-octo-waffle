@@ -16,6 +16,10 @@ import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EmptyState } from '@/components/empty-state';
 
+/**
+ * FavoritesPage - Personalized registry of saved high-trust properties.
+ * Uses role-standardized empty state for non-authenticated or zero-data users.
+ */
 export default function FavoritesPage() {
   const { favoriteIds, loading: favoritesLoading } = useFavorites();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -62,7 +66,7 @@ export default function FavoritesPage() {
   if (loading || favoritesLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
-        <h1 className="text-3xl font-bold tracking-tight mb-8">My Favorites</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight mb-8">My Favorites</h1>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={i} />)}
         </div>
@@ -72,87 +76,90 @@ export default function FavoritesPage() {
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">My Favorites</h1>
+      <h1 className="text-3xl font-black uppercase tracking-tight mb-8">My Favorites</h1>
       {listings.length > 0 ? (
         <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <ArrowUpDown className="h-4 w-4" />
-              Sort favorites
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              Triage Protocol
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant={sortBy === 'newest' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('newest')}>Newest</Button>
-              <Button variant={sortBy === 'priceLow' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('priceLow')}>Price ↑</Button>
-              <Button variant={sortBy === 'priceHigh' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('priceHigh')}>Price ↓</Button>
-              <Button variant={sortBy === 'areaHigh' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('areaHigh')}>Area ↓</Button>
+              <Button variant={sortBy === 'newest' ? 'default' : 'outline'} size="sm" className="h-8 text-[9px] font-black uppercase" onClick={() => setSortBy('newest')}>Newest</Button>
+              <Button variant={sortBy === 'priceLow' ? 'default' : 'outline'} size="sm" className="h-8 text-[9px] font-black uppercase" onClick={() => setSortBy('priceLow')}>Price ↑</Button>
+              <Button variant={sortBy === 'priceHigh' ? 'default' : 'outline'} size="sm" className="h-8 text-[9px] font-black uppercase" onClick={() => setSortBy('priceHigh')}>Price ↓</Button>
+              <Button variant={sortBy === 'areaHigh' ? 'default' : 'outline'} size="sm" className="h-8 text-[9px] font-black uppercase" onClick={() => setSortBy('areaHigh')}>Area ↓</Button>
             </div>
           </div>
 
           {compareIds.length > 0 && (
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-              <p className="text-sm">
-                <span className="font-semibold">Compare mode:</span> {compareIds.length} selected (up to 3).
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 animate-in slide-in-from-top-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-accent">
+                Compare mode: {compareIds.length} / 3 Selected
               </p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setCompareIds([])}>Clear</Button>
-                <Button size="sm" asChild disabled={compareIds.length < 2}>
-                  <Link href={`/explore?ids=${compareIds.join(',')}`}>Compare selected</Link>
+                <Button size="sm" variant="ghost" className="h-8 text-[9px] font-black uppercase" onClick={() => setCompareIds([])}>Flush Selection</Button>
+                <Button size="sm" asChild disabled={compareIds.length < 2} className="h-8 text-[9px] font-black uppercase bg-accent text-white">
+                  <Link href={`/explore?ids=${compareIds.join(',')}`}>Execute Analysis</Link>
                 </Button>
               </div>
             </div>
           )}
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sortedListings.map((listing) => (
-            <Card key={listing.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <Card key={listing.id} className="flex flex-col overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/40 bg-card/50">
               <CardHeader className="relative p-0">
-                <Link href={`/listings/${listing.id}`} className="block">
+                <Link href={`/listings/${listing.id}`} className="block aspect-[3/2] relative overflow-hidden">
                   <Image
                     src={listing.images[0]?.url || 'https://picsum.photos/seed/fallback/600/400'}
                     alt={listing.title}
-                    width={600}
-                    height={400}
+                    fill
                     sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="aspect-[3/2] w-full object-cover"
+                    className="object-cover transition-transform duration-[2s] hover:scale-110"
                     data-ai-hint={listing.images[0]?.hint || 'landscape'}
                   />
                 </Link>
                 <div className="absolute top-3 right-3 flex items-center gap-2">
-                  {listing.badge && <TrustBadge badge={listing.badge} />}
-                  <StatusBadge status={listing.status} />
+                  {listing.badge && <TrustBadge badge={listing.badge} animated={true} />}
                 </div>
                 <div className="absolute top-3 left-3 z-10 space-y-2">
                   <FavoriteButton listingId={listing.id} />
-                  <label className="inline-flex items-center gap-2 rounded-md bg-background/90 px-2 py-1 text-xs shadow">
+                  <label className="flex items-center gap-2 rounded-xl bg-background/90 px-2 py-1 text-[9px] font-black uppercase tracking-tighter shadow-xl backdrop-blur-sm cursor-pointer border border-border/40">
                     <Checkbox
                       checked={compareIds.includes(listing.id)}
                       disabled={!compareIds.includes(listing.id) && compareIds.length >= 3}
                       onCheckedChange={(checked) => toggleCompare(listing.id, checked)}
                     />
-                    <Scale className="h-3.5 w-3.5" /> Compare
+                    <Scale className="h-3 w-3" /> Compare
                   </label>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 p-4">
+              <CardContent className="flex-1 p-5">
                 <Link href={`/listings/${listing.id}`}>
-                  <CardTitle className="mb-1 text-lg font-semibold tracking-tight hover:text-accent leading-tight">
+                  <CardTitle className="mb-1 text-sm font-black uppercase tracking-tight leading-tight hover:text-accent transition-colors line-clamp-2">
                     {listing.title}
                   </CardTitle>
                 </Link>
-                <CardDescription className="text-sm text-muted-foreground">
-                  {listing.location}, {listing.county}
+                <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-accent" />
+                  {listing.location}
                 </CardDescription>
-                <p className="text-sm text-foreground/80 mt-2 flex items-center gap-2">
-                  <LandPlot className="h-4 w-4 text-accent" />
-                  {listing.area} Acres
-                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black">{listing.area}</span>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground tracking-tighter">Acres</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black">KES {listing.price.toLocaleString()}</span>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground tracking-tighter">Handshake Value</span>
+                  </div>
+                </div>
               </CardContent>
-              <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                <p className="text-xl font-bold text-primary">
-                  Ksh {listing.price.toLocaleString()}
-                </p>
-                <Button asChild>
-                  <Link href={`/listings/${listing.id}`}>View</Link>
+              <CardFooter className="p-5 pt-0">
+                <Button asChild className="w-full h-10 font-black uppercase text-[10px] tracking-widest">
+                  <Link href={`/listings/${listing.id}`}>Inspect Vault</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -162,13 +169,11 @@ export default function FavoritesPage() {
       ) : (
         <EmptyState
           icon={Heart}
-          title="You have no favorite listings yet"
-          description="Save listings to compare them later and return faster to the best options."
+          title="Favorites Vault Empty"
+          description="Save high-trust listings to compare them later and maintain persistent transaction momentum."
           actions={[
-            { label: 'Explore properties', href: '/explore' },
-            { label: 'View Residential', href: '/explore?landType=Residential', variant: 'outline' },
-            { label: 'View Agricultural', href: '/explore?landType=Agricultural', variant: 'outline' },
-            { label: 'Gold badge listings', href: '/explore?badges=Gold', variant: 'outline' },
+            { label: 'Explore Registry Nodes', href: '/explore' },
+            { label: 'View Gold Signals', href: '/explore?badges=TrustedSignal', variant: 'outline' },
           ]}
         />
       )}

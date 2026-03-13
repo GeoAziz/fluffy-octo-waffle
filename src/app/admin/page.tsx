@@ -9,11 +9,8 @@ import { getAdminStatsAction } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnalyticsChart } from './_components/analytics-chart';
 import { AdminPage } from './_components/admin-page';
-import { AdminTriageList } from '@/components/admin/admin-triage-list';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
-
 
 type Stats = {
   total: number;
@@ -35,43 +32,43 @@ export default function AdminDashboard() {
 
   const statusCards = [
     {
-      title: 'Total Listings',
-      value: stats?.total ?? null,
-      icon: List,
-      href: '/admin/listings',
-      helper: 'All time',
-      color: 'text-primary'
-    },
-    {
       title: 'Pending Triage',
       value: stats?.pending ?? null,
       icon: Clock,
       href: '/admin/listings?status=pending',
-      helper: 'Needs action',
+      helper: 'Needs action immediately',
       color: 'text-warning'
     },
     {
-      title: 'Approved Assets',
-      value: stats?.approved ?? null,
-      icon: CheckCircle,
-      href: '/admin/listings?status=approved',
-      helper: 'Last 30 days',
-      color: 'text-success'
+      title: 'Active Flags',
+      value: 12, // Mocked for UI priority
+      icon: ShieldAlert,
+      href: '/admin/inbox?tab=reports',
+      helper: 'Require deep audit',
+      color: 'text-risk'
     },
     {
-      title: 'Rejected Records',
-      value: stats?.rejected ?? null,
-      icon: XCircle,
-      href: '/admin/listings?status=rejected',
-      helper: 'Last 30 days',
-      color: 'text-risk'
+      title: 'Unread Inquiries',
+      value: 5, // Mocked for UI priority
+      icon: TrendingUp,
+      href: '/admin/inbox?tab=messages',
+      helper: 'Awaiting response',
+      color: 'text-accent'
+    },
+    {
+      title: 'Total Registry',
+      value: stats?.total ?? null,
+      icon: List,
+      href: '/admin/listings',
+      helper: 'Vaulted records',
+      color: 'text-primary'
     },
   ];
 
   return (
     <AdminPage
-      title="Dashboard"
-      description="Analytical command center for the high-trust property registry."
+      title="Admin Dashboard"
+      description="Operational command center for the high-trust property registry."
       breadcrumbs={[{ href: '/admin', label: 'Dashboard' }]}
       actions={(
         <div className="flex flex-wrap items-center gap-2">
@@ -87,7 +84,45 @@ export default function AdminDashboard() {
         </div>
       )}
     >
-      {/* Platform Health Registry (Strategic Enhancement) */}
+      {/* 1. Primary Action Queue - P0 Recommendation */}
+      <div className="mb-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+            <Activity className="h-5 w-5 text-accent" /> High-Priority Protocol Queue
+          </h2>
+          {updatedAt && (
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Sync Node: {updatedAt.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {statusCards.map((card) => (
+            <Link key={card.title} href={card.href} className="group">
+              <Card className="transition-all duration-300 hover:shadow-xl hover:border-accent/40 bg-card/50 backdrop-blur-sm relative overflow-hidden">
+                <div className={cn("absolute top-0 left-0 w-1 h-full", card.color.replace('text-', 'bg-'))} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.title}</CardTitle>
+                  <card.icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", card.color)} />
+                </CardHeader>
+                <CardContent>
+                  {stats ? (
+                    <div className="flex items-baseline justify-between">
+                      <div className="text-3xl font-black tracking-tighter">{card.value}</div>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">{card.helper}</span>
+                    </div>
+                  ) : (
+                    <Skeleton className="h-10 w-24" />
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Platform Health & Performance */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
         <Card className="border-none shadow-xl bg-accent/5 backdrop-blur-sm overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-10"><Activity size={60} /></div>
@@ -96,7 +131,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-black">98.4%</span>
+              <span className="text-3xl font-black text-foreground">98.4%</span>
               <Badge className="bg-emerald-500 text-white border-none text-[8px] h-4"><TrendingUp className="h-2 w-2 mr-1" /> HEALTHY</Badge>
             </div>
             <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Average Review Cycle: 1.4 Days</p>
@@ -110,7 +145,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-black">12</span>
+              <span className="text-3xl font-black text-foreground">{statusCards[1].value}</span>
               <Badge variant="risk" className="text-[8px] h-4">ACTIVE FLAGS</Badge>
             </div>
             <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Requiring Deep Document Scan</p>
@@ -124,7 +159,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-black">+156</span>
+              <span className="text-3xl font-black text-foreground">+156</span>
               <Badge className="bg-primary text-white border-none text-[8px] h-4">NEW AGENTS</Badge>
             </div>
             <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Identity Nodes Provisioned (30d)</p>
@@ -132,45 +167,13 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-          <Activity className="h-5 w-5 text-accent" /> Queue Statistics
-        </h2>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
-        {statusCards.map((card) => (
-          <Link key={card.title} href={card.href} className="group">
-            <Card className="transition-all hover:shadow-lg hover:border-accent/40 group-data-[state=selected]:border-accent">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.title}</CardTitle>
-                <card.icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", card.color)} />
-              </CardHeader>
-              <CardContent>
-                {stats ? (
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-3xl font-black">{card.value}</div>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{card.helper}</span>
-                  </div>
-                ) : (
-                  <Skeleton className="h-10 w-24" />
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <div className="mb-6">
+      {/* 3. Analytical Trends */}
+      <div className="space-y-6">
         <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-emerald-500" /> Performance Timeline
         </h2>
-      </div>
-
-      <div className="mb-8">
         <AnalyticsChart />
       </div>
-
     </AdminPage>
   );
 }
