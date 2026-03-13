@@ -30,9 +30,12 @@ export default async function BuyerSectionLayout({ children }: PropsWithChildren
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
     const userRole = userDoc.exists ? userDoc.data()?.role : null;
 
-    // Strict Role Validation Protocol
-    if (userRole !== 'BUYER' && userRole !== 'ADMIN') {
-      // Redirect sellers to their appropriate workspace
+    // Strict Role Validation Protocol: only BUYER is allowed in the buyer workspace
+    if (userRole !== 'BUYER') {
+      // Redirect each role to its canonical workspace
+      if (userRole === 'ADMIN') {
+        redirect('/admin');
+      }
       if (userRole === 'SELLER') {
         redirect('/dashboard');
       }

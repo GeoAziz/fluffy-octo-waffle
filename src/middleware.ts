@@ -60,8 +60,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`/denied?role=${userRole || 'UNKNOWN'}&required=SELLER&path=${encodeURIComponent(pathname)}`, request.url));
     }
 
-    if (isBuyerRoute && userRole !== 'BUYER' && userRole !== 'ADMIN') {
-      // Logic for Sellers accidentally hitting Buyer dashboards
+    if (isBuyerRoute && userRole !== 'BUYER') {
+      // Redirect each non-buyer role to its canonical workspace
+      if (userRole === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
       if (userRole === 'SELLER') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }

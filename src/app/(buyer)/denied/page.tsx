@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, ArrowLeft, Home, Mail } from 'lucide-react';
+import { ShieldAlert, Home, Mail, LayoutDashboard } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getRoleAwareDashboardPath } from '@/lib/workspace-navigation';
 
 interface DeniedPageProps {
   searchParams: Promise<{
@@ -12,7 +15,8 @@ interface DeniedPageProps {
 
 /**
  * AccessDeniedPage - Context-aware authorization failure screen.
- * Displays specific reasons for access denial to improve user orientation.
+ * Displays specific reasons for access denial and provides role-aware
+ * recovery links so each user type is guided back to their correct workspace.
  */
 export default async function AccessDeniedPage({ searchParams }: DeniedPageProps) {
   const params = await searchParams;
@@ -21,6 +25,29 @@ export default async function AccessDeniedPage({ searchParams }: DeniedPageProps
   const path = params.path;
 
   const isRoleMismatch = !!(role && required);
+
+  // Try to resolve the authenticated user's actual role for workspace link
+  let workspacePath: string = '/';
+  let workspaceLabel: string = 'Return to Home';
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session')?.value;
+    if (sessionCookie) {
+      const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+      const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+      const userRole = userDoc.exists ? userDoc.data()?.role : null;
+      if (userRole) {
+        workspacePath = getRoleAwareDashboardPath(userRole);
+        workspaceLabel =
+          userRole === 'ADMIN' ? 'Go to Admin Console' :
+          userRole === 'SELLER' ? 'Go to Seller Workspace' :
+          'Go to Buyer Dashboard';
+      }
+    }
+  } catch {
+    // Session cookie may be invalid or expired — silently fall back to the home link.
+    // This is intentional: the denied page must always render, even without a valid session.
+  }
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center text-center px-4 animate-page-enter">
@@ -72,9 +99,15 @@ export default async function AccessDeniedPage({ searchParams }: DeniedPageProps
 
       <div className="mt-12 flex flex-wrap justify-center gap-4">
         <Button asChild size="lg" className="h-14 px-8 font-black uppercase text-[11px] tracking-widest shadow-glow active:scale-95 transition-all">
+          <Link href={workspacePath}>
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            {workspaceLabel}
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg" className="h-14 px-8 border-border/60 font-black uppercase text-[11px] tracking-widest hover:bg-muted active:scale-95 transition-all">
           <Link href="/">
             <Home className="mr-2 h-4 w-4" />
-            Return to Registry
+            Return to Home
           </Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="h-14 px-8 border-border/60 font-black uppercase text-[11px] tracking-widest hover:bg-accent/5 hover:text-accent transition-all active:scale-95">

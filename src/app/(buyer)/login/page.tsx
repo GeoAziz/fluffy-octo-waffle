@@ -72,7 +72,7 @@ export default function LoginPage() {
       } else if (role === 'SELLER') {
         window.location.assign('/dashboard');
       } else {
-        window.location.assign('/');
+        window.location.assign('/buyer/dashboard');
       }
     } catch (err: any) {
       setServerError(err.message);
