@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSearchParams } from 'next/navigation';
 
 type Topic = 'general' | 'technical' | 'listing' | 'verification';
 
@@ -19,20 +20,66 @@ type FieldErrors = {
   message?: string;
 };
 
+interface ListingContext {
+  id: string;
+  title: string;
+  location: string;
+}
+
 export default function ContactUsPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get('listingId');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
   const [expectedResponseHours, setExpectedResponseHours] = useState(24);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [listingContext, setListingContext] = useState<ListingContext | null>(null);
+  const [loadingListing, setLoadingListing] = useState(!!listingId);
+  
   const [formState, setFormState] = useState({
     name: '',
     email: '',
-    topic: 'general' as Topic,
+    topic: listingId ? 'listing' : 'general' as Topic,
     message: '',
+    listingId: listingId || '',
   });
+
+  // Fetch listing context if listingId provided
+  useEffect(() => {
+    if (!listingId) {
+      setLoadingListing(false);
+      return;
+    }
+
+    const fetchListing = async () => {
+      try {
+        const response = await fetch(`/api/listings/${listingId}`);
+        if (response.ok) {
+          const listing = await response.json();
+          setListingContext({
+            id: listing.id,
+            title: listing.title,
+            location: listing.location,
+          });
+          setFormState((prev) => ({
+            ...prev,
+            topic: 'listing',
+            message: `Inquiry about: ${listing.title} (${listing.location})\n\n`,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch listing context:', error);
+      } finally {
+        setLoadingListing(false);
+      }
+    };
+
+    fetchListing();
+  }, [listingId]);
 
   const validate = () => {
     const errors: FieldErrors = {};
@@ -95,7 +142,7 @@ export default function ContactUsPage() {
       setConfirmationId(typeof payload.messageId === 'string' ? payload.messageId : null);
       setExpectedResponseHours(nextResponseHours);
       setFieldErrors({});
-      setFormState({ name: '', email: '', topic: 'general', message: '' });
+      setFormState({ name: '', email: '', topic: listingContext ? 'listing' : 'general', message: '', listingId: listingId || '' });
     } catch (error) {
       const details = error instanceof Error ? error.message : 'Unable to submit your message.';
       setSubmitted(false);
@@ -109,15 +156,26 @@ export default function ContactUsPage() {
     <div className="container mx-auto max-w-2xl py-10 px-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">Contact Us</CardTitle>
+          <CardTitle className="text-3xl">
+            {listingContext ? `Inquiry about "${listingContext.title}"` : 'Contact Us'}
+          </CardTitle>
           <p className="text-muted-foreground">
-            Have a question or need help? Fill out the form and our team will get back to you.
+            {listingContext
+              ? 'Send a message to our team about this property. We\'ll help get you in touch with the seller.'
+              : 'Have a question or need help? Fill out the form and our team will get back to you.'}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
 
+          {loadingListing && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertTitle>Loading listing details</AlertTitle>
+            </Alert>
+          )}
+
           {submitted && (
-            <Alert variant="success" className="bg-green-50 border-green-200 text-green-900">
+            <Alert className="bg-green-50 border-green-200 text-green-900">
               <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Message received</AlertTitle>
               <AlertDescription>
@@ -190,7 +248,7 @@ export default function ContactUsPage() {
                   <SelectContent>
                     <SelectItem value="general">General question</SelectItem>
                     <SelectItem value="technical">Technical issue</SelectItem>
-                    <SelectItem value="listing">Listing issue</SelectItem>
+                    <SelectItem value="listing">Listing inquiry</SelectItem>
                     <SelectItem value="verification">Trust question</SelectItem>
                   </SelectContent>
                 </Select>
@@ -214,7 +272,7 @@ export default function ContactUsPage() {
                 />
                 {fieldErrors.message && <p className="text-sm text-destructive">{fieldErrors.message}</p>}
               </div>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || loadingListing}>
                 {isSubmitting ? 'Sending...' : 'Send Message'}
               </Button>
             </form>

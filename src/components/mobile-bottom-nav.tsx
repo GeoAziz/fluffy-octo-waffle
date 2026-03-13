@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Search, Heart, MessageSquare, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers';
+import { getRoleAwareDashboardPath } from '@/lib/workspace-navigation';
 
 /**
  * MobileBottomNav - Mobile bottom tab navigation (44px+ touch targets)
@@ -23,7 +24,7 @@ export function MobileBottomNav() {
   ];
 
   if (user && userProfile) {
-    const dashboardUrl = userProfile.role === 'BUYER' ? '/buyer/dashboard' : '/dashboard';
+    const dashboardUrl = getRoleAwareDashboardPath(userProfile.role);
     navItems.push({ href: dashboardUrl, label: 'Account', icon: LayoutDashboard });
   } else {
     navItems.push({ href: '/login', label: 'Sign In', icon: LayoutDashboard });

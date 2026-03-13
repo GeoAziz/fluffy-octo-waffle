@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { PropsWithChildren } from 'react';
 import { BuyerHeader } from '@/components/buyer/buyer-header';
 import { BuyerFooter } from '@/components/buyer/buyer-footer';
+import { MobileBottomNav } from '@/components/mobile-bottom-nav';
+import { OnboardingGuard } from '@/components/buyer/onboarding-guard';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
@@ -44,10 +46,13 @@ export default async function BuyerSectionLayout({ children }: PropsWithChildren
   return (
     <div className="flex min-h-screen w-full flex-col">
       <BuyerHeader />
-      <main className="flex-1 w-full animate-page-enter">
-        {children}
-      </main>
+      <OnboardingGuard>
+        <main className="flex-1 w-full pb-16 md:pb-0 animate-page-enter">
+          {children}
+        </main>
+      </OnboardingGuard>
       <BuyerFooter />
+      <MobileBottomNav />
     </div>
   );
 }

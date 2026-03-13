@@ -26,7 +26,8 @@ import {
   Archive,
   Share2,
   Eye,
-  Activity
+  Activity,
+  MessageSquare
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
@@ -41,6 +42,15 @@ import Link from 'next/link';
 import { FavoriteButton } from '@/components/favorite-button';
 import { Button } from '@/components/ui/button';
 import { ViewTracker } from './_components/view-tracker';
+
+const shouldLogListingDebug =
+  process.env.NODE_ENV !== 'production' ||
+  process.env.DEBUG_LISTING_DETAIL === '1';
+
+function logListingDetailDebug(event: string, payload: Record<string, unknown>) {
+  if (!shouldLogListingDebug) return;
+  console.info(`[ListingDetailDebug] ${event}`, payload);
+}
 
 async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['role']} | null> {
     const cookieStore = await cookies();
@@ -73,7 +83,18 @@ export default async function ListingDetailPage({
   const listing = await getListingById(id);
   const user = await getAuthenticatedUser();
 
+  logListingDetailDebug('request.received', {
+    listingId: id,
+    viewerUid: user?.uid ?? null,
+    viewerRole: user?.role ?? null,
+    mode: currentSearchParams.mode ?? null,
+  });
+
   if (!listing) {
+    logListingDetailDebug('listing.notFoundOrFiltered', {
+      listingId: id,
+      reason: 'Listing missing or filtered during data fetch (e.g., seller validation failed).',
+    });
     notFound();
   }
 
@@ -81,11 +102,32 @@ export default async function ListingDetailPage({
   // The owner and admins can see listings in any state.
   const isOwner = user?.uid === listing.ownerId;
   const isAdmin = user?.role === 'ADMIN';
-  const canContact = user && !isOwner;
+  const isAuthenticated = !!user;
+  const canContact = user && !isOwner; // For authenticated non-owners (direct messaging)
+  const canShowContactButton = !isOwner; // Show button to everyone except sellers viewing own listing
   const canViewEvidenceNames = isOwner || isAdmin;
+
+  logListingDetailDebug('listing.loaded', {
+    listingId: listing.id,
+    ownerUid: listing.ownerId,
+    listingStatus: listing.status,
+    sellerNameOnListing: listing.seller?.name ?? null,
+    viewerUid: user?.uid ?? null,
+    viewerRole: user?.role ?? null,
+    isOwner,
+    isAdmin,
+    canContact: !!canContact,
+  });
 
 
   if (listing.status !== 'approved' && !isOwner && !isAdmin) {
+    logListingDetailDebug('listing.blockedByStatus', {
+      listingId: listing.id,
+      ownerUid: listing.ownerId,
+      listingStatus: listing.status,
+      viewerUid: user?.uid ?? null,
+      viewerRole: user?.role ?? null,
+    });
     return (
         <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12">
             <div className="flex flex-col items-center justify-center text-center py-20">
@@ -298,9 +340,19 @@ export default async function ListingDetailPage({
                   <p className="text-xs text-muted-foreground">Verified seller profile</p>
                 </div>
               </div>
-              {canContact && <div className="hidden md:block"><ContactSellerButton listingId={id} /></div>}
+              {canShowContactButton && <div className="hidden md:block"><ContactSellerButton listingId={id} isAuthenticated={isAuthenticated} /></div>}
             </CardContent>
           </Card>
+
+          {!isAuthenticated && canShowContactButton && (
+            <Alert className="border-primary/30 bg-primary/5">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              <AlertTitle>Ready to connect with the seller?</AlertTitle>
+              <AlertDescription>
+                Sign in to send messages directly, save this listing, and track your conversations in one inbox.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Card>
             <CardHeader>
@@ -358,9 +410,9 @@ export default async function ListingDetailPage({
       </div>
       
       {/* Sticky CTA for Mobile */}
-      {canContact && (
+      {canShowContactButton && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-10 bg-background/95 p-4 pb-safe backdrop-blur-md border-t animate-in slide-in-from-bottom duration-500">
-          <ContactSellerButton listingId={id} />
+          <ContactSellerButton listingId={id} isAuthenticated={isAuthenticated} />
         </div>
       )}
     </div>

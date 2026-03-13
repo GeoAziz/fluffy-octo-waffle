@@ -7,12 +7,10 @@ import { usePathname } from 'next/navigation';
 import {
   LandPlot,
   LogOut,
-  UserCircle,
   Menu,
   Heart,
   MessageSquare,
   LayoutDashboard,
-  PlusCircle,
   ShieldCheck,
   User,
   Briefcase,
@@ -38,6 +36,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { ThemeToggle } from '@/components/theme-toggle-advanced';
 import { BecomeSellerModal } from './become-seller-modal';
 import { NotificationBadge } from '@/components/notification-badge';
+import { getDiscoveryNavLinks, getPrimaryWorkspace, getWorkspaceSwitchTargets } from '@/lib/workspace-navigation';
 
 export function BuyerHeader() {
   const pathname = usePathname();
@@ -66,9 +65,10 @@ export function BuyerHeader() {
     return () => unsubscribe();
   }, [user]);
 
-  const isSeller = userProfile?.role === 'SELLER' || userProfile?.role === 'ADMIN';
-  const isAdmin = userProfile?.role === 'ADMIN';
+  const role = userProfile?.role;
   const isBuyer = userProfile?.role === 'BUYER';
+  const primaryWorkspace = getPrimaryWorkspace(role);
+  const workspaceTargets = getWorkspaceSwitchTargets(role);
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -77,11 +77,7 @@ export function BuyerHeader() {
     router.refresh();
   };
 
-  const navLinks = [
-    { href: '/explore', label: 'Browse Listings' },
-    { href: '/trust', label: 'How It Works' },
-    { href: '/contact', label: 'About' },
-  ];
+  const navLinks = getDiscoveryNavLinks(role);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" role="banner">
@@ -147,12 +143,14 @@ export function BuyerHeader() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem asChild className="rounded-lg h-11">
-                      <Link href="/buyer/dashboard" className="font-bold flex items-center gap-3">
-                        <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                        Buyer Dashboard
-                      </Link>
-                    </DropdownMenuItem>
+                    {primaryWorkspace && (
+                      <DropdownMenuItem asChild className="rounded-lg h-11 bg-primary/5 text-primary focus:bg-primary/10">
+                        <Link href={primaryWorkspace.href} className="font-bold flex items-center gap-3">
+                          <LayoutDashboard className="h-4 w-4" />
+                          {primaryWorkspace.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
 
                     {isBuyer && (
                       <DropdownMenuItem
@@ -164,22 +162,29 @@ export function BuyerHeader() {
                       </DropdownMenuItem>
                     )}
 
-                    {isSeller && (
-                      <DropdownMenuItem asChild className="rounded-lg h-11 bg-accent/5 text-accent focus:bg-accent/10">
-                        <Link href="/dashboard" className="font-black uppercase text-[10px] tracking-widest flex items-center gap-3">
-                          <ShieldCheck className="h-4 w-4" />
-                          Seller Workspace
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-
-                    {isAdmin && (
-                      <DropdownMenuItem asChild className="rounded-lg h-11 bg-risk/5 text-risk focus:bg-risk/10">
-                        <Link href="/admin" className="font-black uppercase text-[10px] tracking-widest flex items-center gap-3">
-                          <ShieldCheck className="h-4 w-4" />
-                          Admin Console
-                        </Link>
-                      </DropdownMenuItem>
+                    {workspaceTargets.length > 1 && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1">
+                          Switch Workspace
+                        </DropdownMenuLabel>
+                        {workspaceTargets
+                          .filter((target) => target.href !== primaryWorkspace?.href)
+                          .map((target) => (
+                            <DropdownMenuItem key={target.href} asChild className="rounded-lg h-11">
+                              <Link href={target.href} className="font-medium flex items-center gap-3">
+                                {target.href.startsWith('/admin') ? (
+                                  <ShieldCheck className="h-4 w-4 text-risk" />
+                                ) : target.href.startsWith('/dashboard') ? (
+                                  <Briefcase className="h-4 w-4 text-accent" />
+                                ) : (
+                                  <User className="h-4 w-4 text-primary" />
+                                )}
+                                {target.label}
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                      </>
                     )}
 
                     <DropdownMenuSeparator />
@@ -250,16 +255,26 @@ export function BuyerHeader() {
                       </div>
 
                       <div className="space-y-2">
-                        <Link href="/buyer/dashboard" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all">
-                          <LayoutDashboard className="h-5 w-5 text-primary" />
-                          Buyer Dashboard
-                        </Link>
-                        {isSeller && (
-                          <Link href="/dashboard" onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-black uppercase tracking-widest bg-accent/5 text-accent">
-                            <ShieldCheck className="h-5 w-5" />
-                            Seller Workspace
+                        {primaryWorkspace && (
+                          <Link href={primaryWorkspace.href} onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-black uppercase tracking-widest bg-primary/5 text-primary">
+                            <LayoutDashboard className="h-5 w-5" />
+                            {primaryWorkspace.label}
                           </Link>
                         )}
+                        {workspaceTargets
+                          .filter((target) => target.href !== primaryWorkspace?.href)
+                          .map((target) => (
+                            <Link key={target.href} href={target.href} onClick={() => setIsSheetOpen(false)} className="flex items-center gap-4 rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all">
+                              {target.href.startsWith('/admin') ? (
+                                <ShieldCheck className="h-5 w-5 text-risk" />
+                              ) : target.href.startsWith('/dashboard') ? (
+                                <Briefcase className="h-5 w-5 text-accent" />
+                              ) : (
+                                <User className="h-5 w-5 text-primary" />
+                              )}
+                              {target.label}
+                            </Link>
+                          ))}
                         <Link href="/messages" onClick={() => setIsSheetOpen(false)} className="flex items-center justify-between rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all">
                           <div className="flex items-center gap-4">
                             <MessageSquare className="h-5 w-5 text-primary" />

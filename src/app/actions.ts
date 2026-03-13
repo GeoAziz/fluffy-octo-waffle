@@ -13,6 +13,7 @@ import { getListings, getListingById, getAdminDashboardStats, getListingStatsByD
 import { sendBrandedEmail } from '@/lib/email-service';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
+import { validateSellerExists } from '@/lib/seller-validation';
 
 /**
  * Retrieves the authenticated user from the session cookie.
@@ -700,15 +701,29 @@ export async function checkSuspiciousPatterns(documentDescriptions: string[]) {
 export async function getOrCreateConversation(listingId: string): Promise<{ conversationId: string }> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) throw new Error('Auth required.');
+  
   const listing = await getListingById(listingId);
   if (!listing) throw new Error('Not found.');
+
+  // Validate seller exists and is a verified seller
+  const sellerValidation = await validateSellerExists(listing.ownerId);
+  if (!sellerValidation.isValidSeller) {
+    throw new Error(
+      sellerValidation.exists 
+        ? 'Seller account is not verified or active.' 
+        : 'Seller account no longer exists.'
+    );
+  }
+
   const participantIds = [authUser.uid, listing.ownerId].sort();
   const conversationId = `${participantIds[0]}_${participantIds[1]}_${listingId}`;
   const docRef = adminDb.collection('conversations').doc(conversationId);
   const doc = await docRef.get();
   if (doc.exists) return { conversationId };
+
   const buyerProfile = await adminAuth.getUser(authUser.uid);
   const sellerProfile = await adminAuth.getUser(listing.ownerId);
+
   await adminDb.collection('listings').doc(listingId).update({ inquiryCount: FieldValue.increment(1) });
   await docRef.set({
     listingId: listing.id, listingTitle: listing.title, listingImage: listing.images[0]?.url || '', participantIds,

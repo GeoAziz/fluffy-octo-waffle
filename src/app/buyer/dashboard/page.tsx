@@ -2,6 +2,7 @@ import { getAuthenticatedUser, getSavedSearchesForUser, getFavoriteListingsForUs
 import { redirect } from 'next/navigation';
 import { BuyerPage } from '@/components/buyer/buyer-page';
 import { BuyerDashboardClient } from '@/components/buyer/buyer-dashboard-client';
+import { getRoleAwareDashboardPath } from '@/lib/workspace-navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export default async function BuyerDashboardPage() {
     }
     // This dashboard is only for buyers.
     if (user.role === 'SELLER' || user.role === 'ADMIN') {
-        redirect('/dashboard');
+        redirect(getRoleAwareDashboardPath(user.role));
     }
 
     const [

@@ -3,6 +3,7 @@ import { adminDb, adminStorage } from './firebase-admin';
 import type { Listing, Evidence, ListingStatus, BadgeValue, ListingImage, PlatformSettings } from './types';
 import { cache } from 'react';
 import { Timestamp, type FieldValue } from 'firebase-admin/firestore';
+import { validateSellerExists } from './seller-validation';
 
 const isNetworkError = (error: unknown): boolean => {
     const message = error instanceof Error ? error.message : String(error);
@@ -149,7 +150,22 @@ export const getListings = async (options: any = {}) => {
   }
   q = q.limit(queryLimit);
   const snapshot = await q.get();
-  let listings = snapshot.docs.map(doc => toListing(doc, []));
+  
+  // Filter listings and validate sellers
+  let listings: Listing[] = [];
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    
+    // Validate seller exists
+    const sellerValidation = await validateSellerExists(data.ownerId);
+    if (!sellerValidation.isValidSeller) {
+      console.warn(`[DataFetch] Filtering out listing ${doc.id} - seller validation failed:`, sellerValidation.error);
+      continue;
+    }
+    
+    listings.push(toListing(doc, []));
+  }
+  
   if (query) {
       listings = listings.filter(l => 
           l.county.toLowerCase().includes(query.toLowerCase()) || 
@@ -157,6 +173,7 @@ export const getListings = async (options: any = {}) => {
           l.title.toLowerCase().includes(query.toLowerCase())
       );
   }
+  
   const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
   return { listings, lastVisibleId: lastVisible ? lastVisible.id : null };
 };
@@ -235,6 +252,16 @@ export const getAdminAnalyticsSummary = cache(async (options: any = {}) => {
 export const getListingById = cache(async (id: string) => {
   const docSnap = await adminDb.collection('listings').doc(id).get();
   if (!docSnap.exists) return null;
+
+  const data = docSnap.data();
+  
+  // Validate seller exists before returning listing
+  const sellerValidation = await validateSellerExists(data.ownerId);
+  if (!sellerValidation.isValidSeller) {
+    console.warn(`[DataFetch] Skipping listing ${id} - seller validation failed:`, sellerValidation.error);
+    return null;
+  }
+
   const evidence = await getEvidenceForListing(id);
   return toListing(docSnap, evidence);
 });

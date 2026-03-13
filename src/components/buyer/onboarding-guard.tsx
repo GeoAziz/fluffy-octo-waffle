@@ -17,7 +17,7 @@ import { Loader2 } from 'lucide-react';
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, userProfile, loading } = useAuth();
+  const { userProfile, loading } = useAuth();
   const [shouldShowContent, setShouldShowContent] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     }
 
     // If already on onboarding page, show content
-    if (pathname === '/onboarding' || pathname?.includes('/onboarding')) {
+    if (pathname?.startsWith('/buyer/onboarding') || pathname?.startsWith('/onboarding')) {
       setShouldShowContent(true);
       return;
     }
@@ -41,7 +41,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     // If onboarding is not completed, redirect to onboarding page
     if (!userProfile.hasCompletedOnboarding) {
       setShouldShowContent(false);
-      router.push('/onboarding');
+      router.push('/buyer/onboarding');
       return;
     }
 
