@@ -15,11 +15,16 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { Badge } from '@/components/ui/badge';
 import { conversationStatusLabel, getConversationStatus } from '@/lib/conversation-status';
 
+interface ConversationsListProps {
+    /** Base path for conversation links, e.g. '/buyer/messages' or '/dashboard/messages' */
+    basePath?: string;
+}
+
 /**
  * ConversationsList - Enhanced Inbox Sidebar
  * Features "Awaiting response" badges and sender-aware snippets.
  */
-export function ConversationsList() {
+export function ConversationsList({ basePath = '/buyer/messages' }: ConversationsListProps) {
     const { user, loading: authLoading } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -85,7 +90,7 @@ export function ConversationsList() {
                         const needsAction = !lastMsgFromMe && status !== 'closed';
 
                         return (
-                            <Link href={`/messages/${convo.id}`} key={convo.id} className={cn(
+                            <Link href={`${basePath}/${convo.id}`} key={convo.id} className={cn(
                                 "flex items-center gap-3 p-4 border-b transition-all hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
                                 isActive && "bg-accent/5 border-l-4 border-l-accent pl-3"
                             )}>

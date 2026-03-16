@@ -77,7 +77,7 @@ export function BuyerDashboardClient({
         id: `conversation-${conversation.id}`,
         label: `Messaged about ${conversation.listingTitle}`,
         when: ts,
-        href: `/messages/${conversation.id}`,
+        href: `/buyer/messages/${conversation.id}`,
       });
     });
 
@@ -264,7 +264,7 @@ export function BuyerDashboardClient({
              {recentConversations.length > 0 ? (
                  <div className="space-y-3">
                     {recentConversations.map(convo => (
-                         <Link key={convo.id} href={`/messages/${convo.id}`} className="flex items-center gap-3 p-2 rounded-xl border border-border/40 hover:border-accent/30 transition-all hover:bg-background group">
+                         <Link key={convo.id} href={`/buyer/messages/${convo.id}`} className="flex items-center gap-3 p-2 rounded-xl border border-border/40 hover:border-accent/30 transition-all hover:bg-background group">
                              <div className="relative h-14 w-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                                <Image src={convo.listingImage} alt="" fill className="object-cover" />
                              </div>
@@ -282,7 +282,7 @@ export function BuyerDashboardClient({
                          </Link>
                     ))}
                      <Button asChild variant="ghost" className="w-full h-10 text-[10px] font-black uppercase tracking-widest mt-2">
-                        <Link href="/messages">Enter Communication Hub <ArrowRight className="ml-2 h-3 w-3" /></Link>
+                        <Link href="/buyer/messages">Enter Communication Hub <ArrowRight className="ml-2 h-3 w-3" /></Link>
                     </Button>
                  </div>
              ) : (

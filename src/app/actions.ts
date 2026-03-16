@@ -736,7 +736,7 @@ export async function getOrCreateConversation(listingId: string): Promise<{ conv
     title: 'New Buyer Inquiry',
     message: `${buyerProfile.displayName || 'A buyer'} is interested in your listing: "${listing.title}".`,
     type: 'inquiry',
-    link: `/messages/${conversationId}`
+    link: `/dashboard/messages/${conversationId}`
   });
 
   return { conversationId };

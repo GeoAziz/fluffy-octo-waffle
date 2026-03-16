@@ -165,7 +165,7 @@ export function Header() {
                         </DropdownMenuItem>
                         <PermissionGuard allowedRoles={['ADMIN']} fallback={
                           <DropdownMenuItem asChild>
-                            <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />Messages</Link>
+                            <Link href="/buyer/messages"><MessageSquare className="mr-2 h-4 w-4" />Messages</Link>
                           </DropdownMenuItem>
                         }>
                           <DropdownMenuItem asChild>
@@ -231,7 +231,7 @@ export function Header() {
                             <SheetClose asChild><Link href="/favorites" className={cn('text-sm font-medium flex items-center', pathname === '/favorites' ? 'text-foreground' : 'text-muted-foreground')}><Heart className="mr-2 h-4 w-4"/>Favorites</Link></SheetClose>
                             <PermissionGuard allowedRoles={['ADMIN']} fallback={
                               <SheetClose asChild>
-                                <Link href="/messages" className={cn('text-sm font-medium flex items-center', pathname.startsWith('/messages') ? 'text-foreground' : 'text-muted-foreground')}><MessageSquare className="mr-2 h-4 w-4"/>Messages</Link>
+                                <Link href="/buyer/messages" className={cn('text-sm font-medium flex items-center', pathname.startsWith("/buyer/messages") ? 'text-foreground' : 'text-muted-foreground')}><MessageSquare className="mr-2 h-4 w-4"/>Messages</Link>
                               </SheetClose>
                             }>
                               <SheetClose asChild>

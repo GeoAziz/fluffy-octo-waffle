@@ -147,7 +147,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
     
     switch (notification.type) {
       case 'inquiry':
-        return '/messages';
+        return '/buyer/messages';
       case 'badge_update':
       case 'flag':
         return '/profile';

@@ -304,7 +304,7 @@ export default async function SellerDashboard() {
                   return (
                     <Link
                       key={convo.id}
-                      href={`/messages/${convo.id}`}
+                      href={`/dashboard/messages/${convo.id}`}
                       className="block rounded-xl border border-border/60 bg-card p-4 transition-all hover:shadow-md hover:border-primary/20 group"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
@@ -322,7 +322,7 @@ export default async function SellerDashboard() {
                 })
               )}
               <Button asChild variant="outline" className="w-full h-11 font-black uppercase text-[10px] tracking-widest">
-                <Link href="/messages">Open Communication Hub</Link>
+                <Link href="/dashboard/messages">Open Communication Hub</Link>
               </Button>
             </div>
           </div>
