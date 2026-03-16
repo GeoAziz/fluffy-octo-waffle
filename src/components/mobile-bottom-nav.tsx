@@ -20,7 +20,7 @@ export function MobileBottomNav() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/explore', label: 'Explore', icon: Search },
     { href: '/favorites', label: 'Saved', icon: Heart },
-    { href: '/messages', label: 'Inbox', icon: MessageSquare },
+    { href: '/buyer/messages', label: 'Inbox', icon: MessageSquare },
   ];
 
   if (user && userProfile) {

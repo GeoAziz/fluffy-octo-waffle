@@ -99,7 +99,7 @@ export function NotificationBadge({ variant = 'buyer' }: NotificationBadgeProps)
     // Default routing based on type
     switch (notification.type) {
       case 'inquiry':
-        return '/messages';
+        return '/buyer/messages';
       case 'badge_update':
       case 'flag':
         return '/profile';

@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
 
   // Define route groups
   const authPages = ['/login', '/signup'];
-  const buyerPages = ['/buyer/dashboard', '/buyer/onboarding'];
+  const buyerPages = ['/buyer/dashboard', '/buyer/onboarding', '/buyer/messages'];
   const sellerPages = ['/dashboard', '/listings/new'];
   const generalProtectedPages = ['/messages', '/profile', '/favorites', ...buyerPages];
   

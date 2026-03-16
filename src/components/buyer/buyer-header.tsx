@@ -112,7 +112,7 @@ export function BuyerHeader() {
               <>
                 <NotificationBadge variant="buyer" />
 
-                <Link href="/messages" className="relative group" aria-label={`You have ${unreadMessages} unread messages`}>
+                <Link href="/buyer/messages" className="relative group" aria-label={`You have ${unreadMessages} unread messages`}>
                   <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-accent/10">
                     <MessageSquare className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     {unreadMessages > 0 && (
@@ -275,7 +275,7 @@ export function BuyerHeader() {
                               {target.label}
                             </Link>
                           ))}
-                        <Link href="/messages" onClick={() => setIsSheetOpen(false)} className="flex items-center justify-between rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all">
+                        <Link href="/buyer/messages" onClick={() => setIsSheetOpen(false)} className="flex items-center justify-between rounded-xl px-4 py-4 text-sm font-bold hover:bg-accent/10 transition-all">
                           <div className="flex items-center gap-4">
                             <MessageSquare className="h-5 w-5 text-primary" />
                             Secure Inbox

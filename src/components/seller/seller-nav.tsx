@@ -27,7 +27,7 @@ import { calculateSellerTier, getTierProgress, getTierDescription, type SellerTi
 const workspaceItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Overview & analytics' },
   { href: '/dashboard/listings', label: 'Listings', icon: List, description: 'Manage your properties' },
-  { href: '/messages', label: 'Messages', icon: MessageSquare, description: 'Talk with buyers' },
+  { href: '/dashboard/messages', label: 'Messages', icon: MessageSquare, description: 'Talk with buyers' },
 ];
 
 const accountItems = [

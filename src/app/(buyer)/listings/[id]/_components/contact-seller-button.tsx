@@ -35,7 +35,7 @@ export function ContactSellerButton({ listingId, isAuthenticated = true }: Conta
         setIsLoading(true);
         try {
             const { conversationId } = await getOrCreateConversation(listingId);
-            router.push(`/messages/${conversationId}`);
+            router.push(`/buyer/messages/${conversationId}`);
         } catch (error: any) {
             toast({
                 variant: 'destructive',
