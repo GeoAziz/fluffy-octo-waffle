@@ -29,7 +29,9 @@ export function middleware(request: NextRequest) {
   const authPages = ['/login', '/signup'];
   const buyerPages = ['/buyer/dashboard', '/buyer/onboarding', '/buyer/messages'];
   const sellerPages = ['/dashboard', '/listings/new'];
-  const generalProtectedPages = ['/messages', '/profile', '/favorites', ...buyerPages];
+  // Note: /messages is intentionally excluded — those pages are redirect-only and
+  // handle their own auth checks server-side, redirecting to the correct role-scoped area.
+  const generalProtectedPages = ['/profile', '/favorites', ...buyerPages];
   
   const isAdminRoute = pathname.startsWith('/admin');
   const isSellerRoute = sellerPages.some(p => pathname.startsWith(p)) || /^\/listings\/[^/]+\/edit$/.test(pathname);
