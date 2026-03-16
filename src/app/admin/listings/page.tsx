@@ -228,7 +228,7 @@ export default function AdminListingsPage() {
                     id: listing.id,
                     title: listing.title,
                     owner: listing.seller.name,
-                    createdAt: listing.createdAt instanceof Date ? listing.createdAt : listing.createdAt.toDate(),
+                    createdAt: listing.createdAt instanceof Date ? listing.createdAt : typeof listing.createdAt?.toDate === 'function' ? listing.createdAt.toDate() : new Date(listing.createdAt),
                     aiRiskScore: listing.aiRiskScore,
                     status: listing.status as any
                   }}

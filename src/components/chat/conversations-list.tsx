@@ -105,7 +105,7 @@ export function ConversationsList() {
                                         <p className="font-bold text-sm truncate leading-tight">{convo.listingTitle}</p>
                                         {convo.lastMessage?.timestamp && (
                                             <p className="text-[9px] font-black uppercase text-muted-foreground flex-shrink-0">
-                                                {formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: false })}
+                                                {formatDistanceToNow(typeof convo.lastMessage.timestamp.toDate === 'function' ? convo.lastMessage.timestamp.toDate() : new Date(convo.lastMessage.timestamp), { addSuffix: false })}
                                             </p>
                                         )}
                                     </div>

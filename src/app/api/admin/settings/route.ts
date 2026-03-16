@@ -45,11 +45,6 @@ async function verifyAdmin(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const verifyResult = await verifyAdmin(request);
-    if (!verifyResult.authenticated) {
-      return NextResponse.json({ status: 'error', message: verifyResult.error }, { status: verifyResult.status });
-    }
-
     const settingsDoc = await adminDb.collection('adminConfig').doc('settings').get();
     const settings = settingsDoc.exists ? settingsDoc.data() : {
       platformName: 'Kenya Land Trust',

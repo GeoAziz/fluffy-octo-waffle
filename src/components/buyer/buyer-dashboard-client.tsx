@@ -9,6 +9,17 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { deleteSearchAction } from '@/app/actions';
 import { formatDistanceToNow } from 'date-fns';
+
+// Helper to safely convert Firestore timestamps and serialized dates
+const toDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === 'function') return value.toDate();
+  if (typeof value === 'string') return new Date(value);
+  if (typeof value === 'number') return new Date(value);
+  if (value._seconds !== undefined) return new Date(value._seconds * 1000);
+  return new Date(value);
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,14 +65,14 @@ export function BuyerDashboardClient({
       items.push({
         id: `search-${search.id}`,
         label: `Updated saved search: ${search.name}`,
-        when: search.createdAt.toDate(),
+        when: toDate(search.createdAt),
         href: search.url,
       });
     });
 
     recentConversations.slice(0, 3).forEach((conversation) => {
-      const ts = conversation.lastMessage?.timestamp?.toDate?.();
-      if (!ts) return;
+      if (!conversation.lastMessage?.timestamp) return;
+      const ts = toDate(conversation.lastMessage.timestamp);
       items.push({
         id: `conversation-${conversation.id}`,
         label: `Messaged about ${conversation.listingTitle}`,
@@ -165,7 +176,7 @@ export function BuyerDashboardClient({
                       {search.name}
                     </Link>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                      Protocol Active: {formatDistanceToNow(search.createdAt.toDate(), { addSuffix: true })}
+                      Protocol Active: {formatDistanceToNow(toDate(search.createdAt), { addSuffix: true })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

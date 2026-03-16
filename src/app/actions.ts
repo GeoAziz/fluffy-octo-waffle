@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
 import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation, Message, UserPreferences, Notification } from '@/lib/types';
+import { serializeDocument, serializeDocuments } from '@/lib/firestore-serialization';
 import { FieldValue } from 'firebase-admin/firestore';
 import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
@@ -520,7 +521,7 @@ export async function getFavoriteListingsForUser(userId: string, limitCount = 5)
  */
 export async function getRecentConversationsForUser(userId: string, limitCount = 5): Promise<Conversation[]> {
     const snapshot = await adminDb.collection('conversations').where('participantIds', 'array-contains', userId).orderBy('updatedAt', 'desc').limit(limitCount).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Conversation));
+    return snapshot.docs.map(doc => serializeDocument({ id: doc.id, ...doc.data() }) as Conversation);
 }
 
 /**
@@ -557,7 +558,7 @@ export async function deleteSearchAction(searchId: string) {
  */
 export async function getSavedSearchesForUser(userId: string): Promise<SavedSearch[]> {
     const snapshot = await adminDb.collection('users').doc(userId).collection('savedSearches').orderBy('createdAt', 'desc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SavedSearch));
+    return snapshot.docs.map(doc => serializeDocument({ id: doc.id, ...doc.data() }) as SavedSearch);
 }
 
 /**
@@ -658,10 +659,9 @@ export async function getInboxItemsAction(filters: { contactStatus: string; repo
   if (authUser?.role !== 'ADMIN') throw new Error('Unauthorized.');
   const contactSnapshot = await adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(50).get();
   const reportSnapshot = await adminDb.collection('listingReports').orderBy('createdAt', 'desc').limit(50).get();
-  const toDateISO = (ts?: any) => ts?.toDate?.()?.toISOString() ?? null;
   return {
-    contactMessages: contactSnapshot.docs.map(d => ({ id: d.id, ...d.data(), createdAt: toDateISO(d.data().createdAt) })),
-    listingReports: reportSnapshot.docs.map(d => ({ id: d.id, ...d.data(), createdAt: toDateISO(d.data().createdAt) })),
+    contactMessages: contactSnapshot.docs.map(d => serializeDocument({ id: d.id, ...d.data() })),
+    listingReports: reportSnapshot.docs.map(d => serializeDocument({ id: d.id, ...d.data() })),
   };
 }
 

@@ -165,9 +165,9 @@ export default function AuditTrailPage() {
                     <TableCell className="text-[11px] font-medium text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3 w-3" />
-                        {log.timestamp instanceof Timestamp 
+                        {typeof log.timestamp?.toDate === 'function'
                           ? format(log.timestamp.toDate(), "MMM d, HH:mm:ss")
-                          : "Processing..."
+                          : format(new Date(log.timestamp), "MMM d, HH:mm:ss")
                         }
                       </div>
                     </TableCell>

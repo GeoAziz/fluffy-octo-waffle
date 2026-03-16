@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { LandPlot, Mail, Phone, Facebook, Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/use-settings';
 import type { PlatformSettings } from '@/lib/types';
 
 /**
@@ -21,29 +22,10 @@ interface NavLink {
 
 export function BuyerFooter() {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [subscriptionState, setSubscriptionState] = useState<'idle' | 'success' | 'error'>('idle');
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await fetch('/api/admin/settings');
-        if (response.ok) {
-          const { data } = await response.json();
-          setSettings(data as PlatformSettings);
-        }
-      } catch (error) {
-        console.warn('Failed to load footer settings:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSettings();
-  }, []);
+  const { settings, isLoading } = useSettings();
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

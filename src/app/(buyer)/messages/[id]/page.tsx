@@ -254,7 +254,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                                     <p className="text-sm font-medium" style={{whiteSpace: 'pre-wrap'}}>{msg.text}</p>
                                     {msg.timestamp && (
                                         <p className={cn("text-[9px] font-black uppercase mt-2 text-right opacity-60")}>
-                                            {format(msg.timestamp.toDate(), 'p')}
+                                            {format(typeof msg.timestamp.toDate === 'function' ? msg.timestamp.toDate() : new Date(msg.timestamp), 'p')}
                                         </p>
                                     )}
                                 </div>

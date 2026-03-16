@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/use-settings';
 import { AlertCircle, CheckCircle2, Loader2, Globe, ShieldCheck, Mail, Sliders } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { PlatformSettings } from '@/lib/types';
@@ -50,9 +51,9 @@ type SettingsFormData = z.infer<typeof SettingsSchema>;
 
 export function SettingsForm() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const { settings, isLoading } = useSettings();
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(SettingsSchema),
@@ -75,34 +76,13 @@ export function SettingsForm() {
     },
   });
 
+  // Update form when settings load
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/admin/settings');
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to load settings');
-        }
-
-        const { data } = await response.json();
-        form.reset(data as SettingsFormData);
-        setLastSaved(new Date());
-      } catch (error: any) {
-        console.error('Failed to fetch settings:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error loading settings',
-          description: error.message || 'Failed to load platform settings',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSettings();
-  }, [form, toast]);
+    if (settings) {
+      form.reset(settings as SettingsFormData);
+      setLastSaved(new Date());
+    }
+  }, [settings, form]);
 
   const onSubmit = async (data: SettingsFormData) => {
     try {
@@ -120,6 +100,8 @@ export function SettingsForm() {
       if (!response.ok) {
         throw new Error(result.message || 'Failed to save settings');
       }
+
+
 
       setLastSaved(new Date());
       toast({
