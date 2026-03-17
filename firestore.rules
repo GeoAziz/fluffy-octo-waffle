@@ -16,6 +16,10 @@ service cloud.firestore {
      * - /userProfiles/{userId}/draftListings/{listingId}: Private workspace for sellers' incomplete listings.
      * - /listings/{listingId}: Top-level collection for public or reviewed listings.
      * - /listings/{listingId}/...: Subcollections for evidence, badges, signals, and summaries.
+     * - /conversations/{conversationId}: Messaging threads between buyers and sellers.
+     * - /contactMessages/{messageId}: Contact form submissions (admin-only).
+     * - /listingReports/{reportId}: Reported listings for moderation (admin-only).
+     * - /auditLogs/{logId}: Admin action audit trail (admin-only).
      *
      * KEY SECURITY DECISIONS:
      * 1. DBAC for Admin: Administrative privileges are determined by the existence of a document 
@@ -26,6 +30,8 @@ service cloud.firestore {
      *    sub-documents to allow rules to verify access without reading parent documents.
      * 4. Relational Integrity: On creation and update, rules ensure that ownership fields 
      *    cannot be spoofed or transferred.
+     * 5. Three-Role System: BUYER (browse, message, save), SELLER (list, message, upload evidence), 
+     *    ADMIN (moderate, assign badges, manage reports, audit logs).
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -55,6 +61,17 @@ service cloud.firestore {
     // Ensures a field does not change during an update
     function isImmutable(field) {
       return request.resource.data[field] == resource.data[field];
+    }
+
+    // Check if user is a participant in a conversation
+    function isConversationParticipant(userId) {
+      return isSignedIn() && (resource.data.buyerId == userId || resource.data.sellerId == userId);
+    }
+
+    // Check if user is a valid participant for creating a conversation
+    function isValidConversationParticipant(userIdField, otherUserIdField) {
+      return request.resource.data[userIdField] == request.auth.uid && 
+             request.resource.data[userIdField] != request.resource.data[otherUserIdField];
     }
 
     // --- COLLECTION RULES ---
@@ -103,14 +120,14 @@ service cloud.firestore {
     /**
      * @description Publicly viewable or active listings.
      * @path /listings/{listingId}
-     * @allow (get, list) Public if active/not suspicious; (write) Seller or Admin.
+     * @allow (get, list) Public if approved/not suspicious; (write) Seller or Admin.
      * @deny (update) Seller trying to change the sellerId of a listing.
      * @principle Owner-based writes with conditional public reads.
      */
     match /listings/{listingId} {
-      allow get, list: if (resource.data.status == 'Active' && resource.data.isSuspicious == false) || isExistingOwner('sellerId') || isAdmin();
+      allow get, list: if (resource.data.status == 'approved' && resource.data.isSuspicious == false) || isExistingOwner('sellerId') || isAdmin();
       allow create: if isSignedIn() && isValidOwnership('sellerId');
-      allow update: if (isExistingOwner('sellerId') && isImmutable('sellerId')) || isAdmin();
+      allow update: if (isExistingOwner('sellerId') && isImmutable('sellerId') && isImmutable('status')) || isAdmin();
       allow delete: if isExistingOwner('sellerId') || isAdmin();
     }
 
@@ -165,6 +182,20 @@ service cloud.firestore {
     }
 
     /**
+     * @description User account data (preferences, settings, etc.).
+     * @path /users/{userId}
+     * @allow (get, list, write) User matching the userId or an Admin.
+     * @deny (get, list) One user trying to read another user's profile.
+     * @principle Path-based ownership matching authenticated UID.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
      * @description User notifications (private subcollection).
      * @path /users/{userId}/notifications/{notificationId}
      * @allow (get, list) User matching the userId or an Admin.
@@ -173,7 +204,8 @@ service cloud.firestore {
      */
     match /users/{userId}/notifications/{notificationId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     /**
@@ -198,6 +230,73 @@ service cloud.firestore {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create, delete: if isOwner(userId);
       allow read: if isOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Conversations between buyers and sellers.
+     * @path /conversations/{conversationId}
+     * @allow (get, list) Conversation participants or Admin.
+     * @deny (write) Non-participants modifying conversations.
+     * @principle Buyer-seller messaging with participant verification.
+     */
+    match /conversations/{conversationId} {
+      allow get, list: if isConversationParticipant(request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && (isValidConversationParticipant('buyerId', 'sellerId') || isValidConversationParticipant('sellerId', 'buyerId'));
+      allow update: if isConversationParticipant(request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      /**
+       * @description Individual messages within a conversation.
+       * @path /conversations/{conversationId}/messages/{messageId}
+       * @allow (get, list) Conversation participants or Admin.
+       * @deny (create) Non-participants sending messages.
+       * @principle Message ownership denormalized from parent conversation.
+       */
+      match /messages/{messageId} {
+        allow get, list: if isConversationParticipant(request.auth.uid) || isAdmin();
+        allow create: if isSignedIn() && isValidOwnership('senderId') && isConversationParticipant(request.auth.uid);
+        allow update: if isExistingOwner('senderId') || isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    /**
+     * @description Contact form submissions (admin-only access).
+     * @path /contactMessages/{messageId}
+     * @allow (get, list, write) Admin only.
+     * @deny (read, write) Non-admins attempting to access contact messages.
+     * @principle Admin-only moderation of contact form data.
+     */
+    match /contactMessages/{messageId} {
+      allow get, list: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Reported listings for moderation.
+     * @path /listingReports/{reportId}
+     * @allow (get, list) Buyer who reported or Admin.
+     * @deny (write) Non-admins modifying reports after creation.
+     * @principle Buyer-submitted moderation requests with admin resolution.
+     */
+    match /listingReports/{reportId} {
+      allow get, list: if isExistingOwner('reportedByUserId') || isAdmin();
+      allow create: if isSignedIn() && isValidOwnership('reportedByUserId');
+      allow update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Admin action audit trail.
+     * @path /auditLogs/{logId}
+     * @allow (get, list) Admin only.
+     * @deny (write) Non-admins creating or modifying audit logs.
+     * @principle Append-only admin action history for compliance and security.
+     */
+    match /auditLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }

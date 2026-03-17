@@ -19,8 +19,8 @@ export function MobileBottomNav() {
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/explore', label: 'Explore', icon: Search },
-    { href: '/favorites', label: 'Saved', icon: Heart },
-    { href: '/buyer/messages', label: 'Inbox', icon: MessageSquare },
+    { href: '/favorites', label: 'Saved', icon: Heart, badge: 0 }, // TODO: Connect to favorites count
+    { href: '/buyer/inbox', label: 'Inbox', icon: MessageSquare, badge: 0 }, // TODO: Connect to unread count
   ];
 
   if (user && userProfile) {
@@ -42,6 +42,7 @@ export function MobileBottomNav() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const badge = item.badge || 0;
 
           return (
             <Link
@@ -69,16 +70,23 @@ export function MobileBottomNav() {
                 />
               )}
 
-              {/* Icon with animation */}
-              <Icon
-                className={cn(
-                  'h-6 w-6 transition-all duration-300',
-                  isActive
-                    ? 'text-primary scale-110 animate-bounce-in'
-                    : 'text-muted-foreground'
+              {/* Icon with animation and badge */}
+              <div className="relative">
+                <Icon
+                  className={cn(
+                    'h-6 w-6 transition-all duration-300',
+                    isActive
+                      ? 'text-primary scale-110 animate-bounce-in'
+                      : 'text-muted-foreground'
+                  )}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                {badge > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-white text-[10px] font-bold">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
                 )}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
+              </div>
 
               {/* Label */}
               <span
