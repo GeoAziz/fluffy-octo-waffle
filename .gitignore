@@ -51,3 +51,8 @@ logs.txt
 
 kenya-land-trust-blueprint.md
 SKILL.md
+# Test coverage and reports
+coverage/
+playwright-report/
+test-results/
+.nyc_output/

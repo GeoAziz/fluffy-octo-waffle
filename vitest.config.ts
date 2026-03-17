@@ -8,13 +8,20 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/lib/testing/setup.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/lib/testing/'],
+      exclude: ['node_modules/', 'src/lib/testing/', 'e2e/', 'tests/', '__tests__/'],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 50,
+        statements: 50,
+      },
     },
   },
 });
