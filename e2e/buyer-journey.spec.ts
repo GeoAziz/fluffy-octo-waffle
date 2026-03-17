@@ -10,8 +10,9 @@ test.describe('Buyer Journey - Public Experience', () => {
     await page.goto('/');
 
     await expect(page).toHaveTitle(/Kenya Land Trust/);
+    // Check for actual hero h1 heading from landing-hero.tsx
     await expect(
-      page.getByRole('heading', { name: /Find Verified Land in Kenya/i })
+      page.getByRole('heading', { name: /Find Land with|Ironclad Trust/i })
     ).toBeVisible();
   });
 

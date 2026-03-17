@@ -10,16 +10,19 @@ test.describe('Authentication Pages', () => {
   test('login page renders with email and password fields', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.getByRole('heading', { name: /sign in|log in|welcome/i })).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    // Check for branded login headings (use first to avoid strict mode violation)
+    await expect(page.getByRole('heading', { name: /Vault Access|Identity/i }).first()).toBeVisible();
+    await expect(page.getByLabel(/email|Network Email/i)).toBeVisible();
+    // Use textbox role to avoid matching the "Show password" button
+    await expect(page.getByRole('textbox', { name: /Access Token/i })).toBeVisible();
   });
 
   test('signup page renders with registration form', async ({ page }) => {
     await page.goto('/signup');
 
-    await expect(page.getByRole('heading', { name: /sign up|create account|register/i })).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    // Check for branded signup headings (use first to avoid strict mode violation)
+    await expect(page.getByRole('heading', { name: /Vault Creation|Provision/i }).first()).toBeVisible();
+    await expect(page.getByLabel(/email|Communication Email/i)).toBeVisible();
   });
 
   test('protected route redirects unauthenticated users to login', async ({ page }) => {

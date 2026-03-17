@@ -80,14 +80,20 @@ export function PageSection({
   className,
   withSeparator = false,
   animated = true,
+  id,
+  'aria-label': ariaLabel,
 }: {
   children: React.ReactNode;
   className?: string;
   withSeparator?: boolean;
   animated?: boolean;
+  id?: string;
+  'aria-label'?: string;
 }) {
   return (
     <section
+      id={id}
+      aria-label={ariaLabel}
       className={cn(
         'w-full space-y-8',
         withSeparator && 'py-8 md:py-12 border-b border-border/40',
