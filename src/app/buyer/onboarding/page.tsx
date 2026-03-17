@@ -24,7 +24,8 @@ import {
   Lock,
   Globe,
   Wifi,
-  History
+  History,
+  CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { PageWrapper } from '@/components/page-wrapper';

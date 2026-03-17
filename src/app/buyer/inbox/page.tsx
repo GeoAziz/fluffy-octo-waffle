@@ -186,7 +186,7 @@ export default function InboxPage() {
         <TabsContent value="messages" className="space-y-4">
           {unreadMessages === 0 ? (
             <EmptyState
-              icon={MessageSquare}
+              icon="MessageSquare"
               title="No messages yet"
               description="Start by exploring verified listings and contacting sellers to begin conversations."
               actions={[
@@ -212,7 +212,7 @@ export default function InboxPage() {
         <TabsContent value="alerts" className="space-y-4">
           {unreadAlerts === 0 ? (
             <EmptyState
-              icon={Bell}
+              icon="Bell"
               title="No alerts yet"
               description="Save searches and listings to get alerts about new properties and important updates."
               actions={[

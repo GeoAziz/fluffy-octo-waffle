@@ -56,3 +56,5 @@ coverage/
 playwright-report/
 test-results/
 .nyc_output/
+
+test-results.txt

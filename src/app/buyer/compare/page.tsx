@@ -64,7 +64,7 @@ export default function ComparePage() {
         </div>
 
         <EmptyState
-          icon={Plus}
+          icon="Plus"
           title="No listings selected"
           description="Go back to your favorites and select listings to compare prices, locations, and trust signals."
           actions={[

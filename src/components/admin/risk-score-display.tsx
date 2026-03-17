@@ -3,6 +3,7 @@
 
 import { cn } from '@/lib/utils';
 import { AlertTriangle, CheckCircle2, TrendingDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface RiskScoreBadgeProps {
   score: number;

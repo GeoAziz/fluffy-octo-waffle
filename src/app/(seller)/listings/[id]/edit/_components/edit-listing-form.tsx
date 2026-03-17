@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { editListingAction, generateDescriptionAction } from '@/app/actions';
-import { Loader2, Sparkles, FileText, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Loader2, Sparkles, FileText, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';

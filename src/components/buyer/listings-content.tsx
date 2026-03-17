@@ -140,7 +140,7 @@ function ListingRegistryCard({
             alt={`Property Photo - ${listing.title}`}
             fill
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-[2s] group-hover:scale-110"
+            className="object-cover transition-transform duration-1000 group-hover:scale-110"
             data-ai-hint={listing.images[0].hint}
             priority={index < 4}
           />
@@ -651,7 +651,7 @@ export function ListingsContent() {
       ) : (
         <div className="pb-32">
           <EmptyState
-            icon={Search}
+            icon="Search"
             title="Registry Filter Failure"
             description="We couldn't find exact matches for your specific protocol. Verified land moves quickly on the platform."
             actions={[

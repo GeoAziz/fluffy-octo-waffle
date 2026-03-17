@@ -57,7 +57,7 @@ export default function SavedSearchesPage() {
         </div>
 
         <EmptyState
-          icon={Search}
+          icon="Search"
           title="No saved searches yet"
           description="Create a search to save your filters and get alerts when new properties matching your criteria are added."
           actions={[

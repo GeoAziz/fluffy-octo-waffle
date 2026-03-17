@@ -169,7 +169,7 @@ export default async function SellerListingsPage({
             </>
           ) : (
             <EmptyState
-              icon={Search}
+              icon="Search"
               title={activeStatus === 'all' ? "Registry is Empty" : "No results for protocol"}
               description={activeStatus === 'all' 
                 ? "You haven't provisioned any property nodes to the registry yet. Building a high-trust portfolio starts here."

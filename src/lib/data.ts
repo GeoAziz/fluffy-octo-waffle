@@ -256,6 +256,7 @@ export const getListingById = cache(async (id: string) => {
   const data = docSnap.data();
   
   // Validate seller exists before returning listing
+  if (!data) return null;
   const sellerValidation = await validateSellerExists(data.ownerId);
   if (!sellerValidation.isValidSeller) {
     console.warn(`[DataFetch] Skipping listing ${id} - seller validation failed:`, sellerValidation.error);

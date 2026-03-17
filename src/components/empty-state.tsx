@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import * as Icons from 'lucide-react';
 
 export type EmptyStateAction = {
   label: string;
@@ -14,25 +15,38 @@ export type EmptyStateAction = {
   icon?: React.ComponentType<{ className?: string }>;
 };
 
+type IconName = keyof typeof Icons;
+
 export type EmptyStateProps = {
   title: string;
   description?: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }> | IconName | null;
   actions?: EmptyStateAction[];
   className?: string;
   children?: ReactNode;
   animated?: boolean;
 };
 
+function renderIcon(icon: React.ComponentType<{ className?: string }> | IconName | null | undefined) {
+  if (!icon) return null;
+  if (typeof icon === 'string') {
+    const IconComponent = Icons[icon as IconName] as React.ComponentType<{ className?: string }>;
+    return IconComponent ? <IconComponent className="h-10 w-10 text-muted-foreground/50" /> : null;
+  }
+  const IconComponent = icon as React.ComponentType<{ className?: string }>;
+  return <IconComponent className="h-10 w-10 text-muted-foreground/50" />;
+}
+
 export function EmptyState({
   title,
   description,
-  icon: Icon,
+  icon,
   actions = [],
   className,
   children,
   animated = true,
 }: EmptyStateProps) {
+  const IconComponent = renderIcon(icon);
   return (
     <div
       className={cn(
@@ -44,14 +58,14 @@ export function EmptyState({
       )}
     >
       {/* Icon with animation */}
-      {Icon && (
+      {IconComponent && (
         <div className={cn(
           'mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full',
           'bg-gradient-to-br from-muted/60 to-muted/30',
           'shadow-md transition-all duration-300 hover:scale-110 motion-safe:hover:shadow-lg',
           animated && 'animate-scale-in'
         )}>
-          <Icon className="h-10 w-10 text-muted-foreground/50" />
+          {IconComponent}
         </div>
       )}
 

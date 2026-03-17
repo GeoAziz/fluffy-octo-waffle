@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
         range === 'custom' && startDate && endDate
           ? await getAdminAnalyticsSummaryAction({ startDate, endDate })
           : await getAdminAnalyticsSummaryAction({ days: Number(range) as 7 | 30 | 90 });
-      setSummary(payload as AnalyticsSummary);
+      setSummary(payload as any);
     } catch (error) {
       console.error(error);
     } finally {

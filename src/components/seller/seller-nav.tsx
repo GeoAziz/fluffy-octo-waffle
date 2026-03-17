@@ -23,6 +23,7 @@ import { auth, db } from '@/lib/firebase';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { calculateSellerTier, getTierProgress, getTierDescription, type SellerTier } from '@/lib/seller-tier';
+import type { BadgeValue } from '@/lib/types';
 
 const workspaceItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Overview & analytics' },
@@ -56,7 +57,7 @@ export function SellerNav() {
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
       const badges = snapshot.docs
         .map(doc => doc.data().badge)
-        .filter((badge): badge is string => badge !== null && badge !== undefined);
+        .filter((badge): badge is string => badge !== null && badge !== undefined) as any as BadgeValue[];
       
       const tier = calculateSellerTier(badges);
       const progress = getTierProgress(tier);

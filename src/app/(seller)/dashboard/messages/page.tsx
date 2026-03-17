@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 export default function SellerMessagesPage() {
   return (
     <EmptyState
-      icon={MessageSquare}
+      icon="MessageSquare"
       title="Select a conversation"
       description="Choose from your existing buyer conversations on the left."
       actions={[{ label: 'View Listings', href: '/dashboard/listings', variant: 'outline' }]}

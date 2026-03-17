@@ -60,7 +60,7 @@ export default function HistoryPage() {
         </div>
 
         <EmptyState
-          icon={Clock}
+          icon="Clock"
           title="No browsing history yet"
           description="Start exploring verified land listings and your recently viewed properties will appear here. Track price changes and seller responses."
           actions={[

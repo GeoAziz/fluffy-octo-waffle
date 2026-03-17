@@ -63,7 +63,7 @@ export async function createNotificationAction(userId: string, data: Omit<Notifi
   if (preferences?.notifications?.email && userDoc.data()?.email) {
     await sendBrandedEmail({
       to: userDoc.data()?.email,
-      type: 'system', // Generic type for now
+      type: 'contact_confirmation',
       subject: data.title,
       payload: { name: userDoc.data()?.displayName || 'User', message: data.message }
     });

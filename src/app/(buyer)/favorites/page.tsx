@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFavorites } from '@/hooks/use-favorites';
 import { getListingsByIds } from '@/app/actions';
 import type { Listing } from '@/lib/types';
-import { ArrowUpDown, Heart, LandPlot, Scale } from 'lucide-react';
+import { ArrowUpDown, Heart, LandPlot, Scale, MapPin } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -116,7 +117,7 @@ export default function FavoritesPage() {
                     alt={listing.title}
                     fill
                     sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-[2s] hover:scale-110"
+                    className="object-cover transition-transform duration-1000 hover:scale-110"
                     data-ai-hint={listing.images[0]?.hint || 'landscape'}
                   />
                 </Link>
@@ -168,7 +169,7 @@ export default function FavoritesPage() {
         </>
       ) : (
         <EmptyState
-          icon={Heart}
+          icon="Heart"
           title="Favorites Vault Empty"
           description="Save high-trust listings to compare them later and maintain persistent transaction momentum."
           actions={[

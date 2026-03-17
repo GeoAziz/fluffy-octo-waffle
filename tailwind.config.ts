@@ -19,6 +19,10 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      transitionDuration: {
+        '1000': '1000ms',
+        '10000': '10000ms',
+      },
       fontSize: {
         xs: 'var(--text-xs)',
         sm: 'var(--text-sm)',

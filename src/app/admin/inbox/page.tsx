@@ -58,10 +58,10 @@ export default function AdminInboxPage() {
     getInboxItemsAction({
       contactStatus: contactStatus,
       reportStatus: reportStatus,
-    }).then(data => {
-      setContactMessages(data.contactMessages);
-      setListingReports(data.listingReports);
-    }).catch(err => {
+    }).then((data: any) => {
+      setContactMessages(data.contactMessages || []);
+      setListingReports(data.listingReports || []);
+    }).catch((err: any) => {
       console.error(err);
     }).finally(() => {
       setIsLoading(false);
@@ -95,7 +95,7 @@ export default function AdminInboxPage() {
     if (contactMessages.length === 0) {
         return (
             <EmptyState
-              icon={Mail}
+              icon="Mail"
               title="No contact messages match the current filter"
               description="Try switching to All or Handled to review past messages."
             />
@@ -143,7 +143,7 @@ export default function AdminInboxPage() {
       if (listingReports.length === 0) {
         return (
                         <EmptyState
-                            icon={AlertTriangle}
+                            icon="AlertTriangle"
                             title="No listing reports match the current filter"
                             description="Switch to All to review previously handled reports."
                         />

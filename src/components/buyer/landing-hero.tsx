@@ -26,7 +26,7 @@ export function LandingHero() {
           alt="Kenyan Landscape - Expansive greenery showing land potential"
           fill
           priority={true} // Critical for LCP performance
-          className="object-cover opacity-30 transition-transform duration-[10s] hover:scale-110"
+          className="object-cover opacity-30 transition-transform duration-10000 hover:scale-110"
           sizes="100vw"
           quality={90}
           data-ai-hint="kenya landscape"

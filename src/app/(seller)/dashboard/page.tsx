@@ -224,7 +224,7 @@ export default async function SellerDashboard() {
               {listings.length === 0 ? (
                 <div className="p-12">
                   <EmptyState
-                    icon={ListChecks}
+                    icon="ListChecks"
                     title="Vault is Empty"
                     description="You haven't added any properties to your registry vault yet."
                     actions={[{ label: 'Provision First Listing', href: '/listings/new', variant: 'accent' }]}

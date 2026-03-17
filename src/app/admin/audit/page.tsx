@@ -137,7 +137,7 @@ export default function AuditTrailPage() {
             </div>
           ) : filteredLogs.length === 0 ? (
             <EmptyState
-              icon={History}
+              icon="History"
               title="No events found"
               description="Adjust your search or category filters."
             />

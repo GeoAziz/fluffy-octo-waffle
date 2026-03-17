@@ -46,7 +46,7 @@ export default function ReportListingPage() {
 
       setReportStatus('received');
       toast({
-        variant: 'success',
+        variant: 'default',
         title: 'Report submitted',
         description: 'Thanks for flagging this listing. If you are signed in, we will email a confirmation.',
       });
@@ -82,7 +82,7 @@ export default function ReportListingPage() {
             </ul>
           </div>
           {reportStatus === 'received' ? (
-              <Alert variant="success">
+              <Alert variant="default">
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>Report Received</AlertTitle>
                 <AlertDescription>

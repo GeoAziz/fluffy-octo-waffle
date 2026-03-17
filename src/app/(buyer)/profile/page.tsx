@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfileAction, requestSellerRoleAction, updateUserPreferencesAction } from '@/app/actions';
 import { Loader2, Upload, CheckCircle2, AlertCircle, Mail, Phone, Shield, LogOut, Briefcase, Sparkles, Bell } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BuyerPage } from '@/components/buyer/buyer-page';
 import { useRouter } from 'next/navigation';
@@ -104,7 +105,7 @@ export default function ProfilePage() {
   };
 
   if (loading) return <BuyerPage title="Identity Vault"><ProfileSkeleton /></BuyerPage>;
-  if (!userProfile) return <BuyerPage title="Identity Vault"><EmptyState icon={AlertCircle} title="Registry Error" description="Could not load identity record." actions={[{ label: 'Return to Login', href: '/login' }]} /></BuyerPage>;
+  if (!userProfile) return <BuyerPage title="Identity Vault"><EmptyState icon="AlertCircle" title="Registry Error" description="Could not load identity record." actions={[{ label: 'Return to Login', href: '/login' }]} /></BuyerPage>;
 
   return (
     <BuyerPage title="Identity Profile" description="Manage your secure identity nodes and notification protocols.">
