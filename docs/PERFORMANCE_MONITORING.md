@@ -17,6 +17,25 @@ The Firebase Performance SDK is initialized in production to provide:
 - **Network Request Latency**: Tracking of Firestore and Server Action overhead.
 - **Trace Customization**: Specific segments like AI Triage or Documentation Upload are tagged for bottleneck analysis.
 
+## 2.1 Server Trace Collection
+
+Post-launch tracing now records server action execution into `serverTraces` for:
+- listing search and retrieval actions
+- listing creation/update workflows
+- analytics summary generation
+- messaging conversation bootstrap
+
+Each trace stores status (`ok`/`error`), duration, route context, and identifiers to support regression triage.
+
+## 2.2 Performance Budgets & Regression Tracking
+
+Client-side web vitals are validated against explicit budgets and breaches are recorded via `/api/monitoring/performance-budget` into `performanceBudgets`:
+- **LCP** target: < 2500ms
+- **INP** target: < 200ms
+- **CLS** target: < 0.1
+
+Budget violations are logged as telemetry events and can trigger ops spike alerts.
+
 ## 3. Image Optimization Protocol
 We strictly follow Next.js optimization best-practices to ensure a high-trust, fast-loading visual experience:
 - **Priority Loading**: All above-the-fold assets (Landing Hero, first 4 listing cards) use the `priority` attribute to optimize LCP.

@@ -58,11 +58,12 @@ export function SaveSearchButton({ filters, disabled }: SaveSearchButtonProps) {
         setSearchName('');
         setIsSaved(false);
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Could not commit the search to the vault.';
       toast({
         variant: 'destructive',
         title: 'Transmission Error',
-        description: error.message || 'Could not commit the search to the vault.',
+        description: message,
       });
     } finally {
       setIsSaving(false);

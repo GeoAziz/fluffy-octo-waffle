@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getListingById } from '@/lib/data';
 import { StatusBadge } from '@/components/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,7 +64,7 @@ async function getAuthenticatedUser(): Promise<{uid: string, role: UserProfile['
         
         const userProfile = userDoc.data() as UserProfile;
         return { uid: decodedToken.uid, role: userProfile.role };
-    } catch(e) {
+    } catch {
         return null;
     }
 }

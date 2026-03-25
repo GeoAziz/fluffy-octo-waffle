@@ -18,6 +18,18 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('[Root Error]', error);
+    void fetch('/api/monitoring/error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        route: window.location.pathname,
+      }),
+    }).catch(() => {
+      // intentionally swallow monitoring submission errors
+    });
   }, [error]);
 
   return (

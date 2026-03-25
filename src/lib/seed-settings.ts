@@ -8,6 +8,7 @@
 import { adminDb } from './firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { PlatformSettings } from './types';
+import { assertSeedSafety } from './seed-safety';
 
 const DEFAULT_SETTINGS: PlatformSettings = {
   platformName: 'Kenya Land Trust',
@@ -33,8 +34,16 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   updatedBy: 'system-init',
 };
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 async function initializeSettings() {
   try {
+    assertSeedSafety({ operationName: 'seed:settings' });
     console.log('🚀 Starting platform settings initialization...\n');
 
     const settingsDoc = await adminDb.collection('adminConfig').doc('settings').get();
@@ -44,12 +53,12 @@ async function initializeSettings() {
       return;
     }
 
-    await adminDb.collection('adminConfig').doc('settings').set(DEFAULT_SETTINGS as any);
+    await adminDb.collection('adminConfig').doc('settings').set(DEFAULT_SETTINGS);
 
     console.log('✅ Platform settings initialized successfully!\n');
     console.log(JSON.stringify(DEFAULT_SETTINGS, null, 2));
-  } catch (error: any) {
-    console.error('❌ Error initializing settings:', error?.message || error);
+  } catch (error: unknown) {
+    console.error('❌ Error initializing settings:', getErrorMessage(error));
     process.exit(1);
   }
 }

@@ -70,8 +70,8 @@ export default function SignupPage() {
       // 2. Default landing protocol
       const redirectPath = role === 'SELLER' ? '/dashboard' : '/buyer/onboarding';
       window.location.assign(redirectPath);
-    } catch (err: any) {
-      setServerError(err.message);
+    } catch {
+      setServerError('Failed to create account. Please try again.');
     }
   };
 
@@ -90,8 +90,9 @@ export default function SignupPage() {
         createdAt: serverTimestamp(),
       });
       await handleAuthSuccess(userCredential.user);
-    } catch (error: any) {
-      setServerError(error.code === 'auth/email-already-in-use' ? 'A property vault already exists for this email.' : 'Identity provisioning failed.');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Object && 'code' in error && error.code === 'auth/email-already-in-use' ? 'A property vault already exists for this email.' : 'Identity provisioning failed.';
+      setServerError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +120,7 @@ export default function SignupPage() {
         });
       }
       await handleAuthSuccess(user);
-    } catch (error: any) {
+    } catch {
       setServerError('SSO Handshake failure.');
     } finally {
       setIsLoading(false);
@@ -136,7 +137,7 @@ export default function SignupPage() {
         </div>
         <div className="relative z-20 flex-1 flex flex-col justify-center items-center p-10 text-center">
           <h2 className="text-4xl font-black tracking-tight text-white uppercase">Vault Creation</h2>
-          <p className="mt-4 text-lg text-emerald-50/80 max-w-md">Establish your verified identity on Kenya's most secure land network.</p>
+          <p className="mt-4 text-lg text-emerald-50/80 max-w-md">Establish your verified identity on Kenya&apos;s most secure land network.</p>
         </div>
       </div>
       <div className="flex items-center justify-center py-12 bg-background">

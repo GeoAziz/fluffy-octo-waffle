@@ -3,15 +3,15 @@
 import { useEffect, useRef, useState, use } from 'react';
 import { useAuth } from '@/components/providers';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy, doc, addDoc, serverTimestamp, updateDoc, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, updateDoc, limit, getDocs } from 'firebase/firestore';
 import type { Message, Conversation, Listing } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, AlertTriangle, Sparkles, MapPin, LandPlot, ArrowRight } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, toDateSafe } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -69,7 +69,6 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     const [sending, setSending] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [status, setStatus] = useState<ConversationStatus>('new');
-    const [composerState, setComposerState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
     const [similarListings, setSimilarListings] = useState<Listing[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -128,34 +127,22 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         if (!newMessage.trim() || !user || !conversation) return;
 
         setSending(true);
-        setComposerState('sending');
         setNewMessage('');
 
-        const messagesColRef = collection(db, 'conversations', id, 'messages');
-        const messageData = {
-            senderId: user.uid,
-            text: newMessage,
-            timestamp: serverTimestamp(),
-        };
-
-        const convoRef = doc(db, 'conversations', id);
-        const convoData = {
-            lastMessage: {
-                text: newMessage,
-                senderId: user.uid,
-                timestamp: serverTimestamp(),
-            },
-            updatedAt: serverTimestamp(),
-            status: 'responded',
-        };
-
         try {
-            await addDoc(messagesColRef, messageData);
-            await updateDoc(convoRef, convoData);
+            const response = await fetch('/api/messages/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId: id, text: newMessage }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload?.error || 'Send failed');
+            }
+
             setStatus('responded');
-            setComposerState('sent');
-        } catch (error) {
-            setComposerState('failed');
+        } catch {
             toast({ variant: 'destructive', title: 'Send failed', description: 'Message could not be sent. Retry when ready.' });
         } finally {
             setSending(false);
@@ -175,21 +162,6 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         } catch (error) {
             console.error('Error fetching similar properties:', error);
         }
-    };
-
-    const handleStatusChange = (nextStatus: ConversationStatus) => {
-        if (!conversation) return;
-        setStatus(nextStatus);
-        const convoRef = doc(db, 'conversations', id);
-        updateDoc(convoRef, { status: nextStatus }).catch(async (error) => {
-            const permissionError = new FirestorePermissionError({
-                path: convoRef.path,
-                operation: 'update',
-                requestResourceData: { status: nextStatus },
-            }, error);
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update conversation status.' });
-        });
     };
 
     if (loading) return <ChatSkeleton />;
@@ -238,6 +210,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                     {messages.map(msg => {
                         const isSender = msg.senderId === user?.uid;
                         const participant = isSender ? null : (conversation.participants[msg.senderId] || null);
+                        const messageTimestamp = toDateSafe(msg.timestamp);
 
                         return (
                             <div key={msg.id} className={cn("flex items-end gap-2", isSender && "justify-end")}>
@@ -252,11 +225,11 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                                     isSender ? "bg-primary text-white rounded-tr-none" : "bg-white border rounded-tl-none"
                                 )}>
                                     <p className="text-sm font-medium" style={{whiteSpace: 'pre-wrap'}}>{msg.text}</p>
-                                    {msg.timestamp && (
+                                    {messageTimestamp ? (
                                         <p className={cn("text-[9px] font-black uppercase mt-2 text-right opacity-60")}>
-                                            {format(typeof msg.timestamp.toDate === 'function' ? msg.timestamp.toDate() : new Date(msg.timestamp), 'p')}
+                                            {format(messageTimestamp, 'p')}
                                         </p>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
                         );
@@ -279,7 +252,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                         <form onSubmit={handleSendMessage} className="w-full flex items-center gap-3">
                             <Input 
                                 value={newMessage}
-                                onChange={(e) => { setNewMessage(e.target.value); setComposerState('idle'); }}
+                                onChange={(e) => { setNewMessage(e.target.value); }}
                                 placeholder="Type your message pulse..."
                                 disabled={sending}
                                 className="h-12 bg-background font-medium rounded-xl shadow-inner"

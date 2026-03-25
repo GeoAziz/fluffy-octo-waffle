@@ -63,7 +63,7 @@ export function ProductPreview() {
             <CardContent className="p-0 h-full flex items-center">
               <div className="p-8 space-y-4 flex-1">
                 <h4 className="text-2xl font-black uppercase tracking-tight text-primary">Filter by Signal Confidence</h4>
-                <p className="text-sm text-muted-foreground">Search specifically for "Gold Verified" properties where full documentation is already available for review.</p>
+                <p className="text-sm text-muted-foreground">Search specifically for &quot;Gold Verified&quot; properties where full documentation is already available for review.</p>
               </div>
               <div className="hidden md:block w-1/3 h-full relative">
                 <Image 

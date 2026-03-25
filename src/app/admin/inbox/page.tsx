@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Mail, AlertTriangle, Loader2, MessageCircle } from 'lucide-react';
+import { Mail, AlertTriangle, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { AdminPage } from '../_components/admin-page';
 import { ContactMessageActions, ListingReportActions } from '../_components/inbox-actions';
@@ -39,6 +39,11 @@ type ListingReport = {
   createdAt?: string | null;
 };
 
+type InboxItemsResponse = {
+    contactMessages?: ContactMessage[];
+    listingReports?: ListingReport[];
+};
+
 
 export default function AdminInboxPage() {
   const router = useRouter();
@@ -58,10 +63,11 @@ export default function AdminInboxPage() {
     getInboxItemsAction({
       contactStatus: contactStatus,
       reportStatus: reportStatus,
-    }).then((data: any) => {
-      setContactMessages(data.contactMessages || []);
-      setListingReports(data.listingReports || []);
-    }).catch((err: any) => {
+                }).then((data) => {
+            const inboxData = data as InboxItemsResponse;
+            setContactMessages(inboxData.contactMessages || []);
+            setListingReports(inboxData.listingReports || []);
+        }).catch((err: unknown) => {
       console.error(err);
     }).finally(() => {
       setIsLoading(false);

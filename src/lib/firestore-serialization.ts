@@ -17,15 +17,30 @@ export const isFirestoreTimestamp = (value: unknown): boolean => {
   );
 };
 
+type FirestoreTimestampLike = {
+  _seconds: number;
+  _nanoseconds: number;
+};
+
+const asTimestamp = (value: unknown): FirestoreTimestampLike | null => {
+  if (!isFirestoreTimestamp(value)) return null;
+  const candidate = value as { _seconds?: unknown; _nanoseconds?: unknown };
+  if (typeof candidate._seconds !== 'number' || typeof candidate._nanoseconds !== 'number') {
+    return null;
+  }
+  return { _seconds: candidate._seconds, _nanoseconds: candidate._nanoseconds };
+};
+
 /**
  * Convert a single Firestore Timestamp to ISO string
  */
-export const serializeTimestamp = (timestamp: any): string | null => {
-  if (!isFirestoreTimestamp(timestamp)) {
+export const serializeTimestamp = (timestamp: unknown): string | null => {
+  const parsedTimestamp = asTimestamp(timestamp);
+  if (!parsedTimestamp) {
     return null;
   }
   try {
-    const milliseconds = timestamp._seconds * 1000 + Math.round(timestamp._nanoseconds / 1000000);
+    const milliseconds = parsedTimestamp._seconds * 1000 + Math.round(parsedTimestamp._nanoseconds / 1000000);
     return new Date(milliseconds).toISOString();
   } catch (e) {
     console.error('Failed to serialize timestamp:', e);
@@ -36,20 +51,20 @@ export const serializeTimestamp = (timestamp: any): string | null => {
 /**
  * Deep clone and serialize all Firestore Timestamps in an object
  */
-export const serializeDocument = <T extends Record<string, any>>(doc: T): T => {
+export const serializeDocument = <T>(doc: T): T => {
   if (!doc || typeof doc !== 'object') {
     return doc;
   }
 
   if (isFirestoreTimestamp(doc)) {
-    return serializeTimestamp(doc) as any;
+    return serializeTimestamp(doc) as T;
   }
 
   if (Array.isArray(doc)) {
-    return doc.map(item => serializeDocument(item)) as any;
+    return doc.map(item => serializeDocument(item)) as T;
   }
 
-  const serialized: any = {};
+  const serialized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(doc)) {
     if (isFirestoreTimestamp(value)) {
       serialized[key] = serializeTimestamp(value);
@@ -66,6 +81,6 @@ export const serializeDocument = <T extends Record<string, any>>(doc: T): T => {
 /**
  * Serialize an array of documents
  */
-export const serializeDocuments = <T extends Record<string, any>>(docs: T[]): T[] => {
+export const serializeDocuments = <T extends Record<string, unknown>>(docs: T[]): T[] => {
   return docs.map(doc => serializeDocument(doc));
 };

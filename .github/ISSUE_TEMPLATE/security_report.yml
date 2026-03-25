@@ -1,0 +1,45 @@
+name: Security report
+description: Report a security vulnerability privately
+labels: [security]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not disclose exploit details publicly.
+        For critical vulnerabilities, contact maintainers immediately and include impact details.
+  - type: input
+    id: summary
+    attributes:
+      label: Vulnerability summary
+      placeholder: One-line summary
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What can an attacker do?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps, payload, prerequisites
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested mitigation

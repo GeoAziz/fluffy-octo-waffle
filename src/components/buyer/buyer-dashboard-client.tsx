@@ -4,21 +4,26 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { SavedSearch, Listing, Conversation } from '@/lib/types';
-import { Search, Trash2, Heart, MessageSquare, Loader2, LandPlot, ArrowRight, Sparkles, Clock3, ShieldCheck, CheckCircle2, Circle } from 'lucide-react';
+import { Search, Trash2, Heart, MessageSquare, Loader2, LandPlot, ArrowRight, Sparkles, Clock3, CheckCircle2, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { deleteSearchAction } from '@/app/actions';
 import { formatDistanceToNow } from 'date-fns';
 
 // Helper to safely convert Firestore timestamps and serialized dates
-const toDate = (value: any): Date => {
+const toDate = (value: unknown): Date => {
   if (!value) return new Date();
   if (value instanceof Date) return value;
-  if (typeof value.toDate === 'function') return value.toDate();
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    return ((value as { toDate: () => Date }).toDate());
+  }
   if (typeof value === 'string') return new Date(value);
   if (typeof value === 'number') return new Date(value);
-  if (value._seconds !== undefined) return new Date(value._seconds * 1000);
-  return new Date(value);
+  if (typeof value === 'object' && value !== null && '_seconds' in value) {
+    const seconds = (value as { _seconds?: number })._seconds;
+    if (typeof seconds === 'number') return new Date(seconds * 1000);
+  }
+  return new Date();
 };
 import {
   AlertDialog,
@@ -85,7 +90,7 @@ export function BuyerDashboardClient({
       items.push({
         id: `favorite-${listing.id}`,
         label: `Saved listing: ${listing.title}`,
-        when: new Date(listing.createdAt),
+        when: toDate(listing.createdAt),
         href: `/listings/${listing.id}`,
       });
     });
@@ -102,7 +107,7 @@ export function BuyerDashboardClient({
         title: 'Search Deleted',
         description: 'Your saved search has been removed.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -193,7 +198,7 @@ export function BuyerDashboardClient({
                             <AlertDialogHeader>
                                 <AlertDialogTitle className="font-black uppercase tracking-tight">Flush Search Protocol?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-sm font-medium">
-                                This will permanently remove "{search.name}" from your saved searches.
+                                This will permanently remove &quot;{search.name}&quot; from your saved searches.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -210,7 +215,7 @@ export function BuyerDashboardClient({
             <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-muted/10">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
                 <h3 className="text-sm font-black uppercase tracking-tight">No Saved Filters</h3>
-                <p className="mt-2 text-xs text-muted-foreground font-medium max-w-xs mx-auto">Use the refinement tools in the registry and click "Save Search" to track specific markets.</p>
+                <p className="mt-2 text-xs text-muted-foreground font-medium max-w-xs mx-auto">Use the refinement tools in the registry and click &quot;Save Search&quot; to track specific markets.</p>
                 <Button asChild variant="outline" className="mt-6 h-10 font-bold uppercase text-[10px] tracking-widest">
                     <Link href="/explore">Browse Registry</Link>
                 </Button>

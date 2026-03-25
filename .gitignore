@@ -39,12 +39,14 @@ next-env.d.ts
 
 .genkit/*
 .env*
+!.env.example
 
 # firebase
 firebase-debug.log
 firestore-debug.log
 
 serviceAccountKey.json
+creds.md
 
 logs.txt
 .github/copilot-instructions.md

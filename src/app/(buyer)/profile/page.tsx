@@ -1,28 +1,29 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/components/providers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfileAction, requestSellerRoleAction, updateUserPreferencesAction } from '@/app/actions';
-import { Loader2, Upload, CheckCircle2, AlertCircle, Mail, Phone, Shield, LogOut, Briefcase, Sparkles, Bell } from 'lucide-react';
+import { Loader2, Upload, CheckCircle2, Shield, Briefcase, Bell } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BuyerPage } from '@/components/buyer/buyer-page';
-import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import type { UserProfile } from '@/lib/types';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -36,13 +37,11 @@ const profileSchema = z.object({
  * Features specialized Notification Protocol preferences (Strategic Enhancement).
  */
 export default function ProfilePage() {
+  const router = useRouter();
   const { userProfile, loading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUpgradingRole, setIsUpgradingRole] = useState(false);
   const [showRoleUpgradeConfirm, setShowRoleUpgradeConfirm] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -73,7 +72,7 @@ export default function ProfilePage() {
       toast({ title: 'Identity Nodes Synchronized', description: 'Your profile vault has been updated successfully.' });
       setSelectedPhotoFile(null);
       setPhotoPreview(null);
-    } catch (error) {
+    } catch {
       toast({ variant: 'destructive', title: 'Sync Protocol Failed' });
     } finally {
       setIsSubmitting(false);
@@ -87,7 +86,7 @@ export default function ProfilePage() {
         notifications: { ...current, [type]: value }
       });
       toast({ title: 'Pulse Preferences Updated' });
-    } catch (e) {
+    } catch {
       toast({ variant: 'destructive', title: 'Preference Sync Failed' });
     }
   };
@@ -99,7 +98,7 @@ export default function ProfilePage() {
       await requestSellerRoleAction();
       toast({ title: 'Identity Transition Complete', description: 'Transmitting to workspace...' });
       setTimeout(() => router.push('/dashboard'), 1500);
-    } catch (error) {
+    } catch {
       toast({ variant: 'destructive', title: 'Transition Failed' });
     } finally { setIsUpgradingRole(false); }
   };
@@ -123,7 +122,7 @@ export default function ProfilePage() {
                     photoPreview || userProfile?.photoURL ? "border-primary/20" : "bg-muted border-dashed border-muted-foreground/30 animate-pulse"
                   )}>
                     {photoPreview || userProfile?.photoURL ? (
-                      <img src={photoPreview || userProfile?.photoURL || ''} alt="" className="w-full h-full object-cover" />
+                      <Image src={photoPreview || userProfile?.photoURL || ''} alt="User profile photo" width={128} height={128} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-4xl font-bold text-primary/40">{userProfile?.displayName?.charAt(0)?.toUpperCase() || 'U'}</span>
                     )}
@@ -271,7 +270,7 @@ export default function ProfilePage() {
   );
 }
 
-function calculateProfileCompleteness(profile: any): number {
+function calculateProfileCompleteness(profile: Pick<UserProfile, 'displayName' | 'phone' | 'bio' | 'photoURL'>): number {
   let completeness = 0;
   if (profile.displayName) completeness += 25;
   if (profile.phone) completeness += 25;

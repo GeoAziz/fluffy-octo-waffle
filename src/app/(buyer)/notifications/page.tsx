@@ -1,5 +1,5 @@
-import { getAuthenticatedUser, getNotificationsForUser, markAllNotificationsAsReadAction } from '@/app/actions';
 import { redirect } from 'next/navigation';
+import { getAuthenticatedUser, getNotificationsForUser } from '@/app/actions';
 import { BuyerPage } from '@/components/buyer/buyer-page';
 import { NotificationsClient } from '@/components/buyer/notifications-client';
 

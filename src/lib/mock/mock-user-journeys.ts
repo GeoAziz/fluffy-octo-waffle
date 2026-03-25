@@ -1,7 +1,6 @@
 /**
  * Mock User Journeys - Complete user personas with realistic behavior patterns
  */
-import { faker } from '@faker-js/faker';
 import type { UserProfile } from '../types';
 import { 
   generateKenyanName, 

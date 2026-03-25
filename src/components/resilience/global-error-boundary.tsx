@@ -29,6 +29,19 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[GlobalErrorBoundary] Uncaught error:', error, errorInfo);
+    void fetch('/api/monitoring/error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        route: window.location.pathname,
+        digest: undefined,
+        componentStack: errorInfo.componentStack,
+      }),
+    }).catch(() => {
+      // intentionally swallow monitoring submission errors
+    });
   }
 
   private handleReset = () => {

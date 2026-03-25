@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { PlaceHolderImages } from './placeholder-images';
 import type { UserProfile, BadgeValue, ListingStatus, ListingImage } from './types';
 import { FieldValue } from 'firebase-admin/firestore';
+import { assertSeedSafety } from './seed-safety';
 
 const SEED_USERS = [
     { email: 'buyer1@example.com', displayName: 'Chausiku Mchaji', role: 'BUYER' as const },
@@ -30,6 +31,7 @@ const randomPick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length
 
 
 async function main() {
+    assertSeedSafety({ operationName: 'db:seed', allowClear: true });
     console.log('--- Starting Database Seeding ---');
 
     // 1. Create or Update Users
@@ -38,7 +40,7 @@ async function main() {
 
     for (const userData of SEED_USERS) {
         try {
-            let userRecord = await adminAuth.getUserByEmail(userData.email).catch(() => null);
+            const userRecord = await adminAuth.getUserByEmail(userData.email).catch(() => null);
             let uid: string;
 
             if (userRecord) {
@@ -74,8 +76,9 @@ async function main() {
             await adminDb.collection('users').doc(uid).set(userProfile, { merge: true });
             userRecords.push(userProfile);
             console.log(`Upserted Firestore profile for ${userData.email}.`);
-        } catch (error: any) {
-            console.error(`Failed to process user ${userData.email}:`, error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`Failed to process user ${userData.email}:`, errorMessage);
         }
     }
     console.log('User creation complete.');

@@ -43,7 +43,7 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { ListingCardSkeleton } from '@/components/listing-card-skeleton';
 import { EmptyState } from '@/components/empty-state';
 import { StaggerContainer } from '@/components/animations/stagger-container';
-import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, CheckCircle2, RotateCcw, ShieldCheck, MapPin, Check } from 'lucide-react';
+import { Loader2, Search, SlidersHorizontal, X, LandPlot, ChevronDown, RotateCcw, ShieldCheck, MapPin, Check } from 'lucide-react';
 import { searchListingsAction } from '@/app/actions';
 import type { Listing, BadgeValue } from '@/lib/types';
 import { SaveSearchButton } from './save-search-button';
@@ -398,7 +398,7 @@ export function ListingsContent() {
     setBadges([]);
   };
 
-  const removeFilter = (type: string, value: any) => {
+  const removeFilter = (type: string, value: unknown) => {
     if (type === 'query') setQuery('');
     if (type === 'county') setCounty('');
     if (type === 'landType') setLandType('');

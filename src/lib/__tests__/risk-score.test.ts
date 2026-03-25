@@ -4,7 +4,12 @@ import { describe, it, expect } from 'vitest';
  * Basic unit test for the risk score calculation logic.
  */
 
-const calculateRiskScore = (data: any): number => {
+type RiskInput = {
+  imageAnalysis?: { isSuspicious?: boolean };
+  badgeSuggestion?: { badge?: string };
+};
+
+const calculateRiskScore = (data: RiskInput): number => {
   let score = 0;
   if (data.imageAnalysis?.isSuspicious) score += 40;
   if (data.badgeSuggestion?.badge === 'Suspicious') score += 50;

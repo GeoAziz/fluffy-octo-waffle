@@ -1,13 +1,9 @@
 'use client';
-
-import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Download, Share2, ArrowRight } from 'lucide-react';
+import { X, Download, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import type { Listing } from '@/lib/types';
 
 interface ComparisonTrayProps {

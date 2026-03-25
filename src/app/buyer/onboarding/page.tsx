@@ -1,30 +1,23 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ShieldCheck, 
   ArrowRight, 
-  ArrowLeft,
   User, 
-  Search, 
   Sparkles, 
   Loader2, 
   Database, 
   AlertTriangle, 
   Info, 
-  FileText,
   Gavel,
-  Lock,
   Globe,
   Wifi,
-  History,
   CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '@/components/providers';
@@ -44,7 +37,7 @@ const ONBOARDING_STAGES = [
 ];
 
 export default function OnboardingPage() {
-  const { userProfile, loading } = useAuth();
+  const { loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -56,23 +49,7 @@ export default function OnboardingPage() {
   const [isRegistryLinked, setIsRegistryLinked] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [riskProfile, setRiskProfile] = useState<'conservative' | 'balanced' | 'speculative' | null>(null);
-  
-  const [consents, setConsents] = useState({
-    jurisdiction: false,
-    dataProcessing: false,
-    caveatEmptor: false,
-    platformTerms: false,
-    disclaimer: false
-  });
 
-  useEffect(() => {
-    if (!loading && userProfile) {
-      setDisplayName(userProfile.displayName || '');
-      if (userProfile.bio && userProfile.preferences && step === 1) {
-        router.push('/buyer/dashboard');
-      }
-    }
-  }, [userProfile, loading, step, router]);
 
   const handleNext = () => {
     setIsProcessing(true);
@@ -105,7 +82,7 @@ export default function OnboardingPage() {
       });
       toast({ title: 'Identity Verified', description: 'Registry access protocol initialized.' });
       router.push('/buyer/dashboard');
-    } catch (e) {
+    } catch {
       toast({ variant: 'destructive', title: 'Sync Failure', description: 'Could not commit identity nodes.' });
       setIsSaving(false);
     }
@@ -243,7 +220,7 @@ export default function OnboardingPage() {
                 ].map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => setRiskProfile(item.id as any)}
+                    onClick={() => setRiskProfile(item.id as 'conservative' | 'balanced' | 'speculative')}
                     className={cn(
                       "flex flex-col text-left p-5 rounded-2xl border-2 transition-all duration-300 group",
                       riskProfile === item.id 

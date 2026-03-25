@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bell, MessageSquare, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 import type { Notification } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { markNotificationAsReadAction } from '@/app/actions';
+import { toDateSafe } from '@/lib/utils';
 
 interface NotificationBadgeProps {
   variant?: 'buyer' | 'seller' | 'admin';
@@ -58,7 +59,11 @@ export function NotificationBadge({ variant = 'buyer' }: NotificationBadgeProps)
           id: doc.id,
           ...doc.data()
         } as Notification))
-        .sort((a, b) => b.createdAt?.getTime?.() - a.createdAt?.getTime?.());
+        .sort((a, b) => {
+          const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+          const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+          return bTime - aTime;
+        });
       
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.read).length);
@@ -111,7 +116,11 @@ export function NotificationBadge({ variant = 'buyer' }: NotificationBadgeProps)
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`relative h-10 w-10 rounded-full ${variant === 'admin' ? 'text-primary' : ''}`}
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute top-0 right-0 inline-flex items-center justify-center h-5 w-5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-destructive rounded-full">
@@ -153,7 +162,10 @@ export function NotificationBadge({ variant = 'buyer' }: NotificationBadgeProps)
                       {notification.message}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-                      {formatDistanceToNow(notification.createdAt?.toDate?.() || new Date(), { addSuffix: true })}
+                      {formatDistanceToNow(
+                        toDateSafe(notification.createdAt) ?? new Date(),
+                        { addSuffix: true }
+                      )}
                     </p>
                   </div>
                   {!notification.read && (

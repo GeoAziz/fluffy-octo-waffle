@@ -3,9 +3,25 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendBrandedEmail } from '@/lib/email-service';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const ipLimit = enforceRateLimit({
+      scope: 'listing-report-ip',
+      identifier: ip,
+      maxRequests: 10,
+      windowMs: 60_000,
+    });
+
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { message: 'Too many report submissions. Please retry shortly.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } }
+      );
+    }
+
     const { listingId, reason } = await request.json();
 
     if (!listingId || !reason) {
@@ -18,6 +34,20 @@ export async function POST(request: Request) {
     if (sessionCookie) {
       try {
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+        const userLimit = enforceRateLimit({
+          scope: 'listing-report-user',
+          identifier: decodedToken.uid,
+          maxRequests: 6,
+          windowMs: 60_000,
+        });
+
+        if (!userLimit.allowed) {
+          return NextResponse.json(
+            { message: 'Too many report submissions from this account. Please retry shortly.' },
+            { status: 429, headers: { 'Retry-After': String(userLimit.retryAfterSeconds) } }
+          );
+        }
+
         const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
         if (userDoc.exists) {
           const userData = userDoc.data();

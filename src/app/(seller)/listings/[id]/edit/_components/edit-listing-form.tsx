@@ -13,12 +13,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { editListingAction, generateDescriptionAction } from '@/app/actions';
-import { Loader2, Sparkles, FileText, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2, Sparkles, ShieldAlert, FileText, CheckCircle2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ToastAction } from '@/components/ui/toast';
@@ -128,8 +127,9 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         const result = await generateDescriptionAction(bulletPoints);
         setGeneratedDescription(result.description);
         toast({ title: 'Narrative Generated', description: 'Review or apply the AI description below.' });
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'AI Protocol Failure', description: e.message });
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred';
+        toast({ variant: 'destructive', title: 'AI Protocol Failure', description: errorMessage });
     } finally {
         setIsGenerating(false);
     }
@@ -201,7 +201,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           <ShieldAlert className="h-5 w-5" />
           <AlertTitle className="text-sm font-black uppercase tracking-tight">Listing Rejected: Correction Required</AlertTitle>
           <AlertDescription className="mt-2 text-xs font-medium leading-relaxed">
-            <strong>Admin Pulse:</strong> "{listing.rejectionReason || 'Documentation inconsistencies detected. Please verify your title deed scan matches the location coordinates.'}"
+            <strong>Admin Pulse:</strong> &quot;{listing.rejectionReason || 'Documentation inconsistencies detected. Please verify your title deed scan matches the location coordinates.'}&quot;
           </AlertDescription>
         </Alert>
       )}
@@ -213,7 +213,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
             <div>
                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Registry Modification</CardTitle>
                 <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground mt-1">
-                    Signficant changes will reset your current trust signal status.
+                    Significant changes will reset your current trust signal status.
                 </CardDescription>
             </div>
             <div className="text-right">
@@ -302,7 +302,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
                    {generatedDescription && (
                       <Card className="bg-background border-accent/20 shadow-lg animate-in slide-in-from-bottom-2">
                           <CardContent className="pt-4">
-                              <p className="text-xs italic leading-relaxed text-muted-foreground font-medium">"{generatedDescription}"</p>
+                              <p className="text-xs italic leading-relaxed text-muted-foreground font-medium">&quot;{generatedDescription}&quot;</p>
                           </CardContent>
                           <CardFooter>
                               <Button type="button" size="sm" className="bg-accent text-white font-black text-[10px] uppercase tracking-widest px-6" onClick={useGeneratedDescription}>Apply to Registry</Button>

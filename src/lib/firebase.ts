@@ -16,17 +16,9 @@ const firebaseConfig = {
   measurementId: "G-8TEKGJSJD1"
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
 let analytics: Analytics | undefined = undefined;
 let performance: FirebasePerformance | undefined = undefined;
-
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
@@ -36,7 +28,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-auth = getAuth(app);
-db = getFirestore(app);
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 
 export {app, auth, db, analytics, performance};

@@ -9,7 +9,7 @@ export async function getAuthenticatedUser() {
   try {
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
     return decodedToken;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

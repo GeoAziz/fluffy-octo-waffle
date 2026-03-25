@@ -1,7 +1,7 @@
 'use client';
 
 import { useNetworkStatus } from './network-status-provider';
-import { WifiOff, AlertCircle, X } from 'lucide-react';
+import { WifiOff, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 

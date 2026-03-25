@@ -118,19 +118,19 @@ export const generateAuditLog = (
   let changes;
   if (actionTemplate.action === 'listing_approved') {
     const badge = faker.helpers.arrayElement(['TrustedSignal', 'EvidenceReviewed', 'EvidenceSubmitted']);
-    changes = (actionTemplate.changeTemplate as any)(entityId, badge);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(entityId, badge);
   } else if (actionTemplate.action === 'listing_rejected') {
-    changes = (actionTemplate.changeTemplate as any)(entityId);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(entityId);
   } else if (actionTemplate.action === 'badge_assigned') {
     const badge = faker.helpers.arrayElement(['TrustedSignal', 'EvidenceReviewed', 'EvidenceSubmitted']);
     const previousBadge = faker.helpers.arrayElement(['EvidenceSubmitted', 'None']);
-    changes = (actionTemplate.changeTemplate as any)(entityId, badge, previousBadge);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(entityId, badge, previousBadge);
   } else if (actionTemplate.action === 'evidence_verified') {
-    changes = (actionTemplate.changeTemplate as any)(`evidence-${entityId}`, entityId);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(`evidence-${entityId}`, entityId);
   } else if (actionTemplate.action === 'user_verified') {
-    changes = (actionTemplate.changeTemplate as any)(entityId);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(entityId);
   } else {
-    changes = (actionTemplate.changeTemplate as any)(entityId);
+    changes = (actionTemplate.changeTemplate as (...args: unknown[]) => Record<string, unknown>)(entityId);
   }
 
   return {

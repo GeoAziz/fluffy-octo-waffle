@@ -1,27 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/providers';
+import { useState } from 'react';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle2,
   FileText,
-  MessageSquare,
-  BarChart3,
   ArrowRight,
-  AlertCircle,
   Briefcase,
-  TrendingUp,
   Shield,
-  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 
 interface SellerOnboardingStep {
   id: string;
@@ -37,9 +28,7 @@ interface SellerOnboardingStep {
  * SellerOnboardingWizard - First-time seller onboarding flow
  * Guides new sellers through platform features, listing setup, and success tips
  */
-export function SellerOnboardingWizard() {
-  const router = useRouter();
-  const { userProfile } = useAuth();
+function SellerOnboardingWizardContent() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSkipping, setIsSkipping] = useState(false);
 
@@ -140,5 +129,27 @@ export function SellerOnboardingWizard() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/**
+ * SellerOnboardingWizard - Seller-only onboarding experience
+ * Protected by PermissionGuard to ensure only sellers can access
+ */
+export function SellerOnboardingWizard() {
+  return (
+    <PermissionGuard 
+      allowedRoles={['SELLER']}
+      fallback={
+        <Card className="border-destructive/50">
+          <CardContent className="pt-6">
+            <p className="text-sm font-semibold text-destructive">Sellers Only</p>
+            <p className="text-xs text-muted-foreground mt-2">This experience is designed for sellers. Switch to seller mode to access.</p>
+          </CardContent>
+        </Card>
+      }
+    >
+      <SellerOnboardingWizardContent />
+    </PermissionGuard>
   );
 }

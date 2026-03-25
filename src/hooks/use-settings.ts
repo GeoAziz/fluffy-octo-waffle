@@ -8,7 +8,6 @@ let settingsCache: PlatformSettings | null = null;
 let settingsCacheTime: number = 0;
 let fetchPromise: Promise<PlatformSettings | null> | null = null;
 let lastError: Error | null = null;
-const subscribers = new Set<(data: PlatformSettings | null) => void>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**

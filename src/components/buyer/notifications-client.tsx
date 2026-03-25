@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import type { Notification } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, toDateSafe } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -62,7 +62,11 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
           id: doc.id,
           ...doc.data()
         } as Notification))
-        .sort((a, b) => b.createdAt?.getTime?.() - a.createdAt?.getTime?.());
+        .sort((a, b) => {
+          const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+          const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+          return bTime - aTime;
+        });
       
       setNotifications(notifs);
     }, (error) => {
@@ -81,7 +85,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markNotificationAsReadAction(notificationId);
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -98,7 +102,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
         title: 'Notification deleted',
         description: 'The notification has been removed.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -117,7 +121,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
         title: 'Marked all as read',
         description: `All ${unreadCount} unread notifications have been marked as read.`,
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -239,7 +243,10 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
                   {notification.message}
                 </p>
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-2">
-                  {formatDistanceToNow(notification.createdAt?.toDate?.() || new Date(), { addSuffix: true })}
+                  {formatDistanceToNow(
+                    toDateSafe(notification.createdAt) ?? new Date(),
+                    { addSuffix: true }
+                  )}
                 </p>
               </div>
 

@@ -40,6 +40,7 @@ const formSchema = z.object({
 });
 
 const DRAFT_KEY = 'seller:new-listing:draft:v3';
+type ListingFormValues = z.infer<typeof formSchema>;
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function NewListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<ListingFormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: { title: '', location: '', county: '', price: 0, area: 0, size: '', landType: '', description: '', latitude: 0, longitude: 0 },
@@ -62,7 +63,7 @@ export default function NewListingPage() {
         toast({ title: 'Draft restored', description: 'Your unsaved progress has been recovered.' });
       } catch {}
     }
-  }, []);
+  }, [form, toast]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -74,11 +75,11 @@ export default function NewListingPage() {
   }, [form, isSubmitting]);
 
   const onNext = async () => {
-    const fields: any[] = step === 1 ? ['title', 'location', 'county'] : step === 2 ? ['area', 'size', 'landType', 'price', 'description'] : step === 3 ? ['latitude', 'longitude'] : [];
+    const fields: Array<keyof ListingFormValues> = step === 1 ? ['title', 'location', 'county'] : step === 2 ? ['area', 'size', 'landType', 'price', 'description'] : step === 3 ? ['latitude', 'longitude'] : [];
     if (await form.trigger(fields)) setStep(s => s + 1);
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
     setUploadProgress(10);
     try {
@@ -98,7 +99,7 @@ export default function NewListingPage() {
       });
       
       router.push(`/listings/${id}`);
-    } catch (e) {
+    } catch {
       setIsSubmitting(false);
       toast({ variant: 'destructive', title: 'Submission Failed', description: 'Could not transmit listing assets to the vault.' });
     }
@@ -154,7 +155,7 @@ export default function NewListingPage() {
                             {step === 4 && 'Evidence Vaulting'}
                         </CardTitle>
                         <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground mt-1">
-                            {step === 1 && 'Establish the property\'s public profile'}
+                            {step === 1 && 'Establish the property&lsquo;s public profile'}
                             {step === 2 && 'Define pricing and physical dimensions'}
                             {step === 3 && 'Pinpoint exact geographic boundaries'}
                             {step === 4 && 'Upload restricted documentation proof'}
@@ -206,7 +207,7 @@ export default function NewListingPage() {
                             <MapPin className="h-4 w-4 text-accent" />
                             <AlertTitle className="text-xs font-bold uppercase">Boundary Verification</AlertTitle>
                             <AlertDescription className="text-xs">
-                                Drag the pin to the property's exact entry point. This coordinate is cross-checked against your survey map.
+                                Drag the pin to the property&lsquo;s exact entry point. This coordinate is cross-checked against your survey map.
                             </AlertDescription>
                         </Alert>
                         <ListingLocationPicker />

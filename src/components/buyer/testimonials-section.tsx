@@ -62,7 +62,7 @@ export function TestimonialsSection() {
 
                   {/* Quote */}
                   <p className="text-base leading-relaxed text-foreground italic">
-                    "{testimonial.quote}"
+                    &quot;{testimonial.quote}&quot;
                   </p>
 
                   {/* Author */}

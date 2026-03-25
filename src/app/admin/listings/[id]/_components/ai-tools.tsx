@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -48,18 +48,7 @@ export function AiTools({ listing }: { listing: Listing }) {
   } | null>(null);
   const { toast } = useToast();
 
-  // Automatic background summarization for documents that don't have a summary
-  useEffect(() => {
-    const summarizeNext = async () => {
-      const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
-      if (nextDoc && !isSummarizing) {
-        handleSummarize(nextDoc.id, nextDoc.content, false);
-      }
-    };
-    summarizeNext();
-  }, [listing.evidence, summaries, isSummarizing]);
-
-  const handleSummarize = async (docId: string, docContent: string, isManual = false) => {
+  const handleSummarize = useCallback(async (docId: string, docContent: string, isManual = false) => {
     setIsSummarizing(docId);
     try {
       const result = await getAiSummary(docContent, docId);
@@ -78,7 +67,18 @@ export function AiTools({ listing }: { listing: Listing }) {
     } finally {
       setIsSummarizing(null);
     }
-  };
+  }, [toast]);
+
+  // Automatic background summarization for documents that don't have a summary
+  useEffect(() => {
+    const summarizeNext = async () => {
+      const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
+      if (nextDoc && !isSummarizing) {
+        await handleSummarize(nextDoc.id, nextDoc.content, false);
+      }
+    };
+    void summarizeNext();
+  }, [listing.evidence, summaries, isSummarizing, handleSummarize]);
 
   const handleSuspicionCheck = async () => {
     setIsChecking(true);
@@ -99,7 +99,7 @@ export function AiTools({ listing }: { listing: Listing }) {
         isSuspicious: result.isSuspicious,
         reason: result.reason || 'Deep analysis complete. No high-risk anomalies detected across current documentation.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Deep Analysis Error',

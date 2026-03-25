@@ -5,10 +5,6 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import type { Listing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowRight, LandPlot } from 'lucide-react';
 
 const customIcon = new L.Icon({
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -106,7 +102,7 @@ export function ListingMapView({ listings }: ListingMapViewProps) {
             <p className="text-xs font-bold text-foreground">Verified Plot Markers</p>
           </div>
           <p className="text-[10px] leading-relaxed text-muted-foreground font-medium italic">
-            "Map-based discovery reduces acquisition risk. Verify proximity to major roads and utilities instantly."
+            &quot;Map-based discovery reduces acquisition risk. Verify proximity to major roads and utilities instantly.&quot;
           </p>
         </div>
       </div>

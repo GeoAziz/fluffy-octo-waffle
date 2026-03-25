@@ -36,11 +36,11 @@ export function ContactSellerButton({ listingId, isAuthenticated = true }: Conta
         try {
             const { conversationId } = await getOrCreateConversation(listingId);
             router.push(`/buyer/messages/${conversationId}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: error.message || 'Could not start conversation.',
+                description: (error instanceof Error ? error.message : 'Could not start conversation.') || 'Could not start conversation.',
             });
             setIsLoading(false);
         }

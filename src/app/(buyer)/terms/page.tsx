@@ -63,7 +63,7 @@ export default function TermsOfServicePage() {
             <section id="disclaimers-limitation">
               <h2 className="text-xl font-semibold">3. Disclaimers and Limitation of Liability</h2>
               <p>
-                The services are provided "as-is." Kenya Land Trust makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties. While we provide a verification and approval process, this does not constitute a legal guarantee of title or the authenticity of a listing. Buyers are strongly advised to conduct their own independent due diligence before entering into any transaction.
+                The services are provided &quot;as-is.&quot; Kenya Land Trust makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties. While we provide a verification and approval process, this does not constitute a legal guarantee of title or the authenticity of a listing. Buyers are strongly advised to conduct their own independent due diligence before entering into any transaction.
               </p>
             </section>
             <section id="ai-tools">

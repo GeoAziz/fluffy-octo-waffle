@@ -7,13 +7,13 @@ import type { Conversation } from '@/lib/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn, toDateSafe } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { Badge } from '@/components/ui/badge';
-import { conversationStatusLabel, getConversationStatus } from '@/lib/conversation-status';
+import { getConversationStatus } from '@/lib/conversation-status';
 
 interface ConversationsListProps {
     /** Base path for conversation links, e.g. '/buyer/messages' or '/dashboard/messages' */
@@ -88,6 +88,7 @@ export function ConversationsList({ basePath = '/buyer/messages' }: Conversation
                         const status = getConversationStatus(convo, user?.uid);
                         const lastMsgFromMe = convo.lastMessage?.senderId === user?.uid;
                         const needsAction = !lastMsgFromMe && status !== 'closed';
+                        const lastMessageTimestamp = toDateSafe(convo.lastMessage?.timestamp);
 
                         return (
                             <Link href={`${basePath}/${convo.id}`} key={convo.id} className={cn(
@@ -108,11 +109,11 @@ export function ConversationsList({ basePath = '/buyer/messages' }: Conversation
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-start gap-2 mb-0.5">
                                         <p className="font-bold text-sm truncate leading-tight">{convo.listingTitle}</p>
-                                        {convo.lastMessage?.timestamp && (
+                                        {lastMessageTimestamp ? (
                                             <p className="text-[9px] font-black uppercase text-muted-foreground flex-shrink-0">
-                                                {formatDistanceToNow(typeof convo.lastMessage.timestamp.toDate === 'function' ? convo.lastMessage.timestamp.toDate() : new Date(convo.lastMessage.timestamp), { addSuffix: false })}
+                                                {formatDistanceToNow(lastMessageTimestamp, { addSuffix: false })}
                                             </p>
-                                        )}
+                                        ) : null}
                                     </div>
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight mb-1">
                                         Agent: {otherParticipant.displayName}

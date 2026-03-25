@@ -1,5 +1,8 @@
 import admin from 'firebase-admin';
 import { getApps } from 'firebase-admin/app';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { ServiceAccount } from 'firebase-admin';
 
 /**
  * @fileOverview Firebase Admin SDK initialization.
@@ -8,14 +11,14 @@ import { getApps } from 'firebase-admin/app';
  */
 
 if (!getApps().length) {
-  let serviceAccount: any | undefined;
+  let serviceAccount: ServiceAccount | undefined;
 
   // Priority 1: Base64 encoded JSON (Recommended for production/Vercel)
   const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_B64;
   if (b64) {
     try {
       serviceAccount = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-    } catch (err) {
+    } catch {
       console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY_B64');
     }
   }
@@ -25,7 +28,7 @@ if (!getApps().length) {
   if (!serviceAccount && raw) {
     try {
       serviceAccount = JSON.parse(raw);
-    } catch (err) {
+    } catch {
       console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY');
     }
   }
@@ -47,24 +50,25 @@ if (!getApps().length) {
       storageBucket,
     });
   } else {
-    // Fallback for local development if serviceAccountKey.json exists
-    // Note: We use dynamic require here to prevent the Edge Runtime from seeing 'fs'/'path' during static analysis
+      // Optional local fallback only when explicitly enabled.
+      // This prevents accidental file-based secret dependency in production-like environments.
     let localInitialized = false;
-    try {
-        const fs = require('fs');
-        const path = require('path');
-        const keyPath = path.join(process.cwd(), 'serviceAccountKey.json');
-        if (fs.existsSync(keyPath)) {
+      const allowLocalKeyFile = process.env.ALLOW_LOCAL_SERVICE_ACCOUNT_FILE === 'true';
+      if (allowLocalKeyFile) {
+        try {
+          const keyPath = path.join(process.cwd(), 'serviceAccountKey.json');
+          if (fs.existsSync(keyPath)) {
             const keyFile = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
             admin.initializeApp({
-                credential: admin.credential.cert(keyFile),
-                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${keyFile.project_id}.appspot.com`,
+              credential: admin.credential.cert(keyFile),
+              storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${keyFile.project_id}.appspot.com`,
             });
             localInitialized = true;
-            console.log('Firebase Admin: Initialized from serviceAccountKey.json');
+            console.log('Firebase Admin: Initialized from explicitly enabled local key file');
+          }
+        } catch {
+          console.warn('Firebase Admin: Local key-file fallback failed. Configure env credentials instead.');
         }
-    } catch (e) {
-        // Silently skip if file not found
     }
     
     if (!localInitialized) {

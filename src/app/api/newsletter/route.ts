@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 
 const NewsletterSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -15,6 +16,21 @@ type NewsletterInput = z.infer<typeof NewsletterSchema>;
  */
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const ipLimit = enforceRateLimit({
+      scope: 'newsletter-subscribe-ip',
+      identifier: ip,
+      maxRequests: 15,
+      windowMs: 60_000,
+    });
+
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { status: 'error', message: 'Too many requests. Please retry shortly.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } }
+      );
+    }
+
     const body = await request.json();
 
     // Validate input
@@ -63,8 +79,9 @@ export async function POST(request: NextRequest) {
         createdAt: FieldValue.serverTimestamp(),
         status: 'queued',
       });
-    } catch (emailError: any) {
-      console.warn('Failed to queue confirmation email:', emailError?.message);
+    } catch (emailError: unknown) {
+      const message = emailError instanceof Error ? emailError.message : String(emailError);
+      console.warn('Failed to queue confirmation email:', message);
       // Don't fail the subscription if email queueing fails
     }
 
@@ -75,8 +92,9 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('/api/newsletter/subscribe error:', error?.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('/api/newsletter/subscribe error:', message);
     return NextResponse.json(
       { status: 'error', message: 'Failed to subscribe to newsletter' },
       { status: 500 }
@@ -90,6 +108,21 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const ipLimit = enforceRateLimit({
+      scope: 'newsletter-unsubscribe-ip',
+      identifier: ip,
+      maxRequests: 15,
+      windowMs: 60_000,
+    });
+
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { status: 'error', message: 'Too many requests. Please retry shortly.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } }
+      );
+    }
+
     const body = await request.json();
 
     // Validate input
@@ -126,8 +159,9 @@ export async function DELETE(request: NextRequest) {
       { status: 'success', message: 'Successfully unsubscribed' },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('/api/newsletter/unsubscribe error:', error?.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('/api/newsletter/unsubscribe error:', message);
     return NextResponse.json(
       { status: 'error', message: 'Failed to unsubscribe' },
       { status: 500 }

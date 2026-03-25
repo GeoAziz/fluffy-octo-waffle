@@ -15,10 +15,11 @@ import { Button } from '@/components/ui/button';
 import { formatRelative, formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { ListingStatus, UserProfile } from '@/lib/types';
-import { Edit, ListChecks, PlusCircle, Search } from 'lucide-react';
+import { Edit, PlusCircle } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { getAuthenticatedUser } from '../_lib/auth';
 import { EmptyState } from '@/components/empty-state';
+import { toDateSafe } from '@/lib/utils';
 
 /**
  * SellerListingsPage - The seller's primary property registry.
@@ -115,7 +116,7 @@ export default async function SellerListingsPage({
                     </p>
                     <div className="flex items-center justify-between pt-2">
                       <p className="text-[9px] font-black uppercase text-muted-foreground opacity-60">
-                        Synced: {listing.createdAt ? formatRelative(listing.createdAt, new Date()) : 'N/A'}
+                        Synced: {listing.createdAt ? formatRelative(toDateSafe(listing.createdAt) || new Date(), new Date()) : 'N/A'}
                       </p>
                       <Button asChild variant="outline" size="sm" className="h-8 text-[9px] font-black uppercase px-4">
                         <Link href={`/listings/${listing.id}/edit`}>Modify Node</Link>
@@ -148,7 +149,7 @@ export default async function SellerListingsPage({
                           <StatusBadge status={listing.status} className="h-5 text-[9px] font-black uppercase tracking-widest" />
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-[10px] font-medium text-muted-foreground uppercase">
-                          {listing.createdAt ? formatDistanceToNow(listing.createdAt, { addSuffix: true }) : 'N/A'}
+                          {listing.createdAt ? formatDistanceToNow(toDateSafe(listing.createdAt) || new Date(), { addSuffix: true }) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right font-black text-sm">
                           KES {listing.price.toLocaleString()}

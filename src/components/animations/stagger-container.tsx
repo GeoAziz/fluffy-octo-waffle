@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 interface StaggerContainerProps {
   children: React.ReactNode;
   className?: string;
-  threshold?: number;
   duration?: number;
 }
 
@@ -16,7 +15,6 @@ interface StaggerContainerProps {
 export function StaggerContainer({
   children,
   className,
-  threshold = 0.1,
   duration = 500,
 }: StaggerContainerProps) {
   return (

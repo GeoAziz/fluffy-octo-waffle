@@ -1,9 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, XCircle, List, ArrowUpRight, Activity, ShieldAlert, Users, TrendingUp } from 'lucide-react';
+import { Clock, List, ArrowUpRight, Activity, ShieldAlert, Users, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getAdminStatsAction } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';

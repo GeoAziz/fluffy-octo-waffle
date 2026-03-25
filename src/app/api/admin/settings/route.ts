@@ -3,7 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import type { PlatformSettings, AuditLog } from '@/lib/types';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 
 const SettingsSchema = z.object({
   platformName: z.string().min(1, 'Platform name is required').max(100),
@@ -38,13 +38,28 @@ async function verifyAdmin(request: NextRequest) {
 
     if (userRole !== 'ADMIN') return { authenticated: false, error: 'Forbidden', status: 403 };
     return { authenticated: true, uid: decodedToken.uid };
-  } catch (error) {
+  } catch {
     return { authenticated: false, error: 'Verification failed', status: 401 };
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = enforceRateLimit({
+      scope: 'admin-settings-get-ip',
+      identifier: ip,
+      maxRequests: 120,
+      windowMs: 60_000,
+    });
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { status: 'error', message: 'Too many requests.' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+      );
+    }
+
     const settingsDoc = await adminDb.collection('adminConfig').doc('settings').get();
     const settings = settingsDoc.exists ? settingsDoc.data() : {
       platformName: 'Kenya Land Trust',
@@ -60,13 +75,28 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json({ status: 'success', data: settings });
-  } catch (error: any) {
+  } catch {
     return NextResponse.json({ status: 'error', message: 'Sync failed' }, { status: 500 });
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = enforceRateLimit({
+      scope: 'admin-settings-patch-ip',
+      identifier: ip,
+      maxRequests: 30,
+      windowMs: 60_000,
+    });
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { status: 'error', message: 'Too many requests.' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+      );
+    }
+
     const verifyResult = await verifyAdmin(request);
     if (!verifyResult.authenticated) {
       return NextResponse.json({ status: 'error', message: verifyResult.error }, { status: verifyResult.status });
@@ -87,10 +117,11 @@ export async function PATCH(request: NextRequest) {
     await adminDb.collection('adminConfig').doc('settings').set(updateData, { merge: true });
 
     // Track Audit
-    const changes: Record<string, any> = {};
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    const currentSettingsRecord = currentSettings as Record<string, unknown>;
     Object.entries(validatedData).forEach(([key, value]) => {
-      if (JSON.stringify((currentSettings as any)[key]) !== JSON.stringify(value)) {
-        changes[key] = { old: (currentSettings as any)[key], new: value };
+      if (JSON.stringify(currentSettingsRecord[key]) !== JSON.stringify(value)) {
+        changes[key] = { old: currentSettingsRecord[key], new: value };
       }
     });
 
@@ -108,7 +139,8 @@ export async function PATCH(request: NextRequest) {
     revalidatePath('/');
     revalidatePath('/admin');
     return NextResponse.json({ status: 'success', data: updateData });
-  } catch (error: any) {
-    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ status: 'error', message }, { status: 500 });
   }
 }

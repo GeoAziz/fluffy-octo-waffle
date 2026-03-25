@@ -104,19 +104,19 @@ Coverage is collected when you run `npm run test:coverage`. Reports are written 
 Coverage thresholds are set in `vitest.config.ts`:
 
 ```
-Lines:      50%
-Functions:  50%
-Branches:   50%
-Statements: 50%
+Lines:      65%
+Functions:  65%
+Branches:   60%
+Statements: 65%
 ```
 
-> These thresholds are intentionally modest to start. Raise them as coverage improves.
+These thresholds are enforced as the post-launch baseline.
 
 ---
 
 ## Firebase Emulator (Local E2E with auth)
 
-The E2E tests currently validate public pages and route-protection redirects without a live Firebase instance. To test **authenticated flows** locally:
+The E2E suite includes an authenticated post-launch workflow test in `e2e/post-launch-authenticated-flow.spec.ts` (seller create + evidence upload → admin approval → buyer messaging). To run authenticated flows locally:
 
 1. Install the Firebase CLI: `npm install -g firebase-tools`
 2. Start the emulator suite:
@@ -128,10 +128,28 @@ The E2E tests currently validate public pages and route-protection redirects wit
    ```bash
    NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true npm run dev
    ```
-4. Run E2E tests against the running dev server:
+4. Provide test credentials (or use defaults defined in `e2e/helpers/auth.ts`):
+  ```bash
+  export E2E_ADMIN_EMAIL="admin@kenyalandtrust.co.ke"
+  export E2E_ADMIN_PASSWORD="Password123!"
+  export E2E_SELLER_EMAIL="sales@metroestates.co.ke"
+  export E2E_SELLER_PASSWORD="Password123!"
+  export E2E_BUYER_EMAIL="kamau.tech@gmail.com"
+  export E2E_BUYER_PASSWORD="Password123!"
+  export E2E_REAL_AUTH="true"
+  ```
+5. Run E2E tests against the running dev server:
    ```bash
    npm run e2e
    ```
+
+### Troubleshooting: `Session creation failed with status 401`
+
+If authenticated E2E flows fail with a 401 from `/api/auth/session`, your Firebase client auth and server admin auth are likely pointed at different projects.
+
+- Verify the web SDK config used by the app (API key/project) and `serviceAccountKey.json` belong to the same Firebase project.
+- If running emulators, ensure both client and server are configured for emulator mode.
+- Keep `E2E_REAL_AUTH=true` only when this alignment is confirmed.
 
 ---
 

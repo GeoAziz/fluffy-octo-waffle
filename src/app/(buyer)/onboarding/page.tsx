@@ -103,8 +103,8 @@ export default function OnboardingPage() {
       
       // Auto-redirect after 2 seconds
       setTimeout(() => router.push('/explore'), 2000);
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error saving preferences', description: error.message });
+    } catch (error: unknown) {
+      toast({ variant: 'destructive', title: 'Error saving preferences', description: (error as Error)?.message || 'An error occurred' });
     } finally {
       setIsSubmitting(false);
     }
@@ -155,7 +155,7 @@ export default function OnboardingPage() {
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
                 <h1 className="text-4xl font-black uppercase tracking-tight">Welcome to Kenya Land Trust</h1>
-                <p className="text-lg text-muted-foreground">Let's set up your account to find the perfect property</p>
+                <p className="text-lg text-muted-foreground">Let&apos;s set up your account to find the perfect property</p>
               </div>
 
               <Card className="bg-card/50 backdrop-blur border-primary/20 shadow-xl">
@@ -368,7 +368,7 @@ export default function OnboardingPage() {
                 <CheckCircle2 className="w-12 h-12 text-emerald-600" />
               </div>
               <h1 className="text-3xl font-black uppercase tracking-tight">All Set!</h1>
-              <p className="text-lg text-muted-foreground">Your profile is ready. Let's find your perfect property.</p>
+              <p className="text-lg text-muted-foreground">Your profile is ready. Let&apos;s find your perfect property.</p>
               <Card className="bg-card/50 backdrop-blur border-accent/30 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg"><TrendingUp className="w-5 h-5 text-accent" />Pro Tip: Save Your First Search</CardTitle>

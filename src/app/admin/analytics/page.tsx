@@ -7,8 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Download, RefreshCw, ArrowUp, ArrowDown, Activity, Users, ShieldAlert, BadgeCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Download, RefreshCw, ArrowUp, ArrowDown, Activity, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { getAdminAnalyticsSummaryAction } from '@/app/actions';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,10 @@ type AnalyticsSummary = {
   badgeDistribution: { badge: 'Gold' | 'Silver' | 'Bronze' | 'None'; count: number }[];
   moderationTimeline: { date: string; approved: number; rejected: number }[];
   pendingAgeBuckets: { bucket: string; count: number }[];
+  rejectionReasons: { reason: string; count: number }[];
+  repeatOffenders: { ownerId: string; count: number }[];
+  fraudSignals: { suspiciousListings: number; evidenceCompletenessAverage: number };
+  modelDrift: { reviewedCount: number; overridesCount: number; overrideRate: number };
   window: { startDate: string; endDate: string };
 };
 
@@ -53,27 +57,29 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const payload =
         range === 'custom' && startDate && endDate
           ? await getAdminAnalyticsSummaryAction({ startDate, endDate })
           : await getAdminAnalyticsSummaryAction({ days: Number(range) as 7 | 30 | 90 });
-      setSummary(payload as any);
+      setSummary(payload as unknown as AnalyticsSummary);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [range, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [range]);
+  }, [fetchData]);
 
   const moderationTotals = summary?.moderationTotals ?? { approved: 0, pending: 0, rejected: 0 };
   const trendDeltas = summary?.trendDeltas ?? { approved: 0, pending: 0, rejected: 0 };
+  const fraudSignals = summary?.fraudSignals ?? { suspiciousListings: 0, evidenceCompletenessAverage: 0 };
+  const modelDrift = summary?.modelDrift ?? { reviewedCount: 0, overridesCount: 0, overrideRate: 0 };
 
   const exportCsv = () => {
     if (!summary) return;
@@ -82,6 +88,13 @@ export default function AnalyticsPage() {
       ...summary.countyDistribution.map((x) => `county_distribution,${x.county},${x.count}`),
       ...summary.badgeDistribution.map((x) => `badge_distribution,${x.badge},${x.count}`),
       ...summary.pendingAgeBuckets.map((x) => `pending_age,${x.bucket},${x.count}`),
+      ...summary.rejectionReasons.map((x) => `rejection_reason,${x.reason},${x.count}`),
+      ...summary.repeatOffenders.map((x) => `repeat_offender,${x.ownerId},${x.count}`),
+      `fraud_signals,suspicious_listings,${summary.fraudSignals.suspiciousListings}`,
+      `fraud_signals,evidence_completeness_average,${summary.fraudSignals.evidenceCompletenessAverage}`,
+      `model_drift,reviewed_count,${summary.modelDrift.reviewedCount}`,
+      `model_drift,overrides_count,${summary.modelDrift.overridesCount}`,
+      `model_drift,override_rate,${summary.modelDrift.overrideRate}`,
       ...summary.moderationTimeline.flatMap((x) => [
         `moderation_timeline:${x.date},approved,${x.approved}`,
         `moderation_timeline:${x.date},rejected,${x.rejected}`,
@@ -195,6 +208,44 @@ export default function AnalyticsPage() {
         </Card>
       </PageGrid>
 
+      <PageGrid columns={3} className="mb-8">
+        <Card className="border-none shadow-lg bg-card/50">
+          <CardHeader>
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest">Suspicious Inventory</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton className="h-10 w-24" /> : <p className="text-3xl font-black">{fraudSignals.suspiciousListings}</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-card/50">
+          <CardHeader>
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest">Evidence Completeness</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton className="h-10 w-24" /> : <p className="text-3xl font-black">{fraudSignals.evidenceCompletenessAverage}%</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-card/50">
+          <CardHeader>
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest">Model Drift (Override Rate)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {loading ? (
+              <Skeleton className="h-10 w-24" />
+            ) : (
+              <>
+                <p className="text-3xl font-black">{modelDrift.overrideRate}%</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                  {modelDrift.overridesCount} overrides / {modelDrift.reviewedCount} reviewed
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </PageGrid>
+
       {/* Visual Data Nodes */}
       <div className="grid gap-8 xl:grid-cols-2">
         <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
@@ -283,6 +334,35 @@ export default function AnalyticsPage() {
                   <YAxis dataKey="bucket" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
                   <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
                   <Bar dataKey="count" fill="#f59e0b" radius={[0, 6, 6, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-xl bg-card/50 overflow-hidden">
+          <CardHeader className="border-b bg-muted/10 pb-4">
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Rejection Reasons (Top)</CardTitle>
+            <CardDescription className="text-xs">Most frequent rejection causes in the selected window.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px] pt-6">
+            {loading || !summary ? (
+              <Skeleton className="h-full w-full rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={summary.rejectionReasons} layout="vertical" margin={{ top: 10, right: 20, bottom: 10, left: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                  <XAxis type="number" allowDecimals={false} tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                  <YAxis
+                    dataKey="reason"
+                    type="category"
+                    width={160}
+                    tick={{fontSize: 9, fontWeight: 700}}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)'}} />
+                  <Bar dataKey="count" fill="hsl(var(--accent))" radius={[0, 6, 6, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
             )}

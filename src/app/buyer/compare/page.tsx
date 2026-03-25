@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { X, MapPin, DollarSign, TrendingDown, Plus } from 'lucide-react';
+import { X, MapPin, Plus } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { EmptyState } from '@/components/empty-state';
 import { TrustBadge } from '@/components/trust-badge';
 
@@ -23,7 +21,6 @@ import { TrustBadge } from '@/components/trust-badge';
  */
 export default function ComparePage() {
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
-  const [compareListings, setCompareListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,14 +28,6 @@ export default function ComparePage() {
     // This is a placeholder
     setLoading(false);
   }, []);
-
-  const handleSelectListing = (id: string) => {
-    if (selectedListings.includes(id)) {
-      setSelectedListings(selectedListings.filter(lid => lid !== id));
-    } else if (selectedListings.length < 4) {
-      setSelectedListings([...selectedListings, id]);
-    }
-  };
 
   const handleRemoveListing = (id: string) => {
     setSelectedListings(selectedListings.filter(lid => lid !== id));

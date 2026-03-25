@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { redirect } from 'next/navigation';
 import type { Conversation, Listing, UserProfile, Evidence } from '@/lib/types';
-import { AlertTriangle, Eye, ListChecks, MessageSquareText, PlusCircle, FileText, ShieldCheck, Clock, Activity, Target, CheckCircle2, TrendingUp, Sparkles, ArrowUpRight } from 'lucide-react';
+import { AlertTriangle, ListChecks, MessageSquareText, PlusCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import { SellerPage } from '@/components/seller/seller-page';
 import { SellerOnboardingWizard } from '@/components/seller/seller-onboarding-wizard';
 import { getConversationStatus, conversationStatusLabel } from '@/lib/conversation-status';
@@ -27,7 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/empty-state';
-import { cn } from '@/lib/utils';
+import { cn, toDateSafe } from '@/lib/utils';
 
 const statusStyles: Record<ReturnType<typeof getConversationStatus>, string> = {
   new: 'bg-warning/15 text-warning',
@@ -46,7 +45,7 @@ export default async function SellerDashboard() {
     redirect('/login');
   }
 
-  const [listingsSnapshot, settings, evidenceSnapshot, recentConversationsSnapshot, userProfileDoc] = await Promise.all([
+  const [listingsSnapshot, , evidenceSnapshot, recentConversationsSnapshot, userProfileDoc] = await Promise.all([
     adminDb.collection("listings").where("ownerId", "==", user.uid).orderBy('createdAt', 'desc').get(),
     getPlatformSettings(),
     adminDb.collection("evidence").where("ownerId", "==", user.uid).get(),
@@ -118,12 +117,13 @@ export default async function SellerDashboard() {
                 <AlertTriangle className="h-4 w-4" />
                 Action Required
               </CardTitle>
+            {/* Escaped quotes for JSX entity compliance */}
             </CardHeader>
             <CardContent className="space-y-3">
               {needsAttentionItems.map((item) => (
                 <div key={item.id} className="p-3 bg-background/80 border border-risk/20 rounded-xl space-y-2">
                   <p className="text-xs font-bold">{item.title}</p>
-                  <p className="text-[10px] text-muted-foreground italic">Reason: "{item.rejectionReason}"</p>
+                  <p className="text-[10px] text-muted-foreground italic">Reason: &quot;{item.rejectionReason}&quot;</p>
                   <Button asChild size="sm" variant="outline" className="h-8 text-[9px] font-black uppercase w-full">
                     <Link href={`/listings/${item.id}/edit`}>Re-submit node</Link>
                   </Button>
@@ -299,7 +299,7 @@ export default async function SellerDashboard() {
               ) : (
                 recentConversations.map((convo) => {
                   const status = getConversationStatus(convo, user.uid);
-                  const updatedAt = convo.updatedAt?.toDate?.() ?? new Date();
+                  const updatedAt = toDateSafe(convo.updatedAt) ?? new Date();
 
                   return (
                     <Link

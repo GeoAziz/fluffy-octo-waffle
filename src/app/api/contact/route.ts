@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendBrandedEmail } from '@/lib/email-service';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 
 type ContactTopic = 'general' | 'technical' | 'listing' | 'verification';
 
@@ -15,6 +16,21 @@ function normalizeTopic(topic: unknown): ContactTopic {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const ipLimit = enforceRateLimit({
+      scope: 'contact-submit-ip',
+      identifier: ip,
+      maxRequests: 8,
+      windowMs: 60_000,
+    });
+
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { message: 'Too many contact submissions. Please retry shortly.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } }
+      );
+    }
+
     const payload = await request.json();
     const name = typeof payload?.name === 'string' ? payload.name.trim() : '';
     const email = typeof payload?.email === 'string' ? payload.email.trim().toLowerCase() : '';

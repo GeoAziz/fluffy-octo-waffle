@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -50,18 +50,7 @@ export function AiTools({ listing }: { listing: Listing }) {
   const [serviceOffline, setServiceOffline] = useState(false);
   const { toast } = useToast();
 
-  // Automatic background summarization for documents that don't have a summary
-  useEffect(() => {
-    const summarizeNext = async () => {
-      const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
-      if (nextDoc && !isSummarizing && !serviceOffline) {
-        handleSummarize(nextDoc.id, nextDoc.content, false);
-      }
-    };
-    summarizeNext();
-  }, [listing.evidence, summaries, isSummarizing, serviceOffline]);
-
-  const handleSummarize = async (docId: string, docContent: string, isManual = false) => {
+  const handleSummarize = useCallback(async (docId: string, docContent: string, isManual = false) => {
     setIsSummarizing(docId);
     setServiceOffline(false);
     try {
@@ -75,7 +64,7 @@ export function AiTools({ listing }: { listing: Listing }) {
           toast({ title: 'AI Insight Refreshed', description: 'Updated summary is now active.' });
         }
       }
-    } catch (error) {
+    } catch {
       setServiceOffline(true);
       if (isManual) {
         toast({
@@ -87,7 +76,18 @@ export function AiTools({ listing }: { listing: Listing }) {
     } finally {
       setIsSummarizing(null);
     }
-  };
+  }, [toast]);
+
+  // Automatic background summarization for documents that don't have a summary
+  useEffect(() => {
+    const summarizeNext = async () => {
+      const nextDoc = listing.evidence.find(d => !summaries[d.id] && d.content && d.content.length > 20);
+      if (nextDoc && !isSummarizing && !serviceOffline) {
+        await handleSummarize(nextDoc.id, nextDoc.content, false);
+      }
+    };
+    void summarizeNext();
+  }, [listing.evidence, summaries, isSummarizing, serviceOffline, handleSummarize]);
 
   const handleSuspicionCheck = async () => {
     setIsChecking(true);
@@ -108,7 +108,7 @@ export function AiTools({ listing }: { listing: Listing }) {
         isSuspicious: result.isSuspicious,
         reason: result.reason || 'Deep analysis complete. No high-risk anomalies detected across current documentation.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Deep Analysis Error',

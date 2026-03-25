@@ -6,7 +6,6 @@ import L from 'leaflet';
 import { useFormContext } from 'react-hook-form';
 import { FormItem, FormLabel, FormControl, FormDescription, FormMessage } from './ui/form';
 import { Skeleton } from './ui/skeleton';
-import { cn } from '@/lib/utils';
 
 // Leaflet's default icon paths fix
 const customIcon = new L.Icon({

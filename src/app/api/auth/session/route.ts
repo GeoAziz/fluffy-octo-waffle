@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 
 /**
  * Session Management Route
@@ -8,6 +9,21 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
  */
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const sessionReadLimit = enforceRateLimit({
+    scope: 'auth-session-read',
+    identifier: ip,
+    maxRequests: 120,
+    windowMs: 60_000,
+  });
+
+  if (!sessionReadLimit.allowed) {
+    return NextResponse.json(
+      { status: 'error', message: 'Too many session checks. Please retry shortly.' },
+      { status: 429, headers: { 'Retry-After': String(sessionReadLimit.retryAfterSeconds) } }
+    );
+  }
+
   const sessionCookie = request.cookies.get('__session')?.value;
   
   if (!sessionCookie) {
@@ -20,25 +36,45 @@ export async function GET(request: NextRequest) {
     try {
       const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
       role = userDoc.exists ? userDoc.data()?.role ?? null : null;
-    } catch (roleError: any) {
-      console.warn('/api/auth/session GET: Unable to load user role:', roleError?.message ?? roleError);
+    } catch (roleError: unknown) {
+      const message = roleError instanceof Error ? roleError.message : String(roleError);
+      console.warn('/api/auth/session GET: Unable to load user role:', message);
     }
     return NextResponse.json({ status: 'success', authenticated: true, uid: decodedToken.uid, role });
-  } catch (error: any) {
-    console.error('/api/auth/session GET: Session verification failed:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('/api/auth/session GET: Session verification failed:', message);
     return NextResponse.json({ status: 'error', authenticated: false }, { status: 401 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const sessionCreateLimit = enforceRateLimit({
+    scope: 'auth-session-create',
+    identifier: ip,
+    maxRequests: 15,
+    windowMs: 60_000,
+  });
+
+  if (!sessionCreateLimit.allowed) {
+    return NextResponse.json(
+      { status: 'error', message: 'Too many login attempts. Please retry shortly.' },
+      { status: 429, headers: { 'Retry-After': String(sessionCreateLimit.retryAfterSeconds) } }
+    );
+  }
+
   const { idToken } = await request.json();
 
   if (!idToken) {
     return NextResponse.json({ status: 'error', message: 'idToken is required.' }, { status: 400 });
   }
 
-  // 5 days session
-  const expiresInMs = 60 * 60 * 24 * 5 * 1000;
+  const sessionTtlDays = Number(process.env.SESSION_COOKIE_TTL_DAYS ?? '2');
+  const clampedSessionTtlDays = Number.isFinite(sessionTtlDays)
+    ? Math.min(Math.max(sessionTtlDays, 1), 14)
+    : 2;
+  const expiresInMs = 60 * 60 * 24 * clampedSessionTtlDays * 1000;
 
   try {
     // Authoritative role fetch during session creation
@@ -63,7 +99,7 @@ export async function POST(request: NextRequest) {
         path: '/' 
     };
     
-    const response = NextResponse.json({ status: 'success', role });
+    const response = NextResponse.json({ status: 'success', role, expiresInDays: clampedSessionTtlDays });
     response.cookies.set(options);
     
     // Set a non-httpOnly role hint for Edge Middleware routing
@@ -77,15 +113,57 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("/api/auth/session POST: Error creating session cookie:", error);
-    return NextResponse.json({ status: 'error', message: `Failed to create session cookie: ${error.message}` }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: `Failed to create session cookie: ${message}` }, { status: 401 });
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  const ip = getClientIp(request);
+  const logoutLimit = enforceRateLimit({
+    scope: 'auth-session-delete',
+    identifier: ip,
+    maxRequests: 30,
+    windowMs: 60_000,
+  });
+
+  if (!logoutLimit.allowed) {
+    return NextResponse.json(
+      { status: 'error', message: 'Too many logout attempts. Please retry shortly.' },
+      { status: 429, headers: { 'Retry-After': String(logoutLimit.retryAfterSeconds) } }
+    );
+  }
+
+  const sessionCookie = request.cookies.get('__session')?.value;
+  if (sessionCookie) {
+    try {
+      const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
+      await adminAuth.revokeRefreshTokens(decodedToken.uid);
+    } catch {
+      console.warn('/api/auth/session DELETE: Unable to revoke refresh tokens for current session.');
+    }
+  }
+
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const isSecureContext = process.env.NODE_ENV === 'production'
+    || forwardedProto === 'https'
+    || request.nextUrl.protocol === 'https:';
+
   const response = NextResponse.json({ status: 'success' });
-  response.cookies.set('__session', '', { maxAge: 0 });
-  response.cookies.set('__user_role', '', { maxAge: 0 });
+  response.cookies.set('__session', '', {
+    maxAge: 0,
+    httpOnly: true,
+    secure: isSecureContext,
+    sameSite: 'lax',
+    path: '/',
+  });
+  response.cookies.set('__user_role', '', {
+    maxAge: 0,
+    secure: isSecureContext,
+    sameSite: 'lax',
+    path: '/',
+  });
   return response;
 }

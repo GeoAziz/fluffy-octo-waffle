@@ -22,7 +22,7 @@ export type Evidence = {
   type: EvidenceType;
   name: string;
   storagePath: string; // Path to the document in Firebase Storage
-  uploadedAt: any; // Firestore timestamp
+  uploadedAt: unknown; // Firestore timestamp
   summary?: string;
   content: string; // Plain text content for AI summarization
   verified: boolean;
@@ -39,7 +39,7 @@ export type SavedSearch = {
   id: string;
   name: string;
   url: string;
-  createdAt: any; // Firestore timestamp
+  createdAt: unknown; // Firestore timestamp
   filters: {
     query?: string;
     county?: string;
@@ -73,9 +73,9 @@ export type Listing = {
   };
   evidence: Evidence[];
   images: ListingImage[];
-  createdAt: any; // Firestore timestamp
-  updatedAt: any; // Firestore timestamp
-  adminReviewedAt?: any; // Firestore timestamp, optional
+  createdAt: unknown; // Firestore timestamp
+  updatedAt: unknown; // Firestore timestamp
+  adminReviewedAt?: unknown; // Firestore timestamp, optional
   rejectionReason?: string; // Reason provided by admin for rejection
   adminNotes?: string; // Internal notes for admins
   imageAnalysis?: ImageAnalysis;
@@ -110,18 +110,18 @@ export type UserProfile = {
   phone: string | null;
   bio: string | null;
   role: 'BUYER' | 'SELLER' | 'ADMIN';
-  createdAt: any; // Firestore timestamp
+  createdAt: unknown; // Firestore timestamp
   verified: boolean;
   preferences?: UserPreferences;
   // Onboarding tracking
   hasCompletedOnboarding?: boolean;
-  onboardingCompletedAt?: any;
+  onboardingCompletedAt?: unknown;
   // Profile completeness (0-100)
   profileCompleteness?: number;
   // Seller-specific fields
   serviceArea?: string[];
   enabledForSelling?: boolean;
-  sellerAgreementAcceptedAt?: any;
+  sellerAgreementAcceptedAt?: unknown;
   // Notification preferences
   notificationPreferences?: {
     email: boolean;
@@ -131,7 +131,7 @@ export type UserProfile = {
     badges: boolean;
   };
   // Last activity tracking
-  lastActiveAt?: any;
+  lastActiveAt?: unknown;
   // Buyer preferences (for onboarding)
   preferredCounties?: string[];
   budgetRange?: {
@@ -149,7 +149,7 @@ export type Notification = {
   type: 'inquiry' | 'badge_update' | 'flag' | 'system';
   link?: string;
   read: boolean;
-  createdAt: any;
+  createdAt: unknown;
 };
 
 export type Conversation = {
@@ -166,10 +166,10 @@ export type Conversation = {
   };
   lastMessage: {
     text: string;
-    timestamp: any; // or Date
+    timestamp: unknown; // or Date
     senderId: string;
   } | null;
-  updatedAt: any; // or Date
+  updatedAt: unknown; // or Date
   status?: 'new' | 'responded' | 'closed';
 };
 
@@ -177,7 +177,7 @@ export type Message = {
   id: string;
   senderId: string;
   text: string;
-  timestamp: any; // or Date
+  timestamp: unknown; // or Date
 };
 
 export type PlatformSettings = {
@@ -201,7 +201,7 @@ export type PlatformSettings = {
     totalBuyers: number;
     fraudCasesResolved: number;
   };
-  updatedAt?: any; // Firestore timestamp
+  updatedAt?: unknown; // Firestore timestamp
   updatedBy?: string; // User UID who last updated
 };
 
@@ -211,7 +211,7 @@ export type AuditLog = {
   action: string;
   entityType: string; // 'settings', 'listing', 'user', etc.
   entityId?: string;
-  changes: Record<string, any>;
-  timestamp?: any; // Firestore timestamp
+  changes: Record<string, unknown>;
+  timestamp?: unknown; // Firestore timestamp
   reason?: string; // Explicit reason pulse
 };

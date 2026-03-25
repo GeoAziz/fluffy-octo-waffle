@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 import {
   SidebarContent,
   SidebarHeader,
@@ -12,10 +13,8 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LandPlot, LayoutDashboard, MessageSquare, User, Settings, List, HelpCircle, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,7 @@ const accountItems = [
   { href: '/settings', label: 'Settings', icon: Settings, description: 'Preferences' },
 ];
 
-export function SellerNav() {
+function SellerNavContent() {
   const pathname = usePathname();
   const router = useRouter();
   const { userProfile } = useAuth();
@@ -57,7 +56,13 @@ export function SellerNav() {
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
       const badges = snapshot.docs
         .map(doc => doc.data().badge)
-        .filter((badge): badge is string => badge !== null && badge !== undefined) as any as BadgeValue[];
+        .filter((badge): badge is BadgeValue => {
+          return badge === 'TrustedSignal'
+            || badge === 'EvidenceReviewed'
+            || badge === 'EvidenceSubmitted'
+            || badge === 'Suspicious'
+            || badge === 'None';
+        });
       
       const tier = calculateSellerTier(badges);
       const progress = getTierProgress(tier);
@@ -210,5 +215,20 @@ export function SellerNav() {
         )}
       </SidebarFooter>
     </>
+  );
+}
+
+/**
+ * SellerNav - Seller workspace navigation sidebar
+ * Protected by PermissionGuard to ensure only sellers can access
+ */
+export function SellerNav() {
+  return (
+    <PermissionGuard 
+      allowedRoles={['SELLER']}
+      fallback={null}
+    >
+      <SellerNavContent />
+    </PermissionGuard>
   );
 }

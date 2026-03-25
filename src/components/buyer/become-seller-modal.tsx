@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { requestSellerRoleAction } from '@/app/actions';
@@ -34,8 +34,9 @@ export function BecomeSellerModal({ open, onOpenChange }: BecomeSellerModalProps
       setStep('info');
       setAgreedToTerms(false);
       router.push('/dashboard/create-listing');
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to upgrade account';
+      toast({ variant: 'destructive', title: 'Error', description: message });
       setStep('agreement');
     }
   };

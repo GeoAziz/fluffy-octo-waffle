@@ -2,7 +2,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Loader2, ArrowRight, ShieldCheck, MapPin, Search, Sparkles, BookOpen, Fingerprint, ChevronRight } from 'lucide-react';
+import { Loader2, ShieldCheck, MapPin, Search, Sparkles, BookOpen, Fingerprint, ChevronRight } from 'lucide-react';
 import { LandingHero } from '@/components/buyer/landing-hero';
 import { SocialProof } from '@/components/buyer/social-proof';
 import { FeatureShowcase } from '@/components/buyer/feature-showcase';
@@ -79,7 +79,7 @@ export function BuyerHomePage() {
                     </div>
                     <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">Your First High-Trust Purchase</h2>
                     <p className="text-emerald-50/80 text-lg max-w-2xl font-medium leading-relaxed">
-                      Traditional land buying in Kenya is high-risk. We've built an identity-first protocol to eliminate fraud and provide verifiable documentation for every plot.
+                      Traditional land buying in Kenya is high-risk. We&apos;ve built an identity-first protocol to eliminate fraud and provide verifiable documentation for every plot.
                     </p>
                     <div className="flex flex-wrap gap-4 pt-4">
                       <Link href="/trust" className="h-14 px-8 bg-white text-primary rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center shadow-lg hover:bg-emerald-50 transition-all active:scale-95">

@@ -21,13 +21,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, History, Download, User, Calendar } from "lucide-react";
-import { collection, query, orderBy, limit, getDocs, where, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
 import type { AuditLog } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, toDateSafe } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 
 export default function AuditTrailPage() {
@@ -67,10 +67,11 @@ export default function AuditTrailPage() {
     log.entityId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatChanges = (changes: Record<string, any>) => {
+  const formatChanges = (changes: Record<string, unknown>) => {
     return Object.entries(changes).map(([key, value]) => {
-      const oldVal = typeof value.old === 'object' ? JSON.stringify(value.old) : String(value.old);
-      const newVal = typeof value.new === 'object' ? JSON.stringify(value.new) : String(value.new);
+      const change = (value ?? {}) as { old?: unknown; new?: unknown };
+      const oldVal = typeof change.old === 'object' ? JSON.stringify(change.old) : String(change.old ?? '');
+      const newVal = typeof change.new === 'object' ? JSON.stringify(change.new) : String(change.new ?? '');
       return (
         <div key={key} className="text-[10px] leading-tight mb-1">
           <span className="font-black uppercase text-muted-foreground mr-1">{key}:</span>
@@ -165,10 +166,7 @@ export default function AuditTrailPage() {
                     <TableCell className="text-[11px] font-medium text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3 w-3" />
-                        {typeof log.timestamp?.toDate === 'function'
-                          ? format(log.timestamp.toDate(), "MMM d, HH:mm:ss")
-                          : format(new Date(log.timestamp), "MMM d, HH:mm:ss")
-                        }
+                        {format(toDateSafe(log.timestamp) || new Date(), "MMM d, HH:mm:ss")}
                       </div>
                     </TableCell>
                     <TableCell>

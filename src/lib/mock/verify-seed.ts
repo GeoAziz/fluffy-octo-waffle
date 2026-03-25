@@ -58,14 +58,26 @@ interface VerificationResult {
   error?: string;
 }
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 async function verifyUser(email: string, expectedRole: string): Promise<VerificationResult> {
   try {
     // Step 1: Query Firebase Auth
     let user;
     try {
       user = await adminAuth.getUserByEmail(email);
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === 'auth/user-not-found'
+      ) {
         return {
           email,
           expectedRole,
@@ -132,12 +144,12 @@ async function verifyUser(email: string, expectedRole: string): Promise<Verifica
       uid: user.uid,
       actualRole: profile.role,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       email,
       expectedRole,
       status: 'ERROR',
-      error: error.message,
+      error: getErrorMessage(error),
     };
   }
 }
@@ -198,7 +210,7 @@ async function runVerification() {
 
     for (const [role, roleResults] of Object.entries(byRole)) {
       console.log(`\n${role}S:`);
-      roleResults.forEach((result, idx) => {
+      roleResults.forEach((result) => {
         if (result.status === 'VERIFIED') {
           console.log(`  ✓ ${result.email} → uid: ${result.uid?.slice(0, 8)}... | role: ${result.actualRole}`);
         } else {
@@ -267,9 +279,9 @@ async function runVerification() {
 
     // Exit with appropriate code
     process.exit(issues.length > 0 ? 1 : 0);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('\n❌ Verification Failed:\n');
-    console.error(error.message);
+    console.error(getErrorMessage(error));
     console.error('\n🔧 Troubleshooting:\n');
     console.error('  • Ensure Firebase credentials are loaded (serviceAccountKey.json)');
     console.error('  • Check network connectivity to Firebase\n');

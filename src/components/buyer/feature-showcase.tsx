@@ -41,7 +41,7 @@ export function FeatureShowcase() {
             Redefining Transparency in Real Estate
           </h2>
           <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            We've built the technical infrastructure to solve Kenya's biggest land problems: missing records and fraudulent claims.
+            We&apos;ve built the technical infrastructure to solve Kenya&apos;s biggest land problems: missing records and fraudulent claims.
           </p>
         </div>
 

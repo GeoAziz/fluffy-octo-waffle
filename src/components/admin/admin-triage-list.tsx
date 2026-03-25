@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Listing } from '@/lib/types';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,10 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AlertCircle, Clock, TrendingUp, Eye, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
-import { formatDistanceToNow, differenceInHours, differenceInDays } from 'date-fns';
+import { AlertCircle, Clock, Eye, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
+import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn, toDateSafe } from '@/lib/utils';
 
 interface TriageMetrics {
   riskScore: number; // 0-100: higher = more risky
@@ -57,14 +58,13 @@ interface AdminTriageListProps {
  * - Low evidence quality: +10
  * - SLA breach risk (< 4 hours): +5
  */
-export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps) {
+function AdminTriageListContent({ listings, slaDays = 2 }: AdminTriageListProps) {
   const [sortBy, setSortBy] = useState<'risk' | 'age' | 'sla' | 'evidence'>('risk');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'flagged'>('all');
 
-  const calculateMetrics = (listing: Listing): TriageMetrics => {
-    const createdDate = listing.createdAt?._seconds ? new Date(listing.createdAt._seconds * 1000) : new Date();
+  const calculateMetrics = useCallback((listing: Listing): TriageMetrics => {
+    const createdDate = toDateSafe(listing.createdAt) ?? new Date();
     const ageInHours = differenceInHours(new Date(), createdDate);
-    const slaDays_ = differenceInDays(new Date(), createdDate);
     const timeUntilSLA = slaDays * 24 - ageInHours;
 
     let riskScore = 20; // Base score
@@ -78,7 +78,7 @@ export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps)
     }
 
     // Evidence quality assessment
-    const evidenceCount = (listing as any).evidenceCount || 0;
+    const evidenceCount = Array.isArray(listing.evidence) ? listing.evidence.length : 0;
     const hasEvidence = evidenceCount > 0;
     if (!hasEvidence) {
       riskScore += 15;
@@ -117,7 +117,7 @@ export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps)
       evidenceQuality,
       priority,
     };
-  };
+  }, [slaDays]);
 
   const filteredListings = listings.filter(l => {
     if (filterStatus === 'all') return true;
@@ -147,7 +147,7 @@ export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps)
           return 0;
       }
     });
-  }, [filteredListings, sortBy]);
+  }, [filteredListings, sortBy, calculateMetrics]);
 
   const getPriorityColor = (priority: TriageMetrics['priority']) => {
     switch (priority) {
@@ -293,7 +293,7 @@ export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps)
                     <TableCell className="py-4 text-center">
                       <p className="text-xs font-bold">{metrics.ageInHours}h</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(listing.createdAt?._seconds ? listing.createdAt._seconds * 1000 : 0), {
+                        {formatDistanceToNow(toDateSafe(listing.createdAt) ?? new Date(), {
                           addSuffix: false,
                         })} ago
                       </p>
@@ -366,5 +366,27 @@ export function AdminTriageList({ listings, slaDays = 2 }: AdminTriageListProps)
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/**
+ * AdminTriageList - Admin-only listing review queue
+ * Protected by PermissionGuard to ensure only admins access
+ */
+export function AdminTriageList(props: AdminTriageListProps) {
+  return (
+    <PermissionGuard 
+      allowedRoles={['ADMIN']}
+      fallback={
+        <Card className="border-destructive/50">
+          <CardContent className="pt-6">
+            <p className="text-sm font-semibold text-destructive">Access Denied</p>
+            <p className="text-xs text-muted-foreground mt-2">Only administrators can access the moderation queue.</p>
+          </CardContent>
+        </Card>
+      }
+    >
+      <AdminTriageListContent {...props} />
+    </PermissionGuard>
   );
 }

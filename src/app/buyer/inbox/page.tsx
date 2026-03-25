@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MessageSquare, Bell, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/empty-state';
 
@@ -27,9 +27,9 @@ type NextAction = {
 } | null;
 
 export default function InboxPage() {
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [unreadAlerts, setUnreadAlerts] = useState(0);
-  const [nextAction, setNextAction] = useState<NextAction>(null);
+  const [unreadMessages] = useState(0);
+  const [unreadAlerts] = useState(0);
+  const [nextAction] = useState<NextAction>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

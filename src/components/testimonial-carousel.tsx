@@ -75,7 +75,7 @@ export function TestimonialCarousel({
 
           {/* Testimonial Content */}
           <blockquote className="text-lg md:text-xl font-medium leading-relaxed text-foreground mb-8 italic animate-slide-up" style={{ animationDelay: '100ms' }}>
-            "{testimonial.content}"
+            &ldquo;{testimonial.content}&rdquo;
           </blockquote>
 
           {/* Author Info */}
@@ -179,7 +179,7 @@ export function TestimonialGrid({ testimonials }: { testimonials: Testimonial[] 
 
           {/* Content */}
           <p className="text-sm text-foreground leading-relaxed mb-6 line-clamp-4">
-            "{testimonial.content}"
+            &ldquo;{testimonial.content}&rdquo;
           </p>
 
           {/* Author */}

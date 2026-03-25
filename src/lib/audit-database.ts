@@ -76,7 +76,7 @@ export async function auditDatabase(): Promise<AuditReport> {
     const usersSnapshot = await adminDb.collection('users').get();
     report.summary.totalUsers = usersSnapshot.size;
 
-    const userMap = new Map<string, any>();
+    const userMap = new Map<string, { role?: string; email?: string; displayName?: string }>();
     const sellersInDb = new Set<string>();
 
     usersSnapshot.forEach(doc => {

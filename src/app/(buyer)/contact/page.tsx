@@ -188,7 +188,7 @@ export default function ContactUsPage() {
           {errorMessage && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>We couldn't send your message</AlertTitle>
+              <AlertTitle>We couldn&apos;t send your message</AlertTitle>
               <AlertDescription>
                 {errorMessage} Please retry in a moment. If this continues, email support@kenyalandtrust.com.
               </AlertDescription>

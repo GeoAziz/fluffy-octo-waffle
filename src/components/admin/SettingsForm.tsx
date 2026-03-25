@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PermissionGuard } from '@/components/auth/permission-guard';
 import {
   Form,
   FormControl,
@@ -20,9 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/hooks/use-settings';
-import { AlertCircle, CheckCircle2, Loader2, Globe, ShieldCheck, Mail, Sliders } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { PlatformSettings } from '@/lib/types';
+import { Loader2, Globe, ShieldCheck, Mail, Sliders } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const SettingsSchema = z.object({
@@ -49,7 +48,7 @@ const SettingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof SettingsSchema>;
 
-export function SettingsForm() {
+function SettingsFormContent() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -108,11 +107,12 @@ export function SettingsForm() {
         title: 'Settings updated',
         description: 'Platform settings have been saved and audit trail updated.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to save platform settings';
       toast({
         variant: 'destructive',
         title: 'Error saving settings',
-        description: error.message || 'Failed to save platform settings',
+        description: message,
       });
     } finally {
       setIsSaving(false);
@@ -349,5 +349,29 @@ export function SettingsForm() {
         </div>
       </form>
     </Form>
+  );
+}
+
+/**
+ * SettingsForm - Admin-only component for platform configuration
+ * Protected by PermissionGuard to ensure only admins can access
+ */
+export function SettingsForm() {
+  return (
+    <PermissionGuard 
+      allowedRoles={['ADMIN']}
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Card className="border-destructive/50">
+            <CardContent className="pt-6">
+              <p className="text-sm font-semibold text-destructive">Access Denied</p>
+              <p className="text-xs text-muted-foreground mt-2">Only administrators can modify platform settings.</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <SettingsFormContent />
+    </PermissionGuard>
   );
 }

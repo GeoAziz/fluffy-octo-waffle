@@ -31,8 +31,7 @@ import {
 } from './mock-listings';
 import { generateListingEvidence } from './mock-evidence';
 import { 
-  generateBuyerConversations,
-  generateSellerConversations 
+  generateBuyerConversations
 } from './mock-conversations';
 import {
   generateListingAuditTrail,
@@ -40,10 +39,18 @@ import {
   generateBuyerFavorites,
   generateSavedSearches
 } from './mock-admin-activity';
+import { assertSeedSafety } from '../seed-safety';
 
 // Configuration
 const DEFAULT_LISTINGS_PER_SELLER = 4;
 const SEED_PASSWORD = 'Password123!';
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
 
 /**
  * Parse command line arguments
@@ -134,7 +141,7 @@ async function seedUsers(users: UserJourney[]): Promise<Map<string, string>> {
     const { profile } = userJourney;
     
     try {
-      let firebaseUser = await adminAuth.getUserByEmail(profile.email).catch(() => null);
+      const firebaseUser = await adminAuth.getUserByEmail(profile.email).catch(() => null);
       let uid: string;
 
       if (firebaseUser) {
@@ -170,8 +177,8 @@ async function seedUsers(users: UserJourney[]): Promise<Map<string, string>> {
       }, { merge: true });
 
       userIdMap.set(profile.uid, uid);
-    } catch (error: any) {
-      console.error(`   ✗ Failed to create user ${profile.email}:`, error.message);
+    } catch (error: unknown) {
+      console.error(`   ✗ Failed to create user ${profile.email}:`, getErrorMessage(error));
     }
   }
 
@@ -226,12 +233,12 @@ async function seedListings(
       };
 
       // Remove undefined fields from firestoreListing before saving
-      const cleanListing = Object.entries(firestoreListing).reduce((acc, [key, value]) => {
+      const cleanListing = Object.entries(firestoreListing).reduce<Record<string, unknown>>((acc, [key, value]) => {
         if (value !== undefined) {
-          acc[key as keyof typeof firestoreListing] = value;
+          acc[key] = value;
         }
         return acc;
-      }, {} as any);
+      }, {});
 
       await listingRef.set(cleanListing);
       listingIds.push(listingId);
@@ -278,9 +285,18 @@ async function seedConversations(
     .limit(100)
     .get();
 
-  const listingsBySeller = new Map<string, any[]>();
+  type ListingSnapshotShape = {
+    id: string;
+    title?: string;
+    ownerId?: string;
+    images?: Array<{ url?: string }>;
+  };
+  const listingsBySeller = new Map<string, ListingSnapshotShape[]>();
   listingsSnapshot.docs.forEach(doc => {
-    const listing = doc.data();
+    const listing = doc.data() as { ownerId?: string; title?: string; images?: Array<{ url?: string }> };
+    if (!listing.ownerId) {
+      return;
+    }
     if (!listingsBySeller.has(listing.ownerId)) {
       listingsBySeller.set(listing.ownerId, []);
     }
@@ -301,12 +317,12 @@ async function seedConversations(
       photo: s.profile.photoURL || ''
     })).filter(s => s.id);
 
-    const allListings: any[] = [];
+    const allListings: Array<{ id: string; title: string; image: string; ownerId: string }> = [];
     sellerData.forEach(seller => {
       const sellerListings = listingsBySeller.get(seller.id) || [];
       allListings.push(...sellerListings.map(l => ({
         id: l.id,
-        title: l.title,
+        title: l.title || 'Untitled Listing',
         image: l.images?.[0]?.url || '',
         ownerId: seller.id
       })));
@@ -468,6 +484,7 @@ async function main() {
   console.log('╚════════════════════════════════════════════════╝');
 
   const config = parseArgs();
+  assertSeedSafety({ operationName: 'seed:all', allowClear: config.clear });
 
   console.log('\n📋 Configuration:');
   console.log(`   Clear existing data: ${config.clear ? 'YES' : 'NO'}`);

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Search, Trash2, Plus } from 'lucide-react';
+import { Search, Trash2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/empty-state';
 import type { SavedSearch } from '@/lib/types';
@@ -33,7 +33,7 @@ export default function SavedSearchesPage() {
     // TODO: Call server action to delete from Firebase
   };
 
-  const handleEditSearch = (id: string) => {
+  const handleEditSearch = () => {
     // TODO: Navigate to edit page or open modal
   };
 
@@ -145,7 +145,7 @@ export default function SavedSearchesPage() {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => handleEditSearch(search.id)}
+                  onClick={handleEditSearch}
                 >
                   Edit
                 </Button>

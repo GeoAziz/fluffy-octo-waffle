@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { BadgeValue, Listing, ListingStatus } from '@/lib/types';
-import { deleteListing, updateListing } from '@/app/actions';
-import { Loader2, Trash2, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { deleteListing, escalateListingAction, updateListing } from '@/app/actions';
+import { Loader2, Trash2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TrustBadge } from '@/components/trust-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,6 +46,12 @@ const REASON_TEMPLATES = [
   "TrustedSignal: All 4 key documents vaulted and verified authentic."
 ];
 
+const ESCALATION_OPTIONS = [
+  { value: 'flag', label: 'Flag Listing' },
+  { value: 'request_more_evidence', label: 'Request More Evidence' },
+  { value: 'lock_seller', label: 'Lock Seller Account' },
+] as const;
+
 /**
  * AdminReviewActions - Critical moderation interface for updating trust signals.
  * Now requires mandatory reasoning and provides templates for velocity.
@@ -63,6 +69,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setConfirmOpen] = useState(false);
   const [adminReason, setAdminReason] = useState(listing.adminNotes || '');
+  const [isEscalating, setIsEscalating] = useState(false);
   
   // Track if badge was just assigned for animation
   const [badgeJustIssued, setBadgeJustIssued] = useState(false);
@@ -100,7 +107,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
       });
       router.refresh();
       setConfirmOpen(false);
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Update Failed',
@@ -120,7 +127,7 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
         description: 'Property listing and evidence deleted permanently.',
       });
       router.push('/admin/listings');
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
@@ -128,6 +135,35 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleEscalation = async (escalation: (typeof ESCALATION_OPTIONS)[number]['value']) => {
+    if (!adminReason.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Reason Required',
+        description: 'Add escalation notes before executing this workflow.',
+      });
+      return;
+    }
+
+    setIsEscalating(true);
+    try {
+      await escalateListingAction(listing.id, escalation, adminReason);
+      toast({
+        title: 'Escalation Executed',
+        description: `Workflow updated: ${escalation.replaceAll('_', ' ')}`,
+      });
+      router.refresh();
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Escalation Failed',
+        description: 'Unable to apply escalation workflow. Please retry.',
+      });
+    } finally {
+      setIsEscalating(false);
     }
   };
 
@@ -273,6 +309,22 @@ export function AdminReviewActions({ listing }: { listing: Listing }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <div className="flex items-center gap-2 rounded-lg border bg-background p-1">
+        {ESCALATION_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            size="sm"
+            variant="outline"
+            disabled={isEscalating}
+            className="h-9 text-[10px] font-black uppercase tracking-widest"
+            onClick={() => handleEscalation(option.value)}
+          >
+            {isEscalating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+            {option.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

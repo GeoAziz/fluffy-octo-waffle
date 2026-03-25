@@ -3,7 +3,7 @@
 import { DragEvent, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { cn } from '@/lib/utils';
-import { FileText, Trash2, UploadCloud, FileCheck, Map, Shield, ChevronDown, Info } from 'lucide-react';
+import { FileText, Trash2, UploadCloud, FileCheck, Map, Shield, Info } from 'lucide-react';
 import Image from 'next/image';
 import { FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -81,7 +81,7 @@ export function FileDragAndDrop({
   const processFiles = (newlySelected: File[]) => {
     if (!newlySelected.length) return;
 
-    let errors: string[] = [];
+    const errors: string[] = [];
     const validated = newlySelected.filter(f => {
       const error = validateFile(f);
       if (error) errors.push(error);

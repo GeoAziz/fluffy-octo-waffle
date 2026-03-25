@@ -22,7 +22,7 @@ export function ContactMessageActions({ messageId, currentStatus }: { messageId:
                     description: `Message marked as ${newStatus}.`,
                 });
                 router.refresh(); // Re-fetches server-side data
-            } catch (error) {
+            } catch {
                 toast({
                     variant: 'destructive',
                     title: 'Error',
@@ -68,7 +68,7 @@ export function ListingReportActions({ reportId, currentStatus }: { reportId: st
                     description: `Report marked as ${newStatus}.`,
                 });
                 router.refresh();
-            } catch (error) {
+            } catch {
                 toast({
                     variant: 'destructive',
                     title: 'Error',

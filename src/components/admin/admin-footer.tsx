@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { LandPlot } from 'lucide-react';
 
 /**
  * AdminFooter - Admin workspace footer

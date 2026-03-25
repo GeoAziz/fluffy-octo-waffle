@@ -81,7 +81,7 @@ export async function sendBrandedEmail(options: {
   to: string;
   type: EmailType;
   subject: string;
-  payload: any;
+  payload: Record<string, unknown>;
 }) {
   const { to, type, subject, payload } = options;
   let htmlContent = '';

@@ -1,31 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { LandPlot, Mail, Phone, Facebook, Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { LandPlot, Mail, Phone, Facebook, Twitter, Linkedin, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/hooks/use-settings';
-import type { PlatformSettings } from '@/lib/types';
 
 /**
  * BuyerFooter - Modern, efficient buyer-focused footer
  * Features dynamic settings and trust stats from the admin panel.
  */
-
-interface NavLink {
-  href: string;
-  label: string;
-  description?: string;
-}
-
 export function BuyerFooter() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [subscriptionState, setSubscriptionState] = useState<'idle' | 'success' | 'error'>('idle');
-  const { settings, isLoading } = useSettings();
+  const { settings } = useSettings();
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +39,7 @@ export function BuyerFooter() {
       } else {
         throw new Error('Subscription failed');
       }
-    } catch (error: any) {
+    } catch {
       setSubscriptionState('error');
       setTimeout(() => setSubscriptionState('idle'), 3000);
     } finally {

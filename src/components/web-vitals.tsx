@@ -11,6 +11,15 @@ import { logEvent } from 'firebase/analytics';
  */
 export function WebVitals() {
   useReportWebVitals((metric) => {
+    const budgets: Record<string, number> = {
+      LCP: 2500,
+      INP: 200,
+      CLS: 0.1,
+    };
+
+    const budget = budgets[metric.name];
+    const isBudgetBreach = typeof budget === 'number' && metric.value > budget;
+
     if (analytics) {
       // Log Core Web Vital metrics to Firebase Analytics
       logEvent(analytics, 'web_vitals', {
@@ -29,6 +38,31 @@ export function WebVitals() {
           id: metric.id,
         });
       }
+
+      if (isBudgetBreach) {
+        logEvent(analytics, 'web_vitals_budget_breach', {
+          metric_name: metric.name,
+          metric_value: metric.value,
+          threshold: budget,
+          page_path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        });
+      }
+    }
+
+    if (isBudgetBreach) {
+      fetch('/api/monitoring/performance-budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          metric: metric.name,
+          value: metric.value,
+          threshold: budget,
+          pagePath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        }),
+        keepalive: true,
+      }).catch(() => {
+        // Silent fail for telemetry path.
+      });
     }
   });
 

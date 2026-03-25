@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -13,7 +12,7 @@ import { doc, getDoc } from 'firebase/firestore';
  */
 export function useAuth() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

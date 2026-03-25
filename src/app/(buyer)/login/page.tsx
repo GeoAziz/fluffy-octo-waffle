@@ -81,8 +81,8 @@ export default function LoginPage() {
         const target = profile?.hasCompletedOnboarding ? '/buyer/dashboard' : '/buyer/onboarding';
         window.location.assign(target);
       }
-    } catch (err: any) {
-      setServerError(err.message);
+    } catch (err: unknown) {
+      setServerError((err as Error)?.message || 'Login failed');
     }
   };
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       await handleLoginSuccess(userCredential.user);
-    } catch (error: any) {
+    } catch {
       setServerError('Incorrect identity credentials. Please verify your email and token.');
     } finally {
       setIsLoading(false);
@@ -124,7 +124,7 @@ export default function LoginPage() {
         });
       }
       await handleLoginSuccess(user);
-    } catch (error: any) {
+    } catch {
       setServerError('SSO Protocol Failure.');
     } finally {
       setIsLoading(false);
@@ -141,7 +141,7 @@ export default function LoginPage() {
         </div>
         <div className="relative z-20 flex-1 flex flex-col justify-center items-center p-10 text-center">
           <h2 className="text-4xl font-black tracking-tight text-white uppercase">Vault Access</h2>
-          <p className="mt-4 text-lg text-emerald-50/80 max-w-md">Secure authentication for Kenya's most trusted land marketplace.</p>
+          <p className="mt-4 text-lg text-emerald-50/80 max-w-md">Secure authentication for Kenya&apos;s most trusted land marketplace.</p>
         </div>
       </div>
       <div className="flex items-center justify-center py-12 bg-background">

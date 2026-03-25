@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import Image from 'next/image';
 
 export type FeatureCard = {
   id: string;
@@ -185,11 +185,12 @@ export function FeatureHighlight({
       {/* Image / Visual */}
       {imageUrl && (
         <div className={cn('relative aspect-square overflow-hidden rounded-2xl bg-muted', reversed && 'md:order-first')}>
-          <img
+          <Image
             src={imageUrl}
             alt={title}
+            fill
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-            role="presentation"
+            sizes="(min-width: 768px) 50vw, 100vw"
           />
         </div>
       )}

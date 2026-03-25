@@ -60,9 +60,12 @@ NEXT_PUBLIC_FIREBASE_API_KEY=...
 
 ## 📚 Documentation
 - `docs/PERFORMANCE_MONITORING.md` - Core Web Vitals & Tracing
+- `docs/COST_CONTROLS.md` - Firestore, storage lifecycle, AI quota guardrails
 - `docs/BUYER_JOURNEY.md` - Permissions & UX Flow
 - `docs/ADMIN_SETTINGS.md` - Platform Configuration
 - `docs/ui-ux-review-audit.md` - Quality standards
+- `docs/DEPLOYMENT_GUARDRAILS.md` - Required CI, branch protection, and Vercel launch checks
+- `SECURITY.md` - Vulnerability reporting and disclosure policy
 
 ---
 **Kenya Land Trust** is trust-as-a-feature. We build confidence before you engage professionals.

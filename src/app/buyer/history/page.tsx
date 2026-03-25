@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EmptyState } from '@/components/empty-state';
@@ -35,11 +35,6 @@ export default function HistoryPage() {
     setHistory([]);
   };
 
-  const handleRemoveItem = (id: string) => {
-    setHistory(history.filter(h => h.id !== id));
-    // TODO: Call server action to remove from history
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -56,7 +51,7 @@ export default function HistoryPage() {
       <div className="space-y-8 py-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Recently Viewed</h1>
-          <p className="text-muted-foreground">Properties you've recently browsed</p>
+          <p className="text-muted-foreground">Properties you&apos;ve recently browsed</p>
         </div>
 
         <EmptyState
@@ -76,7 +71,7 @@ export default function HistoryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recently Viewed</h1>
-          <p className="text-muted-foreground mt-1">You've viewed {history.length} propertie{history.length !== 1 ? 's' : ''}</p>
+          <p className="text-muted-foreground mt-1">You&apos;ve viewed {history.length} propertie{history.length !== 1 ? 's' : ''}</p>
         </div>
         {history.length > 0 && (
           <Button variant="outline" onClick={handleClearHistory} className="text-destructive hover:text-destructive">
@@ -147,7 +142,7 @@ export default function HistoryPage() {
                   <Link href={`/listings/${listing.id}`}>View Details</Link>
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1" asChild>
-                  <Link href={`/listings/${listing.id}#contact`}>Contact</Link>
+                  <Link href={`/listings/${listing.id}#contact`}>Contact Seller</Link>
                 </Button>
               </div>
             </CardContent>

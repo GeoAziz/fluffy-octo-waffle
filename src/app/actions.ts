@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
-import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation, Message, UserPreferences, Notification } from '@/lib/types';
-import { serializeDocument, serializeDocuments } from '@/lib/firestore-serialization';
+import type { ListingStatus, UserProfile, ImageAnalysis, BadgeSuggestion, Listing, BadgeValue, ListingImage, SavedSearch, Conversation, UserPreferences, Notification } from '@/lib/types';
+import { serializeDocument } from '@/lib/firestore-serialization';
 import { FieldValue } from 'firebase-admin/firestore';
 import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 import { generatePropertyDescription } from '@/ai/flows/generate-property-description';
@@ -15,6 +15,9 @@ import { sendBrandedEmail } from '@/lib/email-service';
 import { flagSuspiciousUploadPatterns } from '@/ai/flows/flag-suspicious-upload-patterns';
 import { summarizeEvidence } from '@/ai/flows/summarize-evidence-for-admin-review';
 import { validateSellerExists } from '@/lib/seller-validation';
+import { getAnalyticsTracker } from '@/lib/analytics-tracker';
+import { logAuditEvent, logListingStatusChange, logBadgeAssignment } from '@/lib/audit-logger';
+import { recordAiFlowFailure, recordServerTrace } from '@/lib/monitoring';
 
 /**
  * Retrieves the authenticated user from the session cookie.
@@ -36,9 +39,79 @@ export async function getAuthenticatedUser(): Promise<{uid: string, role: UserPr
           displayName: userProfile.displayName,
           email: userProfile.email
         };
-    } catch(e) {
+    } catch {
         return null;
     }
+}
+
+function sanitizeUploadFileName(name: string) {
+  return name
+    .replace(/[\\/]/g, '_')
+    .replace(/\.{2,}/g, '.')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .slice(0, 120);
+}
+
+function hasValidMagicBytes(mimeType: string, buffer: Buffer) {
+  if (mimeType === 'application/pdf') {
+    return buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+  }
+
+  if (mimeType === 'image/jpeg') {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  if (mimeType === 'image/png') {
+    const pngHeader = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    return buffer.length >= pngHeader.length && pngHeader.every((byte, index) => buffer[index] === byte);
+  }
+
+  if (mimeType === 'image/webp') {
+    if (buffer.length < 12) return false;
+    return buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+  }
+
+  return false;
+}
+
+const AI_DAILY_QUOTA = Number(process.env.AI_DAILY_QUOTA || 800);
+
+function buildSearchTokens(input: string): string[] {
+  const normalized = input
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return [];
+  return Array.from(new Set(normalized.split(' ').filter(Boolean)));
+}
+
+async function consumeAiQuota(flow: string): Promise<boolean> {
+  const quotaKey = new Date().toISOString().slice(0, 10);
+  const quotaRef = adminDb.collection('ops').doc(`ai-quota-${quotaKey}`);
+
+  const exceeded = await adminDb.runTransaction(async (tx) => {
+    const snapshot = await tx.get(quotaRef);
+    const used = snapshot.exists ? Number(snapshot.data()?.used || 0) : 0;
+    if (used >= AI_DAILY_QUOTA) {
+      return true;
+    }
+
+    tx.set(
+      quotaRef,
+      {
+        used: used + 1,
+        updatedAt: FieldValue.serverTimestamp(),
+        lastFlow: flow,
+      },
+      { merge: true }
+    );
+
+    return false;
+  });
+
+  return !exceeded;
 }
 
 /**
@@ -206,16 +279,58 @@ export async function recordListingViewAction(listingId: string) {
 /**
  * Searches and filters listings based on various criteria.
  */
-export async function searchListingsAction(options: any) {
-  return getListings(options);
+export async function searchListingsAction(options: unknown) {
+  const startTime = performance.now();
+  try {
+    const result = await getListings(options as Record<string, unknown>);
+    await recordServerTrace({
+      traceName: 'searchListingsAction',
+      status: 'ok',
+      durationMs: performance.now() - startTime,
+      route: '/explore',
+      metadata: { options },
+    });
+    return result;
+  } catch (error) {
+    await recordServerTrace({
+      traceName: 'searchListingsAction',
+      status: 'error',
+      durationMs: performance.now() - startTime,
+      route: '/explore',
+      metadata: { error: error instanceof Error ? error.message : String(error) },
+    });
+    throw error;
+  }
 }
 
 /**
  * Admin action to update a listing's status and badge.
  */
 export async function updateListing(listingId: string, data: { status?: ListingStatus; badge?: BadgeValue; rejectionReason?: string | null; adminNotes?: string | null; }) {
+  const startTime = performance.now();
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') {
+    // Track failed authorization and log to audit trail
+    if (authUser) {
+      try {
+        const tracker = getAnalyticsTracker();
+        await tracker.trackAuthCheck(authUser.uid, authUser.role, 'updateListing', false);
+        
+        // Log permission denied event
+        await logAuditEvent({
+          action: 'PERMISSION_DENIED',
+          level: 'critical',
+          userId: authUser.uid,
+          userRole: authUser.role,
+          resourceType: 'listing',
+          resource: listingId,
+          details: { requiredRole: ['ADMIN'] },
+          success: false,
+        });
+      } catch (error) {
+        console.error('Failed to track analytics:', error);
+      }
+    }
     throw new Error('Authorization required: Only admins can update listing status.');
   }
 
@@ -227,10 +342,11 @@ export async function updateListing(listingId: string, data: { status?: ListingS
   }
 
   const listingData = listingDoc.data() as Listing;
+  const oldStatus = listingData.status;
   const sellerDoc = await adminDb.collection('users').doc(listingData.ownerId).get();
   const sellerProfile = sellerDoc.exists ? sellerDoc.data() as UserProfile : null;
 
-  const updateData: Record<string, any> = {
+  const updateData: Record<string, unknown> = {
     ...data,
     updatedAt: FieldValue.serverTimestamp(),
     adminReviewedAt: FieldValue.serverTimestamp(),
@@ -241,6 +357,29 @@ export async function updateListing(listingId: string, data: { status?: ListingS
   }
 
   await listingRef.update(updateData);
+
+  if (data.badge) {
+    const suggestedBadge = listingData.badgeSuggestion?.badge;
+    const aiSuggestionLogs = await adminDb
+      .collection('aiSuggestionLogs')
+      .where('listingId', '==', listingId)
+      .orderBy('generatedAt', 'desc')
+      .limit(1)
+      .get();
+
+    if (!aiSuggestionLogs.empty) {
+      await aiSuggestionLogs.docs[0].ref.set(
+        {
+          adminDecision: data.badge,
+          adminDecisionAt: FieldValue.serverTimestamp(),
+          adminDecisionBy: authUser.uid,
+          overrideReason: data.adminNotes ?? null,
+          override: suggestedBadge ? suggestedBadge !== data.badge : null,
+        },
+        { merge: true }
+      );
+    }
+  }
 
   // Send Notification to Seller
   if (sellerProfile) {
@@ -276,6 +415,41 @@ export async function updateListing(listingId: string, data: { status?: ListingS
       changes: data,
       timestamp: FieldValue.serverTimestamp(),
     });
+
+    // Track analytics event and comprehensive audit logging
+    try {
+      const tracker = getAnalyticsTracker();
+      const duration = performance.now() - startTime;
+      await tracker.trackListingStatusChange(
+        authUser.uid,
+        listingId,
+        oldStatus || 'unknown',
+        data.status || oldStatus || 'unknown',
+        { badge: data.badge, duration }
+      );
+      
+      // Log status changes and badge assignments to comprehensive audit trail
+      if (data.status && data.status !== oldStatus) {
+        await logListingStatusChange(
+          authUser.uid,
+          listingId,
+          oldStatus || 'unknown',
+          data.status,
+          (data.rejectionReason || data.adminNotes) ?? undefined
+        );
+      }
+      
+      if (data.badge) {
+        await logBadgeAssignment(
+          authUser.uid,
+          listingId,
+          data.badge,
+          data.adminNotes ?? undefined
+        );
+      }
+    } catch (error) {
+      console.error('Failed to track analytics:', error);
+    }
   }
 
   revalidatePath('/admin');
@@ -283,21 +457,102 @@ export async function updateListing(listingId: string, data: { status?: ListingS
   revalidatePath(`/listings/${listingId}`);
   revalidatePath('/dashboard');
   revalidatePath('/');
+
+  await recordServerTrace({
+    traceName: 'updateListing',
+    status: 'ok',
+    durationMs: performance.now() - startTime,
+    route: '/admin/listings/[id]',
+    listingId,
+    userId: authUser.uid,
+    metadata: { status: data.status, badge: data.badge },
+  });
+}
+
+export async function escalateListingAction(
+  listingId: string,
+  escalation: 'flag' | 'lock_seller' | 'request_more_evidence',
+  note: string
+) {
+  const authUser = await getAuthenticatedUser();
+  if (authUser?.role !== 'ADMIN') throw new Error('Authorization required: Admin only.');
+
+  const listingRef = adminDb.collection('listings').doc(listingId);
+  const listingDoc = await listingRef.get();
+  if (!listingDoc.exists) throw new Error('Listing not found.');
+
+  const listing = listingDoc.data() as Listing;
+  const payload: Record<string, unknown> = {
+    escalationState: escalation,
+    escalationNote: note,
+    escalatedAt: FieldValue.serverTimestamp(),
+    escalatedBy: authUser.uid,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  if (escalation === 'request_more_evidence') {
+    payload.status = 'pending';
+    payload.adminNotes = note;
+  }
+
+  await listingRef.set(payload, { merge: true });
+
+  if (escalation === 'lock_seller') {
+    await adminDb.collection('users').doc(listing.ownerId).set(
+      {
+        sellerLocked: true,
+        sellerLockReason: note,
+        sellerLockedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  await logAuditEvent({
+    action: 'MODERATION_ESCALATION',
+    level: escalation === 'lock_seller' ? 'critical' : 'warning',
+    userId: authUser.uid,
+    userRole: authUser.role,
+    resourceType: 'listing',
+    resource: listingId,
+    details: { escalation, note, ownerId: listing.ownerId },
+    success: true,
+  });
+
+  revalidatePath('/admin/listings');
+  revalidatePath(`/admin/listings/${listingId}`);
 }
 
 /**
  * Creates a new listing with AI analysis and evidence processing.
  */
 export async function createListing(formData: FormData): Promise<{id: string}> {
+  const actionStartTime = performance.now();
   const authUser = await getAuthenticatedUser();
   if (!authUser) throw new Error('Authentication required.');
+  if (authUser.role !== 'SELLER' && authUser.role !== 'ADMIN') {
+    throw new Error('Authorization required: Only sellers can create listings.');
+  }
 
   const settings = await getPlatformSettings();
   const maxSizeBytes = settings.maxUploadSizeMB * 1024 * 1024;
+  const maxEvidenceFiles = 10;
+  const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  const allowedEvidenceMimeTypes = new Set([
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ]);
 
   const userRecord = await adminAuth.getUser(authUser.uid);
   const title = formData.get('title') as string;
+  const location = formData.get('location') as string;
+  const county = formData.get('county') as string;
+  const landType = formData.get('landType') as string;
   const allEvidenceContent: string[] = [];
+  const evidenceIds: string[] = [];
   let imageAnalysisResult: ImageAnalysis | undefined = undefined;
   let badgeSuggestionResult: BadgeSuggestion | undefined = undefined;
   
@@ -309,17 +564,38 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
   for (const [index, file] of imageFiles.entries()) {
       if (file.size > 0) {
           if (file.size > maxSizeBytes) throw new Error(`File too large.`);
+          if (!allowedImageMimeTypes.has(file.type)) {
+            throw new Error('Unsupported image file type. Allowed: JPG, PNG, WEBP.');
+          }
+
           const buffer = Buffer.from(await file.arrayBuffer());
-          const path = `listings/${authUser.uid}/${docRef.id}/${Date.now()}-${file.name}`;
+          if (!hasValidMagicBytes(file.type, buffer)) {
+            throw new Error('Invalid image content signature.');
+          }
+          const safeFileName = sanitizeUploadFileName(file.name || `image-${Date.now()}`);
+          const path = `listings/${authUser.uid}/${docRef.id}/${Date.now()}-${safeFileName}`;
           await bucket.file(path).save(buffer, { metadata: { contentType: file.type } });
           uploadedImages.push({ url: `https://storage.googleapis.com/${bucket.name}/${path}`, hint: 'custom upload' });
 
           if (index === 0) {
               try {
-                  const imageDataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
-                  imageAnalysisResult = await analyzePropertyImage({ imageDataUri });
+                  if (await consumeAiQuota('analyze-property-image')) {
+                    const imageDataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+                    imageAnalysisResult = await analyzePropertyImage({ imageDataUri });
+                  } else {
+                    imageAnalysisResult = {
+                      isSuspicious: false,
+                      reason: 'AI quota reached for the day. Manual review required.',
+                    };
+                  }
               } catch (e) {
                   console.warn('[AI Triage] Property image analysis failed.', e);
+                  await recordAiFlowFailure({
+                    flow: 'analyze-property-image',
+                    listingId: docRef.id,
+                    userId: authUser.uid,
+                    error: e instanceof Error ? e.message : String(e),
+                  });
               }
           }
       }
@@ -327,24 +603,51 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 
   let evidenceCount = 0;
   const evidenceFiles = formData.getAll('evidence') as File[];
+  if (evidenceFiles.length > maxEvidenceFiles) {
+    throw new Error(`Too many evidence files. Maximum allowed is ${maxEvidenceFiles}.`);
+  }
+
   if (evidenceFiles.length > 0 && evidenceFiles[0].size > 0) {
     const evidenceBatch = adminDb.batch();
     for (const file of evidenceFiles) {
         if (file.size > 0) {
+            if (file.size > maxSizeBytes) {
+              throw new Error('Evidence file too large.');
+            }
+
+            if (!allowedEvidenceMimeTypes.has(file.type)) {
+              throw new Error('Unsupported evidence file type. Allowed: PDF, JPG, PNG, WEBP.');
+            }
+
+            const buffer = Buffer.from(await file.arrayBuffer());
+            if (!hasValidMagicBytes(file.type, buffer)) {
+              throw new Error('Invalid evidence file signature.');
+            }
+
             evidenceCount++;
             const evidenceRef = adminDb.collection('evidence').doc();
-            const path = `evidence/${authUser.uid}/${docRef.id}/${Date.now()}-${file.name}`;
-            const buffer = Buffer.from(await file.arrayBuffer());
+            evidenceIds.push(evidenceRef.id);
+            const safeFileName = sanitizeUploadFileName(file.name || `evidence-${Date.now()}`);
+            const path = `evidence/${authUser.uid}/${docRef.id}/${Date.now()}-${safeFileName}`;
             await bucket.file(path).save(buffer, { metadata: { contentType: file.type } });
 
             let contentForAi = `(File: ${file.name})`;
             if (file.type.startsWith('image/')) {
                 try {
-                    const imageDataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
-                    const ocr = await extractTextFromImage({ imageDataUri });
-                    contentForAi = ocr.extractedText || contentForAi;
+                    if (await consumeAiQuota('extract-text-from-image')) {
+                      const imageDataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+                      const ocr = await extractTextFromImage({ imageDataUri });
+                      contentForAi = ocr.extractedText || contentForAi;
+                    }
                 } catch (e) {
                     console.warn('[AI OCR] Text extraction failed for file:', file.name, e);
+                  await recordAiFlowFailure({
+                    flow: 'extract-text-from-image',
+                    listingId: docRef.id,
+                    evidenceId: evidenceRef.id,
+                    userId: authUser.uid,
+                    error: e instanceof Error ? e.message : String(e),
+                  });
                 }
             }
             allEvidenceContent.push(contentForAi);
@@ -366,21 +669,34 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 
   if (allEvidenceContent.length > 0) {
       try {
-          badgeSuggestionResult = await suggestTrustBadge({ listingTitle: title, evidenceContent: allEvidenceContent });
+          if (await consumeAiQuota('suggest-trust-badge')) {
+            badgeSuggestionResult = await suggestTrustBadge({ listingTitle: title, evidenceContent: allEvidenceContent });
+          } else {
+            badgeSuggestionResult = {
+              badge: 'EvidenceSubmitted',
+              reason: 'AI quota reached for today. Using safe fallback badge until admin review.',
+            };
+          }
       } catch (e) {
           console.warn('[AI Signal] Trust badge suggestion failed.', e);
+        await recordAiFlowFailure({
+          flow: 'suggest-trust-badge',
+          listingId: docRef.id,
+          userId: authUser.uid,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
   }
 
   const newListingData = {
     ownerId: authUser.uid,
     title,
-    location: formData.get('location') as string,
-    county: formData.get('county') as string,
+    location,
+    county,
     price: Number(formData.get('price')),
     area: Number(formData.get('area')),
     size: formData.get('size') as string,
-    landType: formData.get('landType') as string,
+    landType,
     latitude: Number(formData.get('latitude')),
     longitude: Number(formData.get('longitude')),
     description: formData.get('description') as string,
@@ -397,10 +713,73 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
     updatedAt: FieldValue.serverTimestamp(),
     aiRiskScore: calculateCompositeRisk(imageAnalysisResult, badgeSuggestionResult),
     imageAnalysis: imageAnalysisResult,
+    searchText: `${title} ${location} ${county} ${landType}`.toLowerCase(),
+    searchTokens: buildSearchTokens(`${title} ${location} ${county} ${landType}`),
     badgeSuggestion: badgeSuggestionResult,
+    badgeSuggestionMetadata: badgeSuggestionResult
+      ? {
+          advisory: true,
+          generatedAt: FieldValue.serverTimestamp(),
+          model: 'suggest-trust-badge',
+          evidenceIds,
+        }
+      : null,
   };
 
   await docRef.set(newListingData);
+
+  if (badgeSuggestionResult) {
+    await adminDb.collection('aiSuggestionLogs').add({
+      listingId: docRef.id,
+      evidenceIds,
+      model: 'suggest-trust-badge',
+      output: {
+        badge: badgeSuggestionResult.badge,
+        reason: badgeSuggestionResult.reason,
+      },
+      advisory: true,
+      generatedAt: FieldValue.serverTimestamp(),
+      generatedByUserId: authUser.uid,
+      adminDecision: null,
+      adminDecisionAt: null,
+      adminDecisionBy: null,
+      overrideReason: null,
+    });
+  }
+
+  // Track listing creation analytics
+  try {
+    const tracker = getAnalyticsTracker();
+    await tracker.trackListingCreated(
+      authUser.uid,
+      docRef.id,
+      {
+        title,
+        evidenceCount,
+        imageCount: uploadedImages.length,
+        badge: newListingData.badgeSuggestion?.badge
+      }
+    );
+    
+    // Log seller action to audit trail
+    await logAuditEvent({
+      action: 'SELLER_ACTION',
+      level: 'info',
+      userId: authUser.uid,
+      userRole: 'SELLER',
+      resourceType: 'listing',
+      resource: docRef.id,
+      details: { 
+        action: 'listing_created',
+        title,
+        evidenceCount,
+        imageCount: uploadedImages.length
+      },
+      success: true,
+    });
+  } catch (error) {
+    console.error('Failed to track listing creation analytics:', error);
+  }
 
   if (authUser.email) {
     await sendBrandedEmail({
@@ -416,6 +795,17 @@ export async function createListing(formData: FormData): Promise<{id: string}> {
 
   revalidatePath('/');
   revalidatePath('/dashboard');
+
+  await recordServerTrace({
+    traceName: 'createListing',
+    status: 'ok',
+    durationMs: performance.now() - actionStartTime,
+    route: '/listings/new',
+    listingId: docRef.id,
+    userId: authUser.uid,
+    metadata: { evidenceCount, imageCount: uploadedImages.length },
+  });
+
   return { id: docRef.id };
 }
 
@@ -433,16 +823,19 @@ function calculateCompositeRisk(img?: ImageAnalysis, badge?: BadgeSuggestion): n
 export async function editListingAction(listingId: string, formData: FormData): Promise<{id: string}> {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Authentication required.');
+    if (authUser.role !== 'SELLER' && authUser.role !== 'ADMIN') {
+      throw new Error('Authorization required: Seller role required.');
+    }
 
     const docRef = adminDb.collection('listings').doc(listingId);
     const listingDoc = await docRef.get();
     if (!listingDoc.exists) throw new Error("Listing not found.");
     if (listingDoc.data()?.ownerId !== authUser.uid) throw new Error("Unauthorized.");
 
-    const updatePayload: Record<string, any> = {
-        title: formData.get('title') as string,
-        location: formData.get('location') as string,
-        county: formData.get('county') as string,
+    const updatePayload: Record<string, unknown> = {
+      title: formData.get('title') as string,
+      location: formData.get('location') as string,
+      county: formData.get('county') as string,
         price: Number(formData.get('price')),
         area: Number(formData.get('area')),
         size: formData.get('size') as string,
@@ -454,6 +847,10 @@ export async function editListingAction(listingId: string, formData: FormData): 
         status: 'pending',
         badge: null,
     };
+
+      const searchInput = `${String(updatePayload.title || '')} ${String(updatePayload.location || '')} ${String(updatePayload.county || '')} ${String(updatePayload.landType || '')}`;
+      updatePayload.searchText = searchInput.toLowerCase();
+      updatePayload.searchTokens = buildSearchTokens(searchInput);
 
     await docRef.update(updatePayload);
     revalidatePath('/');
@@ -499,10 +896,19 @@ export async function getAdminStatsAction() {
 /**
  * Admin action to retrieve analytics summary.
  */
-export async function getAdminAnalyticsSummaryAction(options: any = {}) {
+export async function getAdminAnalyticsSummaryAction(options: Record<string, unknown> = {}) {
+  const startTime = performance.now();
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') throw new Error('Unauthorized.');
-  return getAdminAnalyticsSummary(options);
+  const result = await getAdminAnalyticsSummary(options);
+  await recordServerTrace({
+    traceName: 'getAdminAnalyticsSummaryAction',
+    status: 'ok',
+    durationMs: performance.now() - startTime,
+    route: '/admin/analytics',
+    userId: authUser.uid,
+  });
+  return result;
 }
 
 /**
@@ -536,7 +942,7 @@ export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
 /**
  * Saves a search configuration for a buyer.
  */
-export async function saveSearchAction(data: { name: string; filters: any, url: string }) {
+export async function saveSearchAction(data: { name: string; filters: Record<string, unknown>; url: string }) {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Auth required.');
     await adminDb.collection('users').doc(authUser.uid).collection('savedSearches').add({ ...data, createdAt: FieldValue.serverTimestamp() });
@@ -568,7 +974,7 @@ export async function updateUserProfileAction(formData: FormData) {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Auth required');
     
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
         updatedAt: FieldValue.serverTimestamp()
     };
 
@@ -606,8 +1012,24 @@ export async function updateUserProfileAction(formData: FormData) {
     // Handle photo upload
     const photo = formData.get('photo') as File | null;
     if (photo && photo.size > 0) {
+        const allowedProfileMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+        const maxProfilePhotoSizeBytes = 5 * 1024 * 1024;
+
+        if (photo.size > maxProfilePhotoSizeBytes) {
+          throw new Error('Profile photo too large. Maximum allowed size is 5MB.');
+        }
+
+        if (!allowedProfileMimeTypes.has(photo.type)) {
+          throw new Error('Unsupported profile photo type. Allowed: JPG, PNG, WEBP.');
+        }
+
         const buffer = Buffer.from(await photo.arrayBuffer());
-        const path = `profiles/${authUser.uid}/${Date.now()}-${photo.name}`;
+        if (!hasValidMagicBytes(photo.type, buffer)) {
+          throw new Error('Invalid profile photo signature.');
+        }
+
+        const safePhotoName = sanitizeUploadFileName(photo.name || `profile-${Date.now()}`);
+        const path = `profiles/${authUser.uid}/${Date.now()}-${safePhotoName}`;
         await adminStorage.bucket().file(path).save(buffer, { metadata: { contentType: photo.type } });
         updateData.photoURL = `https://storage.googleapis.com/${adminStorage.bucket().name}/${path}`;
     }
@@ -624,7 +1046,7 @@ export async function updateUserProfileAction(formData: FormData) {
     revalidatePath('/profile');
 }
 
-function calculateProfileCompleteness(profile: any): number {
+function calculateProfileCompleteness(profile: Partial<UserProfile> & { serviceArea?: unknown }): number {
     let score = 0;
     if (profile.displayName) score += 20;
     if (profile.phone) score += 20;
@@ -657,8 +1079,20 @@ export async function deleteUserAccountAction() {
 export async function getInboxItemsAction(filters: { contactStatus: string; reportStatus: string; }) {
   const authUser = await getAuthenticatedUser();
   if (authUser?.role !== 'ADMIN') throw new Error('Unauthorized.');
-  const contactSnapshot = await adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(50).get();
-  const reportSnapshot = await adminDb.collection('listingReports').orderBy('createdAt', 'desc').limit(50).get();
+
+  let contactQuery = adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(50);
+  if (filters.contactStatus !== 'all') {
+    contactQuery = adminDb.collection('contactMessages').where('status', '==', filters.contactStatus).orderBy('createdAt', 'desc').limit(50);
+  }
+
+  let reportQuery = adminDb.collection('listingReports').orderBy('createdAt', 'desc').limit(50);
+  if (filters.reportStatus !== 'all') {
+    reportQuery = adminDb.collection('listingReports').where('status', '==', filters.reportStatus).orderBy('createdAt', 'desc').limit(50);
+  }
+
+  const contactSnapshot = await contactQuery.get();
+  const reportSnapshot = await reportQuery.get();
+
   return {
     contactMessages: contactSnapshot.docs.map(d => serializeDocument({ id: d.id, ...d.data() })),
     listingReports: reportSnapshot.docs.map(d => serializeDocument({ id: d.id, ...d.data() })),
@@ -699,6 +1133,7 @@ export async function checkSuspiciousPatterns(documentDescriptions: string[]) {
  * Gets or create a conversation between a buyer and a seller.
  */
 export async function getOrCreateConversation(listingId: string): Promise<{ conversationId: string }> {
+  const startTime = performance.now();
   const authUser = await getAuthenticatedUser();
   if (!authUser) throw new Error('Auth required.');
   
@@ -739,6 +1174,15 @@ export async function getOrCreateConversation(listingId: string): Promise<{ conv
     link: `/dashboard/messages/${conversationId}`
   });
 
+  await recordServerTrace({
+    traceName: 'getOrCreateConversation',
+    status: 'ok',
+    durationMs: performance.now() - startTime,
+    route: '/messages',
+    listingId,
+    userId: authUser.uid,
+  });
+
   return { conversationId };
 }
 
@@ -768,6 +1212,7 @@ export async function markListingReportStatus(reportId: string, status: 'new' | 
 export async function changeUserPasswordAction(current: string, next: string) {
     const authUser = await getAuthenticatedUser();
     if (!authUser) throw new Error('Auth required');
+  if (!current || !next) throw new Error('Both current and next passwords are required.');
     return { success: true };
 }
 

@@ -38,7 +38,7 @@ export function LandingHero() {
         {/* Trust Signal - Animated Entry */}
         <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest backdrop-blur-md animate-slide-up">
           <BadgeCheck className="h-4 w-4 text-accent" />
-          <span>Kenya's #1 Verified Land Marketplace</span>
+          <span>Kenya&apos;s #1 Verified Land Marketplace</span>
         </div>
 
         {/* Hero Headline - Gradient Text */}
